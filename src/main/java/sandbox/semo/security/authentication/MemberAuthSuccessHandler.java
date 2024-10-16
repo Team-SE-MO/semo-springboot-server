@@ -1,6 +1,6 @@
 package sandbox.semo.security.authentication;
 
-import static sandbox.semo.security.exception.ErrorCode.UNAUTHORIZED_USER;
+import static sandbox.semo.security.exception.AuthErrorCode.UNAUTHORIZED_USER;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,6 +1,6 @@
 package sandbox.semo.security.authentication;
 
-import static sandbox.semo.security.exception.ErrorCode.INVALID_CREDENTIALS;
+import static sandbox.semo.security.exception.AuthErrorCode.INVALID_CREDENTIALS;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

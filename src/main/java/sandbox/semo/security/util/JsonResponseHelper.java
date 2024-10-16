@@ -7,7 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import sandbox.semo.security.exception.ErrorCode;
+import sandbox.semo.security.exception.AuthErrorCode;
 
 public class JsonResponseHelper {
 
@@ -21,14 +21,14 @@ public class JsonResponseHelper {
         response.getWriter().write(mapper.writeValueAsString(responseBody));
     }
 
-    public static void sendJsonErrorResponse(HttpServletResponse response, ErrorCode errorCode)
+    public static void sendJsonErrorResponse(HttpServletResponse response, AuthErrorCode authErrorCode)
             throws IOException {
-        response.setStatus(errorCode.getStatus().value());
+        response.setStatus(authErrorCode.getHttpStatus().value());
         response.setContentType("application/json;charset=UTF-8");
 
         Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("code", errorCode.getStatus().value());
-        responseBody.put("message", errorCode.getMessage());
+        responseBody.put("code", authErrorCode.getHttpStatus().value());
+        responseBody.put("message", authErrorCode.getMessage());
 
         ObjectMapper mapper = new ObjectMapper();
         response.getWriter().write(mapper.writeValueAsString(responseBody));
