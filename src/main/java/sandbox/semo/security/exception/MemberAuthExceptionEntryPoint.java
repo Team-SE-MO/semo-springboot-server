@@ -18,8 +18,8 @@ public class MemberAuthExceptionEntryPoint implements AuthenticationEntryPoint {
     public void commence(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException authException) throws IOException, ServletException {
         log.error(">>> [ ❌ 인증 실패: {} ]", authException.getMessage());
-        ErrorCode errorCode = ErrorCode.UNAUTHORIZED_USER;
-        JsonResponseHelper.sendJsonErrorResponse(response, errorCode);
+        AuthErrorCode authErrorCode = AuthErrorCode.UNAUTHORIZED_USER;
+        JsonResponseHelper.sendJsonErrorResponse(response, authErrorCode);
     }
 
 }
