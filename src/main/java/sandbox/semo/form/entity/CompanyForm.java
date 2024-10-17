@@ -19,14 +19,14 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Getter
-@Table(name = "COMPANY_REGISTER_FORM")
+@Table(name = "COMPANY_FORM")
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CompanyRegisterForm {
+public class CompanyForm {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "COMPANY_REGISTER_SEQ_GEN")
-    @SequenceGenerator(name = "COMPANY_REGISTER_SEQ_GEN", sequenceName = "COMPANY_SEQ", allocationSize = 1)
+    @SequenceGenerator(name = "COMPANY_REGISTER_SEQ_GEN", sequenceName = "COMPANY_FORM_SEQ", allocationSize = 1)
     @Column(name = "FORM_ID", nullable = false)
     private Long id;
 
@@ -57,7 +57,7 @@ public class CompanyRegisterForm {
     }
 
     @Builder
-    public CompanyRegisterForm(String companyName, String taxId, String ownerName, String email,
+    public CompanyForm(String companyName, String taxId, String ownerName, String email,
             String status) {
         this.companyName = companyName;
         this.taxId = taxId;
