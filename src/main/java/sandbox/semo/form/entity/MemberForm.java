@@ -3,6 +3,8 @@ package sandbox.semo.form.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -38,8 +40,9 @@ public class MemberForm {
     @Column(name = "EMAIL", nullable = false, length = 50)
     private String email;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "STATUS", nullable = false, length = 30)
-    private String status;
+    private Status status;
 
     @CreatedDate
     @Column(name = "REQUEST_DATE", nullable = false, updatable = false)
@@ -53,7 +56,7 @@ public class MemberForm {
     }
 
     @Builder
-    public MemberForm(String companyName, String ownerName, String email, String status) {
+    public MemberForm(String companyName, String ownerName, String email, Status status) {
         this.companyName = companyName;
         this.ownerName = ownerName;
         this.email = email;
