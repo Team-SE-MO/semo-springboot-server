@@ -5,4 +5,5 @@ import sandbox.semo.company.entity.Company;
 
 public interface CompanyRepository extends JpaRepository<Company, Long> {
 
+    boolean existsByTaxId(String taxId);
 }
