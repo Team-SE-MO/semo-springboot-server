@@ -13,7 +13,7 @@ import sandbox.semo.form.exception.CompanyFormBusinessException;
 import sandbox.semo.form.repository.CompanyFormRepository;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class CompanyFormImpl implements CompanyFormService {
 
@@ -21,6 +21,7 @@ public class CompanyFormImpl implements CompanyFormService {
     private final CompanyRepository companyRepository;
 
     @Override
+    @Transactional
     public void companyRegister(CompanyFormRegister request) {
         checkCompanyExists(request.getTaxId());
         CompanyForm companyForm = CompanyForm.builder()
