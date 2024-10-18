@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: semo-api
+
+  profiles:
+    active: secret
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.OracleDialect
+
+server:
+  port: 8080
+
+logging:
+  level:
+    org.hibernate.type.descriptor.sql: trace
+    org.springframework.security: DEBUG

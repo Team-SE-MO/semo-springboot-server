@@ -1,1 +1,5 @@
-rootProject.name = 'semo'
+rootProject.name = 'semo-springboot-server'
+include 'semo-api'
+include 'semo-batch'
+include 'semo-core'
+
