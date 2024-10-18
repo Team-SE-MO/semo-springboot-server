@@ -1,0 +1,11 @@
+dependencies {
+    implementation project(':semo-core')
+}
+
+tasks.bootJar {
+    enabled = false
+}
+
+tasks.jar {
+    enabled = true
+}
