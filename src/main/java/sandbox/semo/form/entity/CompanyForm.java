@@ -3,19 +3,15 @@ package sandbox.semo.form.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 
@@ -24,7 +20,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Table(name = "COMPANY_FORM")
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CompanyForm {
+public class CompanyForm extends BaseForm {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "COMPANY_REGISTER_SEQ_GEN")
@@ -32,32 +28,8 @@ public class CompanyForm {
     @Column(name = "FORM_ID", nullable = false)
     private Long id;
 
-    @Column(name = "COMPANY_NAME", nullable = false, length = 50)
-    private String companyName;
-
     @Column(name = "TAX_ID", nullable = false, unique = true, length = 30)
     private String taxId;
-
-    @Column(name = "OWNER_NAME", nullable = false, length = 50)
-    private String ownerName;
-
-    @Column(name = "EMAIL", nullable = false, length = 50)
-    private String email;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "STATUS", nullable = false, length = 20)
-    private Status status;
-
-    @CreatedDate
-    @Column(name = "REQUEST_DATE", nullable = false, updatable = false)
-    private LocalDateTime requestDate;
-
-    @Column(name = "APPROVED_AT", nullable = true)
-    private LocalDateTime approvedAt;
-
-    public void markAsApproved() {
-        this.approvedAt = LocalDateTime.now();  // 현재 시간 설정
-    }
 
     @Builder
     public CompanyForm(String companyName, String taxId, String ownerName, String email,
