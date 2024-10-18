@@ -27,6 +27,9 @@ public class Company {
     @Column(name = "COMPANY_NAME", nullable = false, length = 50)
     private String companyName;
 
+    @Column(name = "TAX_ID", nullable = false, unique = true ,length = 30 )
+    private String taxId;
+
     @Builder
     public Company(String companyName) {
         this.companyName = companyName;
