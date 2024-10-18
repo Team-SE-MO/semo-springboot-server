@@ -1,4 +1,4 @@
-package sandbox.semo.form.entity;
+package sandbox.semo.domain.form.entity;
 
 public enum Status {
     PENDING, DENIED, APPROVED;

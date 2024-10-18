@@ -1,21 +1,21 @@
-package sandbox.semo.form.service;
+package sandbox.semo.application.form.service;
 
-import static sandbox.semo.form.exception.CompanyFormErrorCode.COMPANY_ALREADY_EXISTS;
+import static sandbox.semo.application.form.exception.CompanyFormErrorCode.COMPANY_ALREADY_EXISTS;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sandbox.semo.company.repository.CompanyRepository;
-import sandbox.semo.form.dto.CompanyFormRegister;
-import sandbox.semo.form.entity.CompanyForm;
-import sandbox.semo.form.entity.Status;
-import sandbox.semo.form.exception.CompanyFormBusinessException;
-import sandbox.semo.form.repository.CompanyFormRepository;
+import sandbox.semo.application.form.exception.CompanyFormBusinessException;
+import sandbox.semo.domain.company.repository.CompanyRepository;
+import sandbox.semo.domain.form.dto.request.CompanyFormRegister;
+import sandbox.semo.domain.form.entity.CompanyForm;
+import sandbox.semo.domain.form.entity.Status;
+import sandbox.semo.domain.form.repository.CompanyFormRepository;
 
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
-public class CompanyFormImpl implements CompanyFormService {
+public class CompanyFormServiceImpl implements CompanyFormService {
 
     private final CompanyFormRepository companyFormRepository;
     private final CompanyRepository companyRepository;
@@ -40,4 +40,5 @@ public class CompanyFormImpl implements CompanyFormService {
             throw new CompanyFormBusinessException(COMPANY_ALREADY_EXISTS);
         }
     }
+
 }

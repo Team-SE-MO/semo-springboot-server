@@ -1,4 +1,4 @@
-package sandbox.semo.form.entity;
+package sandbox.semo.domain.form.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,13 +12,11 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 
 @Entity
 @Getter
 @Table(name = "COMPANY_FORM")
-@EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CompanyForm extends BaseForm {
 

@@ -1,4 +1,4 @@
-package sandbox.semo.form.exception;
+package sandbox.semo.application.form.exception;
 
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 

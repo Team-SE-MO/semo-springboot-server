@@ -1,4 +1,4 @@
-package sandbox.semo.form.entity;
+package sandbox.semo.domain.form.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -31,4 +31,5 @@ public class MemberForm extends BaseForm {
         this.email = email;
         this.status = status;
     }
+
 }

@@ -1,4 +1,4 @@
-package sandbox.semo.form.dto;
+package sandbox.semo.domain.form.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
