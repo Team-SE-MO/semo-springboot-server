@@ -2,6 +2,7 @@ package sandbox.semo.application.form.controller;
 
 import static org.springframework.http.HttpStatus.OK;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
@@ -26,7 +27,8 @@ public class CompanyFormController {
     private final CompanyFormService companyFormService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse> formRegister(@RequestBody CompanyFormRegister registerForm) {
+    public ResponseEntity<ApiResponse> formRegister(
+            @RequestBody @Valid CompanyFormRegister registerForm) {
         companyFormService.companyRegister(registerForm);
         return ResponseEntity.ok().body(
                 ApiResponse.successResponse(
