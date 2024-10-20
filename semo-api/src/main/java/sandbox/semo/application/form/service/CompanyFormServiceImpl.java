@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -62,22 +61,16 @@ public class CompanyFormServiceImpl implements CompanyFormService {
         if (companyFormPage.isEmpty()) {
             throw new CompanyFormBusinessException(FORM_NO_FOUND);
         }
-        List<CompanyFormList> formList = companyFormPage.getContent().stream()
-                .map(companyForm -> CompanyFormList.builder()
-                        .formId(companyForm.getId())
-                        .companyName(companyForm.getCompanyName())
-                        .ownerName(companyForm.getOwnerName())
-                        .taxId(companyForm.getTaxId())
-                        .email(companyForm.getEmail())
-                        .status(companyForm.getStatus())
-                        .requestDate(companyForm.getRequestDate())
-                        .approvedAt(companyForm.getApprovedAt())
-                        .build())
-                .toList();
-
-        long totalElements = companyFormPage.getTotalElements();
-
-        return new PageImpl<>(formList, pageable, totalElements);
+        return companyFormPage.map(companyForm -> CompanyFormList.builder()
+                .formId(companyForm.getId())
+                .companyName(companyForm.getCompanyName())
+                .ownerName(companyForm.getOwnerName())
+                .taxId(companyForm.getTaxId())
+                .email(companyForm.getEmail())
+                .status(companyForm.getStatus())
+                .requestDate(companyForm.getRequestDate())
+                .approvedAt(companyForm.getApprovedAt())
+                .build());
     }
 
 }
