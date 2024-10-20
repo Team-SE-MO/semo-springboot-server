@@ -35,6 +35,9 @@ public class Device extends BaseTime {
     @JoinColumn(name = "COMPANY_ID", nullable = false)
     private Company company;
 
+    @Column(name = "DEVICE_ALIAS", nullable = false, length = 100)
+    private String deviceAlias;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "TYPE", nullable = false, length = 30)
     private DatabaseType type;
@@ -46,7 +49,7 @@ public class Device extends BaseTime {
     private Long port;
 
     @Column(name = "SID", nullable = false, length = 50)
-    private String sId;
+    private String sid;
 
     @Column(name = "USERNAME", nullable = false, length = 50)
     private String username;
@@ -59,13 +62,14 @@ public class Device extends BaseTime {
 
     @Builder
     public Device(
-            Company company, DatabaseType type, String ip, Long port, String sId, String username,
+            Company company, String deviceAlias, DatabaseType type, String ip, Long port, String sid, String username,
             String password, Boolean status) {
         this.company = company;
+        this.deviceAlias = deviceAlias;
         this.type = type;
         this.ip = ip;
         this.port = port;
-        this.sId = sId;
+        this.sid = sid;
         this.username = username;
         this.password = password;
         this.status = status;
