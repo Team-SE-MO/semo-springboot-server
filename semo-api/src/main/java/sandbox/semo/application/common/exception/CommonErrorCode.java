@@ -1,4 +1,4 @@
-package sandbox.semo.common.exception;
+package sandbox.semo.application.common.exception;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
