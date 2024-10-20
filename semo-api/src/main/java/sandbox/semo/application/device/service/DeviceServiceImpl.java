@@ -9,20 +9,44 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import sandbox.semo.application.device.exception.DeviceBusinessException;
-import sandbox.semo.domain.device.dto.request.HealthCheck;
+import sandbox.semo.domain.company.entity.Company;
+import sandbox.semo.domain.device.dto.request.DeviceRegister;
+import sandbox.semo.domain.device.dto.request.DataBaseInfo;
+import sandbox.semo.domain.device.entity.Device;
+import sandbox.semo.domain.device.repository.DeviceRepository;
 
 @Service
 @Log4j2
 @RequiredArgsConstructor
 public class DeviceServiceImpl implements DeviceService {
 
+    private final DeviceRepository deviceRepository;
+
     @Override
-    public void healthCheck(HealthCheck request) {
+    public void register(Company company, DeviceRegister request) {
+        DataBaseInfo dataBaseInfo = request.getDataBaseInfo();
+        deviceRepository.save(Device.builder()
+                .company(company)
+                .deviceAlias(request.getDeviceAlias())
+                .type(dataBaseInfo.getType())
+                .ip(dataBaseInfo.getIp())
+                .port(dataBaseInfo.getPort())
+                .sid(dataBaseInfo.getSid())
+                .username(dataBaseInfo.getUsername())
+                .password(dataBaseInfo.getPassword())
+                .status(healthCheck(dataBaseInfo))
+                .build());
+        log.info(">>> [ ✅ 데이터베이스 장비가 성공적으로 등록되었습니다. ]");
+    }
+
+    @Override
+    public boolean healthCheck(DataBaseInfo request) {
         try (Connection conn = getDBConnection(request)) {
             validateDBConnection(conn);
             checkVSessionAccess(conn);
+            return true;
         } catch (SQLException e) {
-            throw new DeviceBusinessException(DATABASE_CONNECTION_FAILURE);
+            return false;
         }
     }
 
@@ -49,7 +73,7 @@ public class DeviceServiceImpl implements DeviceService {
         log.info(">>> [ ✅ 데이터베이스 연결 체크 성공 ]");
     }
 
-    private Connection getDBConnection(HealthCheck request) throws SQLException {
+    private Connection getDBConnection(DataBaseInfo request) throws SQLException {
         String url = getConnectionUrl(request.getIp(), request.getPort(), request.getSid());
         return DriverManager.getConnection(url, request.getUsername(), request.getPassword());
     }
