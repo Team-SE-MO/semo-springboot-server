@@ -1,18 +1,20 @@
 package sandbox.semo.domain.device.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import sandbox.semo.domain.device.entity.DatabaseType;
 
 @Data
-public class HealthCheck {
+public class DataBaseInfo {
 
-    @NotBlank
-    private String type;
+    @NotNull
+    private DatabaseType type;
 
     @NotBlank
     private String ip;
 
-    @NotBlank
+    @NotNull
     private Long port;
 
     @NotBlank
