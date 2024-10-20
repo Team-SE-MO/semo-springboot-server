@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class DeviceRegister {
+public class HealthCheck {
 
     @NotBlank
     private String type;

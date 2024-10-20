@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.device.service.DeviceService;
-import sandbox.semo.domain.device.dto.request.DeviceRegister;
+import sandbox.semo.domain.device.dto.request.HealthCheck;
 
 @Log4j2
 @RestController
@@ -21,8 +21,8 @@ public class DeviceController {
     private final DeviceService deviceService;
 
     @PostMapping("/hc")
-    public ApiResponse<Boolean> testConnect(@RequestBody DeviceRegister deviceRegister) {
-        deviceService.healthCheck(deviceRegister);
+    public ApiResponse<Boolean> testConnect(@RequestBody HealthCheck request) {
+        deviceService.healthCheck(request);
         return ApiResponse.successResponse(OK, "DEVICE 상태가 양호 합니다.");
     }
 

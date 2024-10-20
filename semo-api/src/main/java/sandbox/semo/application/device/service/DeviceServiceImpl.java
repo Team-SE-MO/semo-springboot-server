@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import sandbox.semo.application.device.exception.DeviceBusinessException;
-import sandbox.semo.domain.device.dto.request.DeviceRegister;
+import sandbox.semo.domain.device.dto.request.HealthCheck;
 
 @Service
 @Log4j2
@@ -17,7 +17,7 @@ import sandbox.semo.domain.device.dto.request.DeviceRegister;
 public class DeviceServiceImpl implements DeviceService {
 
     @Override
-    public void healthCheck(DeviceRegister request) {
+    public void healthCheck(HealthCheck request) {
         try (Connection conn = getDBConnection(request)) {
             validateDBConnection(conn);
             checkVSessionAccess(conn);
@@ -49,7 +49,7 @@ public class DeviceServiceImpl implements DeviceService {
         log.info(">>> [ ✅ 데이터베이스 연결 체크 성공 ]");
     }
 
-    private Connection getDBConnection(DeviceRegister request) throws SQLException {
+    private Connection getDBConnection(HealthCheck request) throws SQLException {
         String url = getConnectionUrl(request.getIp(), request.getPort(), request.getSid());
         return DriverManager.getConnection(url, request.getUsername(), request.getPassword());
     }
