@@ -1,4 +1,4 @@
-package sandbox.semo.member.controller;
+package sandbox.semo.application.member.controller;
 
 import static org.springframework.http.HttpStatus.OK;
 
@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import sandbox.semo.common.response.ApiResponse;
-import sandbox.semo.member.service.EmailService;
+import sandbox.semo.application.common.response.ApiResponse;
+import sandbox.semo.application.member.service.EmailService;
 import sandbox.semo.member.dto.request.EmailRegister;
 
 @RestController

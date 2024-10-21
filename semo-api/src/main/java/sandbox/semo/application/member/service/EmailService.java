@@ -1,4 +1,4 @@
-package sandbox.semo.member.service;
+package sandbox.semo.application.member.service;
 
 import jakarta.mail.MessagingException;
 import java.io.IOException;
