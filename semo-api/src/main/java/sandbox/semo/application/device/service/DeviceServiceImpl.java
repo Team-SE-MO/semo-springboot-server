@@ -26,6 +26,9 @@ public class DeviceServiceImpl implements DeviceService {
     @Override
     public void register(Company company, DeviceRegister request) {
         DataBaseInfo dataBaseInfo = request.getDataBaseInfo();
+        if (!healthCheck(dataBaseInfo)) {
+            throw new DeviceBusinessException(DATABASE_CONNECTION_FAILURE);
+        }
         deviceRepository.save(Device.builder()
                 .company(company)
                 .deviceAlias(request.getDeviceAlias())
