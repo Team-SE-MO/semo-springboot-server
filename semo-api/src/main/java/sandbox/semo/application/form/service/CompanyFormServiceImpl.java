@@ -32,7 +32,7 @@ public class CompanyFormServiceImpl implements CompanyFormService {
 
     @Override
     @Transactional
-    public void companyRegister(CompanyFormRegister request) {
+    public void formRegister(CompanyFormRegister request) {
         checkCompanyExists(request.getTaxId());
         CompanyForm companyForm = CompanyForm.builder()
                 .companyName(request.getCompanyName())

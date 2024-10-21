@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,7 +33,7 @@ public class CompanyFormController {
     @PostMapping
     public ResponseEntity<ApiResponse> formRegister(
             @RequestBody @Valid CompanyFormRegister registerForm) {
-        companyFormService.companyRegister(registerForm);
+        companyFormService.formRegister(registerForm);
         return ResponseEntity.ok().body(
                 ApiResponse.successResponse(
                         HttpStatus.OK,

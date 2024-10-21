@@ -7,7 +7,7 @@ import sandbox.semo.domain.form.dto.response.CompanyFormList;
 
 public interface CompanyFormService {
 
-    void companyRegister(CompanyFormRegister companyFormRegister);
+    void formRegister(CompanyFormRegister companyFormRegister);
 
     Page<CompanyFormList> findAllForms(int page, int size);
 
