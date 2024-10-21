@@ -3,10 +3,12 @@ package sandbox.semo.application.device.controller;
 import static org.springframework.http.HttpStatus.OK;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +18,7 @@ import sandbox.semo.application.device.service.DeviceService;
 import sandbox.semo.application.security.authentication.MemberPrincipalDetails;
 import sandbox.semo.domain.device.dto.request.DeviceRegister;
 import sandbox.semo.domain.device.dto.request.DataBaseInfo;
+import sandbox.semo.domain.device.dto.response.DeviceInfo;
 
 @Log4j2
 @RestController
@@ -39,6 +42,20 @@ public class DeviceController {
     ) {
         deviceService.register(memberDetails.getMember().getCompany(), request);
         return ApiResponse.successResponse(OK, "성공적으로 DEVICE가 등록되었습니다.");
+    }
+
+    @GetMapping
+    public ApiResponse<?> getDeviceInfoByCompany(
+            @AuthenticationPrincipal MemberPrincipalDetails memberDetails) {
+        List<DeviceInfo> data = deviceService.getDeviceInfo(
+                memberDetails.getMember().getRole(),
+                memberDetails.getMember().getCompany()
+        );
+        return ApiResponse.successResponse(
+                OK,
+                "성공적으로 DEVICE가 조회 되었습니다.",
+                data.isEmpty() ? "조회된 데이터가 없습니다." : data
+        );
     }
 
 }
