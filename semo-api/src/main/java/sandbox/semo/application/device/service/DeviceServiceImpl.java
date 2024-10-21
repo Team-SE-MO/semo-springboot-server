@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.common.util.AES256;
 import sandbox.semo.application.device.exception.DeviceBusinessException;
 import sandbox.semo.domain.company.entity.Company;
@@ -18,11 +19,13 @@ import sandbox.semo.domain.device.repository.DeviceRepository;
 
 @Service
 @Log4j2
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class DeviceServiceImpl implements DeviceService {
 
     private final DeviceRepository deviceRepository;
 
+    @Transactional
     @Override
     public void register(Company company, DeviceRegister request) {
         DataBaseInfo dataBaseInfo = request.getDataBaseInfo();
