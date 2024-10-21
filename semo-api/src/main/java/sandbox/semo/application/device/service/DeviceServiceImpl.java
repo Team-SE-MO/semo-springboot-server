@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import sandbox.semo.application.common.util.AES256;
 import sandbox.semo.application.device.exception.DeviceBusinessException;
 import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.device.dto.request.DeviceRegister;
@@ -33,7 +34,7 @@ public class DeviceServiceImpl implements DeviceService {
                 .port(dataBaseInfo.getPort())
                 .sid(dataBaseInfo.getSid())
                 .username(dataBaseInfo.getUsername())
-                .password(dataBaseInfo.getPassword())
+                .password(AES256.encrypt(dataBaseInfo.getPassword()))
                 .status(healthCheck(dataBaseInfo))
                 .build());
         log.info(">>> [ ✅ 데이터베이스 장비가 성공적으로 등록되었습니다. ]");
