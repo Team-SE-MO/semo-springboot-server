@@ -58,6 +58,7 @@ public class CompanyFormController {
 
     }
 
+    @Secured("SUPER")
     @PatchMapping
     public ResponseEntity<ApiResponse> formUpdate(
             @RequestBody @Valid CompanyFormUpdate updateForm) {
