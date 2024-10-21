@@ -1,7 +1,8 @@
 package sandbox.semo.application.form.service;
 
 import static sandbox.semo.application.form.exception.CompanyFormErrorCode.COMPANY_ALREADY_EXISTS;
-import static sandbox.semo.application.form.exception.CompanyFormErrorCode.FORM_NO_FOUND;
+import static sandbox.semo.application.form.exception.CompanyFormErrorCode.FORM_DOES_NOT_EXIST;
+import static sandbox.semo.application.form.exception.CompanyFormErrorCode.FORM_NOT_FOUND;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.form.exception.CompanyFormBusinessException;
 import sandbox.semo.domain.company.repository.CompanyRepository;
 import sandbox.semo.domain.form.dto.request.CompanyFormRegister;
+import sandbox.semo.domain.form.dto.request.CompanyFormUpdate;
 import sandbox.semo.domain.form.dto.response.CompanyFormList;
 import sandbox.semo.domain.form.entity.CompanyForm;
 import sandbox.semo.domain.form.entity.Status;
@@ -59,7 +61,7 @@ public class CompanyFormServiceImpl implements CompanyFormService {
         Page<CompanyForm> companyFormPage = companyFormRepository.findAll(pageable);
 
         if (companyFormPage.isEmpty()) {
-            throw new CompanyFormBusinessException(FORM_NO_FOUND);
+            throw new CompanyFormBusinessException(FORM_NOT_FOUND);
         }
         return companyFormPage.map(companyForm -> CompanyFormList.builder()
                 .formId(companyForm.getId())
@@ -73,4 +75,15 @@ public class CompanyFormServiceImpl implements CompanyFormService {
                 .build());
     }
 
+    @Override
+    @Transactional
+    public String updateStatus(CompanyFormUpdate request) {
+        CompanyForm companyForm = companyFormRepository.findById(request.getFormId())
+                .orElseThrow(() -> new CompanyFormBusinessException(FORM_DOES_NOT_EXIST));
+
+        Status newStatus = Status.valueOf(request.getUpdateStatus().toUpperCase());
+        companyForm.changeStatus(newStatus);
+        return companyFormRepository.save(companyForm).getStatus().toString();
+
+    }
 }

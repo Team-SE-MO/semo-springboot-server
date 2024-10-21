@@ -2,7 +2,6 @@ package sandbox.semo.domain.form.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -37,6 +36,10 @@ public class CompanyForm extends BaseForm {
         this.ownerName = ownerName;
         this.email = email;
         this.status = status;
+    }
+
+    public void changeStatus(Status newStatus) {
+        this.status = newStatus;
     }
 
 }
