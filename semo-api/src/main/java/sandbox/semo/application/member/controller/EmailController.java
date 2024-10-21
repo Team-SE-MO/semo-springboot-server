@@ -14,6 +14,7 @@ import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.member.service.EmailService;
 import sandbox.semo.domain.form.dto.response.CompanyFormRegister;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
+import sandbox.semo.domain.member.dto.response.MemberRegister;
 
 @RestController
 @RequiredArgsConstructor
@@ -60,15 +61,27 @@ public class EmailController {
         }
     }
 
-    // 회원가입 완료 이메일 발송 API
+    // 회사등록 완료 이메일 발송 API
+    @PostMapping("/send-company-registration-confirmation")
+    public ApiResponse<String> sendCompanyRegistrationConfirmationEmail(@RequestBody CompanyFormRegister companyFormRegister)
+            throws MessagingException, IOException {
+
+        // 회사등록 완료 이메일 발송
+        emailService.sendCompanyRegistrationConfirmationEmail(companyFormRegister);
+
+        // 성공 응답
+        return ApiResponse.successResponse(OK, "회사등록 완료 이메일 전송 성공", null);
+    }
+
+    // 회원가입 완료 확인 이메일 발송 API
     @PostMapping("/send-registration-confirmation")
-    public ApiResponse<String> sendRegistrationConfirmationEmail(@RequestBody CompanyFormRegister companyFormRegister)
+    public ApiResponse<String> sendRegistrationConfirmationEmail(@RequestBody MemberRegister memberRegister)
             throws MessagingException, IOException {
 
         // 회원가입 완료 이메일 발송
-        emailService.sendRegistrationConfirmationEmail(companyFormRegister);
+        emailService.sendMemberRegistrationConfirmationEmail(memberRegister);
 
         // 성공 응답
-        return ApiResponse.successResponse(OK, "회원가입 완료 이메일 전송 성공", null);
+        return ApiResponse.successResponse(OK, "회원가입 확인 이메일 전송 성공", null);
     }
 }
