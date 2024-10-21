@@ -1,16 +1,16 @@
 package sandbox.semo.application.form.controller;
 
 
+import static org.springframework.http.HttpStatus.OK;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,13 +36,13 @@ public class CompanyFormController {
         companyFormService.formRegister(registerForm);
         return ResponseEntity.ok().body(
                 ApiResponse.successResponse(
-                        HttpStatus.OK,
+                        OK,
                         "성공적으로 폼을 제출하였습니다."
                 )
         );
     }
 
-    @Secured("SUPER")
+    @PreAuthorize("hasAnyRole('SUPER')")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<CompanyFormList>>> registerList(
             @RequestParam(defaultValue = "0") int page,
@@ -51,7 +51,7 @@ public class CompanyFormController {
         Page<CompanyFormList> companyFormLists = companyFormService.findAllForms(page, size);
         return ResponseEntity.ok().body(
                 ApiResponse.successResponse(
-                        HttpStatus.OK,
+                        OK,
                         "성공적으로 목록을 조회하였습니다.",
                         companyFormLists
                 )
@@ -59,7 +59,7 @@ public class CompanyFormController {
 
     }
 
-    @Secured("SUPER")
+    @PreAuthorize("hasAnyRole('SUPER')")
     @PatchMapping
     public ResponseEntity<ApiResponse> formUpdate(
             @RequestBody @Valid CompanyFormUpdate updateForm) {
@@ -67,7 +67,7 @@ public class CompanyFormController {
 
         return ResponseEntity.ok().body(
                 ApiResponse.successResponse(
-                        HttpStatus.OK,
+                        OK,
                         "성공적으로 처리되었습니다.",
                         response
                 )
