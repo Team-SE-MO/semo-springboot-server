@@ -81,13 +81,30 @@ public class EmailServiceImpl implements EmailService {
 
         // 이메일 본문을 담을 HTML 내용
         String htmlContent = "<html>"
+                + "<head>"
+                + "<style>"
+                + "@font-face {"
+                + "    font-family: 'Pretendard-Regular';"
+                + "    src: url('https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff') format('woff');"
+                + "    font-weight: 400;"
+                + "    font-style: normal;"
+                + "}"
+                + "body {"
+                + "    font-family: 'Pretendard-Regular', sans-serif;" // 기본 폰트 설정
+                + "    margin: 0; padding: 20px; font-size: 16px;" // 여백 및 기본 글꼴 크기 설정
+                + "}"
+                + "h2, p {"
+                + "    font-family: 'Pretendard-Regular', sans-serif; " // 헤더와 단락에도 폰트 적용
+                + "}"
+                + "</style>"
+                + "</head>"
                 + "<body>"
                 + "<img src='cid:blockImage' />" // 이미지 삽입
                 + "<h2>Hello, We are SEMO!</h2>"
                 + "<p>SEMO 서비스를 이용해주시는 고객 여러분 감사합니다.</p>"
                 + "<p>비밀번호 재설정을 위한 인증 코드는 아래와 같습니다.</p>"
                 + "<br>"
-                + "<a href='#' style='background-color:#64739f; color:white; padding:10px 135px; text-decoration:none; border-radius:50px; font-weight:bold;'>"
+                + "<a href='#' style='background-color:#42526E; color:white; padding:10px 135px; text-decoration:none; border-radius:50px; font-weight:bold;'>"
                 + authCode + "</a>" // 인증 코드를 버튼 스타일로 강조
                 + "<br><br>"
                 + "<p style='font-size:10px;'>본 메일은 " + currentDate + " 기준으로 작성되었습니다.</p>"
@@ -161,13 +178,30 @@ public class EmailServiceImpl implements EmailService {
 
         // 이메일 본문을 담을 HTML 내용
         String htmlContent = "<html>"
+                + "<head>"
+                + "<style>"
+                + "@font-face {"
+                + "    font-family: 'Pretendard-Regular';"
+                + "    src: url('https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff') format('woff');"
+                + "    font-weight: 400;"
+                + "    font-style: normal;"
+                + "}"
+                + "body {"
+                + "    font-family: 'Pretendard-Regular', sans-serif;" // 기본 폰트 설정
+                + "    margin: 0; padding: 20px; font-size: 16px;" // 여백 및 기본 글꼴 크기 설정
+                + "}"
+                + "h2, p {"
+                + "    font-family: 'Pretendard-Regular', sans-serif; " // 헤더와 단락에도 폰트 적용
+                + "}"
+                + "</style>"
+                + "</head>"
                 + "<body>"
                 + "<img src='cid:blockImage' />" // 이미지 삽입
                 + "<h2>Hello, We are SEMO!</h2>"
                 + "<p>" + companyFormRegister.getOwnerName() + "님 안녕하세요, SEMO 서비스를 이용해주셔서 감사드립니다.</p>"
                 + "<p>아래와 같은 회사명으로 회사가 등록되었습니다. 이어서 SEMO 서비스 등록 신청을 이용해주세요.</p>"
                 + "<br>"
-                + "<a href='#' style='background-color:#64739f; color:white; padding:10px 135px; text-decoration:none; border-radius:50px; font-weight:bold;'>"
+                + "<a href='#' style='background-color:#42526E; color:white; padding:10px 135px; text-decoration:none; border-radius:50px; font-weight:bold;'>"
                 + companyFormRegister.getCompanyName() + "</a>"
                 + "<br><br>"
                 + "<p>SEMO 는 서비스를 더욱 편리하게 이용하실 수 있도록 항상 최선을 다하겠습니다.</p>"
@@ -245,6 +279,23 @@ public class EmailServiceImpl implements EmailService {
 
         // 이메일 본문을 담을 HTML 내용
         String htmlContent = "<html>"
+                + "<head>"
+                + "<style>"
+                + "@font-face {"
+                + "    font-family: 'Pretendard-Regular';"
+                + "    src: url('https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff') format('woff');"
+                + "    font-weight: 400;"
+                + "    font-style: normal;"
+                + "}"
+                + "body {"
+                + "    font-family: 'Pretendard-Regular', sans-serif;" // 기본 폰트 설정
+                + "    margin: 0; padding: 20px; font-size: 16px;" // 여백 및 기본 글꼴 크기 설정
+                + "}"
+                + "h2, p {"
+                + "    font-family: 'Pretendard-Regular', sans-serif; " // 헤더와 단락에도 폰트 적용
+                + "}"
+                + "</style>"
+                + "</head>"
                 + "<body>"
                 + "<img src='cid:blockImage' />" // 이미지 삽입
                 + "<h2>Hello, We are SEMO!</h2>"
@@ -253,7 +304,7 @@ public class EmailServiceImpl implements EmailService {
                 + "<p>" + memberRegister.getOwnerName() + "님 안녕하세요, SEMO 서비스 이용 신청을 주셔서 감사드립니다.</p>"
                 + "<p>아래의 아이디를 통해 SEMO 서비스를 정상적으로 이용 가능합니다.(초기 비밀번호:" + memberRegister.getPassword() + ")</p>"
                 + "<br><br>"
-                + "<a href='#' style='background-color:#64739f; color:white; padding:10px 135px; text-decoration:none; border-radius:50px; font-weight:bold;'>"
+                + "<a href='#' style='background-color:#42526E; color:white; padding:10px 135px; text-decoration:none; border-radius:50px; font-weight:bold;'>"
                 + memberRegister.getLoginId() + "</a>"
                 + "<br><br>"
                 + "<p>SEMO 는 서비스를 더욱 편리하게 이용하실 수 있도록 항상 최선을 다하겠습니다.</p>"
