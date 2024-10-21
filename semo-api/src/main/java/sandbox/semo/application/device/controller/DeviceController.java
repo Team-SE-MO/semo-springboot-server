@@ -45,17 +45,13 @@ public class DeviceController {
     }
 
     @GetMapping
-    public ApiResponse<?> getDeviceInfoByCompany(
+    public ApiResponse<List<DeviceInfo>> getDeviceInfoByCompany(
             @AuthenticationPrincipal MemberPrincipalDetails memberDetails) {
         List<DeviceInfo> data = deviceService.getDeviceInfo(
                 memberDetails.getMember().getRole(),
                 memberDetails.getMember().getCompany()
         );
-        return ApiResponse.successResponse(
-                OK,
-                "성공적으로 DEVICE가 조회 되었습니다.",
-                data.isEmpty() ? "조회된 데이터가 없습니다." : data
-        );
+        return ApiResponse.successResponse(OK, "성공적으로 DEVICE가 조회 되었습니다.", data);
     }
 
 }
