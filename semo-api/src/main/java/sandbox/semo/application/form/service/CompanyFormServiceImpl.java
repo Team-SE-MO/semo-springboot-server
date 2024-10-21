@@ -2,7 +2,6 @@ package sandbox.semo.application.form.service;
 
 import static sandbox.semo.application.form.exception.CompanyFormErrorCode.COMPANY_ALREADY_EXISTS;
 import static sandbox.semo.application.form.exception.CompanyFormErrorCode.FORM_DOES_NOT_EXIST;
-import static sandbox.semo.application.form.exception.CompanyFormErrorCode.FORM_NOT_FOUND;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,9 +59,6 @@ public class CompanyFormServiceImpl implements CompanyFormService {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sorts));
         Page<CompanyForm> companyFormPage = companyFormRepository.findAll(pageable);
 
-        if (companyFormPage.isEmpty()) {
-            throw new CompanyFormBusinessException(FORM_NOT_FOUND);
-        }
         return companyFormPage.map(companyForm -> CompanyFormList.builder()
                 .formId(companyForm.getId())
                 .companyName(companyForm.getCompanyName())
