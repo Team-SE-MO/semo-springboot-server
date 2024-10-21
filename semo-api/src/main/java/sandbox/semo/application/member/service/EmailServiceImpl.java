@@ -21,7 +21,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
-import sandbox.semo.member.dto.request.EmailRegister;
+import sandbox.semo.domain.member.dto.request.EmailRegister;
 
 @Log4j2
 @Service
@@ -88,8 +88,7 @@ public class EmailServiceImpl implements EmailService{
                 + "<a href='#' style='background-color:#64739f; color:white; padding:10px 135px; text-decoration:none; border-radius:50px; font-weight:bold;'>"
                 + authCode + "</a>" // 인증 코드를 버튼 스타일로 강조
                 + "<br><br>"
-                + "<p style='font-size:10px;'>본 메일은 "
-                + currentDate + " 기준으로 작성되었습니다.</p>" // 글씨체 조정 및 가운데 정렬
+                + "<p style='font-size:10px;'>본 메일은 " + currentDate + " 기준으로 작성되었습니다.</p>"
                 + "</body>"
                 + "</html>";
 

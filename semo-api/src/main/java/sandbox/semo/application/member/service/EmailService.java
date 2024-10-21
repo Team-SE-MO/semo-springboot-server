@@ -2,7 +2,7 @@ package sandbox.semo.application.member.service;
 
 import jakarta.mail.MessagingException;
 import java.io.IOException;
-import sandbox.semo.member.dto.request.EmailRegister;
+import sandbox.semo.domain.member.dto.request.EmailRegister;
 
 public interface EmailService {
 

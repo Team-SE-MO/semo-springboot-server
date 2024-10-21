@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.member.service.EmailService;
-import sandbox.semo.member.dto.request.EmailRegister;
+import sandbox.semo.domain.member.dto.request.EmailRegister;
 
 @RestController
 @RequiredArgsConstructor
