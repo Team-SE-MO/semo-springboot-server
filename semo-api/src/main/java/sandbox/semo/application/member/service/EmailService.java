@@ -5,6 +5,7 @@ import java.io.IOException;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.form.dto.response.CompanyFormRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegister;
+import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
 
 public interface EmailService {
 
@@ -22,4 +23,8 @@ public interface EmailService {
     // 회원가입 완료 이메일 발송 메서드
     void sendMemberRegistrationConfirmationEmail(MemberRegister memberRegister)
             throws  MessagingException, IOException;
+
+    // 회원가입 반려 이메일 발송 메서드
+    void sendMemberRegistrationRejectionEmail(MemberRegisterRejection memberRegisterRejection)
+            throws MessagingException, IOException;
 }

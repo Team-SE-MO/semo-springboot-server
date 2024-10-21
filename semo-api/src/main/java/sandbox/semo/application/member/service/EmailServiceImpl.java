@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.form.dto.response.CompanyFormRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegister;
+import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
 
 @Log4j2
 @Service
@@ -345,4 +346,86 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    // 회원가입 반려 이메일 발송 메서드
+    @Override
+    public void sendMemberRegistrationRejectionEmail(MemberRegisterRejection memberRegisterRejection)
+            throws MessagingException, IOException {
+
+        String to = memberRegisterRejection.getEmail(); // 수신자의 이메일 주소 설정
+        String subject = "[SEMO] 회원가입 반려 안내"; // 이메일 제목
+
+        // 이메일 발송 정보 로그 출력
+        log.info(">>> [ 📧 회원가입 반려 이메일 발송 준비 - 수신자: {} 제목: {} ]", to, subject);
+
+        // 현재 날짜를 원하는 형식으로 포맷팅
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분");
+        String currentDate = dateFormat.format(new Date());
+
+        // Gmail SMTP 서버 설정
+        Properties props = new Properties();
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.host", "smtp.gmail.com");
+        props.put("mail.smtp.port", "587");
+
+        // SMTP 인증을 위한 세션 생성
+        Session session = Session.getInstance(props, new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(from, password);
+            }
+        });
+
+        // MIME 멀티파트 메시지 작성
+        Message message = new MimeMessage(session);
+        message.setFrom(new InternetAddress(from)); // 발신자 설정
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to)); // 수신자 설정
+        message.setSubject(subject); // 제목 설정
+
+        // 이메일 본문을 담을 HTML 내용
+        String htmlContent = "<html>"
+                + "<head>"
+                + "<img src='cid:blockImage' />" // 이미지 삽입
+                + "<h2>Hello, We are SEMO!</h2>"
+                + "</head>"
+                + "<body>"
+                + "<h2>회원가입 반려 안내</h2>"
+                + "<p>안녕하세요, 귀하의 회원가입 신청이 반려되었습니다.</p>"
+                + "<p>추가 문의사항은 고객센터로 연락주시기 바랍니다.</p>"
+                + "<br>"
+                + "<p>감사합니다.</p>"
+                + "<br><br>"
+                + "<p style='font-size:10px;'>본 메일은 " + currentDate + " 기준으로 작성되었습니다.</p>"
+                + "</body>"
+                + "</html>";
+
+        // MIME 메시지 작성
+        MimeBodyPart messageBodyPart = new MimeBodyPart();
+        messageBodyPart.setContent(htmlContent, "text/html; charset=utf-8");
+
+        // 이미지 첨부를 위한 BodyPart
+        MimeBodyPart imagePart = new MimeBodyPart();
+        ClassPathResource imgResource = new ClassPathResource("img/Block.png"); // 이미지 파일 경로
+        imagePart.attachFile(imgResource.getFile()); // 이미지 파일 첨부
+        imagePart.setContentID("<blockImage>"); // 이미지 CID 설정
+        imagePart.setDisposition(MimeBodyPart.INLINE); // 이미지 인라인 설정
+
+        // 멀티파트로 이메일 구성
+        Multipart multipart = new MimeMultipart();
+        multipart.addBodyPart(messageBodyPart); // HTML 본문 추가
+        multipart.addBodyPart(imagePart); // 이미지 추가
+
+        message.setContent(multipart); // 멀티파트로 설정
+
+        try {
+            // 이메일 전송
+            Transport.send(message);
+            // 성공 로그 출력
+            log.info(">>> [ ✅ 회원가입 완료 이메일 전송 성공 - 수신자: {} ]", to);
+        } catch (MessagingException e) {
+            // 에러 로그 출력 및 예외 발생
+            log.error(">>> [ ❌ 이메일 전송 실패: {} ]", e.getMessage());
+            throw new RuntimeException("이메일 전송 실패: " + e.getMessage(), e);
+        }
+    }
 }

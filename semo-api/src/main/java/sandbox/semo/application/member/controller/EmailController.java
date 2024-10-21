@@ -15,10 +15,11 @@ import sandbox.semo.application.member.service.EmailService;
 import sandbox.semo.domain.form.dto.response.CompanyFormRegister;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegister;
+import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/member")
+@RequestMapping("/api/v1/mail")
 public class EmailController {
 
     private final EmailService emailService;
@@ -84,4 +85,17 @@ public class EmailController {
         // 성공 응답
         return ApiResponse.successResponse(OK, "회원가입 확인 이메일 전송 성공", null);
     }
+
+    // 회원가입 반려 이메일 발송 API
+    @PostMapping("/send-registration-rejection")
+    public ApiResponse<String> sendMemberRegistrationRejectionEmail(@RequestBody MemberRegisterRejection memberRegisterRejection)
+            throws MessagingException, IOException {
+
+        // 회원가입 반려 이메일 발송
+        emailService.sendMemberRegistrationRejectionEmail(memberRegisterRejection);
+
+        // 성공 응답
+        return ApiResponse.successResponse(OK, "회원가입 반려 이메일 전송 성공", null);
+    }
+
 }
