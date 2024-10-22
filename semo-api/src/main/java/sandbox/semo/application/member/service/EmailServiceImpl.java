@@ -119,13 +119,8 @@ public class EmailServiceImpl implements EmailService {
         message.setSubject("[SEMO]비밀번호를 재설정 해주세요."); // 제목 설정
         message.setContent(multipart);
 
-        try {
-            Transport.send(message);
-            log.info(">>> [ ✅ 이메일 전송 성공 - 수신자: {} ]", to);
-        } catch (MessagingException e) {
-            log.error(">>> [ ❌ 이메일 전송 실패: {} ]", e.getMessage());
-            throw new RuntimeException("이메일 전송 실패: " + e.getMessage(), e);
-        }
+        Transport.send(message);
+        log.info(">>> [ ✅ 이메일 전송 성공 - 수신자: {} ]", to);
     }
 
     @Override
@@ -175,13 +170,8 @@ public class EmailServiceImpl implements EmailService {
         message.setSubject(subject);
         message.setContent(multipart);
 
-        try {
-            Transport.send(message);
-            log.info(">>> [ ✅ 회사등록 완료 이메일 전송 성공 - 수신자: {} ]", to);
-        } catch (MessagingException e) {
-            log.error(">>> [ ❌ 이메일 전송 실패: {} ]", e.getMessage());
-            throw new RuntimeException("이메일 전송 실패: " + e.getMessage(), e);
-        }
+        Transport.send(message);
+        log.info(">>> [ ✅ 회사등록 완료 이메일 전송 성공 - 수신자: {} ]", to);
     }
 
     @Override
@@ -240,13 +230,8 @@ public class EmailServiceImpl implements EmailService {
         message.setContent(multipart);
 
         // 이메일 발송
-        try {
-            Transport.send(message);
-            log.info(">>> [ ✅ 회원가입 완료 이메일 전송 성공 - 수신자: {} ]", to);
-        } catch (MessagingException e) {
-            log.error(">>> [ ❌ 이메일 전송 실패: {} ]", e.getMessage());
-            throw new RuntimeException("이메일 전송 실패: " + e.getMessage(), e);
-        }
+        Transport.send(message);
+        log.info(">>> [ ✅ 회원가입 완료 이메일 전송 성공 - 수신자: {} ]", to);
     }
 
     @Override
@@ -306,17 +291,10 @@ public class EmailServiceImpl implements EmailService {
         message.setSubject(subject); // 제목 설정
         message.setContent(multipart); // 멀티파트로 설정
 
-        try {
-            // 이메일 전송
-            Transport.send(message);
-            // 성공 로그 출력
-            log.info(">>> [ ✅ 회원가입 반려 이메일 전송 성공 - 수신자: {} ]", to);
-        } catch (MessagingException e) {
-            // 에러 로그 출력 및 예외 발생
-            log.error(">>> [ ❌ 이메일 전송 실패: {} ]", e.getMessage());
-            throw new RuntimeException("이메일 전송 실패: " + e.getMessage(), e);
-        }
+        // 이메일 전송
+        Transport.send(message);
+        // 성공 로그 출력
+        log.info(">>> [ ✅ 회원가입 반려 이메일 전송 성공 - 수신자: {} ]", to);
     }
-
 
 }

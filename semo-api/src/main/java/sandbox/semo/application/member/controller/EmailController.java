@@ -26,7 +26,7 @@ public class EmailController {
     private final HttpSession session;
 
     // 비밀번호 재설정 인증코드 발송 API
-    @PostMapping("/send-auth-code")
+    @PostMapping("/auth-code/send")
     public ApiResponse<String> sendEmail(@RequestBody EmailRegister emailRegister)
             throws MessagingException, IOException {
 
@@ -44,13 +44,13 @@ public class EmailController {
     }
 
     // 인증 코드 검증 API
-    @PostMapping("/verify-auth-code")
+    @PostMapping("/auth-code/verify")
     public ApiResponse<String> verifyAuthCode(@RequestBody String inputAuthCode) {
         return emailService.verifyAuthCode(inputAuthCode);
     }
 
     // 회사등록 완료 이메일 발송 API
-    @PostMapping("/send-company-registration-confirmation")
+    @PostMapping("/company/registration-confirm")
     public ApiResponse<String> sendCompanyRegistrationConfirmationEmail(@RequestBody CompanyRegister companyFormRegister)
             throws MessagingException, IOException {
 
@@ -62,7 +62,7 @@ public class EmailController {
     }
 
     // 회원가입 완료 확인 이메일 발송 API
-    @PostMapping("/send-registration-confirmation")
+    @PostMapping("/registration/confirm")
     public ApiResponse<String> sendRegistrationConfirmationEmail(@RequestBody MemberRegister memberRegister)
             throws MessagingException, IOException {
 
@@ -74,7 +74,7 @@ public class EmailController {
     }
 
     // 회원가입 반려 이메일 발송 API
-    @PostMapping("/send-registration-rejection")
+    @PostMapping("/registration/reject")
     public ApiResponse<String> sendMemberRegistrationRejectionEmail(@RequestBody MemberRegisterRejection memberRegisterRejection)
             throws MessagingException, IOException {
 
