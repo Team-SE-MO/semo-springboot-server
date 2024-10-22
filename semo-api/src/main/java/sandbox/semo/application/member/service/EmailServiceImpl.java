@@ -12,6 +12,7 @@ import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
@@ -21,8 +22,8 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
-import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.form.dto.response.CompanyFormRegister;
+import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
 
@@ -31,42 +32,43 @@ import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
-    @Value("${spring.mail.username}")  // 이메일 발신자의 주소
+    @Value("${spring.mail.username}")
     private String from;
 
-    @Value("${spring.mail.password}") // 이메일 발신자의 비밀번호
+    @Value("${spring.mail.password}")
     private String password;
 
-    // 인증코드 생성 메서드: 6자리 숫자 랜덤 생성
     @Override
     public String generateAuthCode() {
         Random random = new Random();
-        int authCode = random.nextInt(999999); // 6자리 인증 코드 생성
-        log.info(">>> [ 🔐 인증 코드 생성: {} ]", authCode);  // 생성된 인증 코드 로그 출력
+        int authCode = random.nextInt(999999);
+        log.info(">>> [ 🔐 인증 코드 생성: {} ]", authCode);
         return String.format("%06d", authCode);
     }
 
-    // 이메일 발송 메서드: 수신자, 제목, 본문을 받아서 이메일 발송
+    // HTML 파일을 문자열로 읽어오는 유틸리티 메서드
+    private String readHtmlTemplate(String fileName) throws IOException {
+        ClassPathResource resource = new ClassPathResource("templates/" + fileName);
+        return new String(Files.readAllBytes(resource.getFile().toPath()), "UTF-8");
+    }
+
+    // 이메일 발송 메서드: 수신자, 제목, 인증코드 받아서 이메일 발송
     @Override
     public void sendEmail(EmailRegister email, String subject, String authCode)
             throws MessagingException, IOException {
-        String to = email.getEmail();  // 수신자의 이메일 주소 가져오기
-
-        // 이메일 발송 정보 로그 출력
+        String to = email.getEmail();
         log.info(">>> [ 📧 이메일 발송 준비 - 수신자: {} 제목: {} ]", to, subject);
 
-        // 현재 날짜를 원하는 형식으로 포맷팅
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분");
         String currentDate = dateFormat.format(new Date());
 
-        // Gmail SMTP 서버 설정
+        // Gmail SMTP 설정
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.host", "smtp.gmail.com");
         props.put("mail.smtp.port", "587");
 
-        // SMTP 인증을 위한 세션 생성
         Session session = Session.getInstance(props, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
@@ -74,96 +76,56 @@ public class EmailServiceImpl implements EmailService {
             }
         });
 
-        // MIME 멀티파트 메시지 작성 (이미지와 HTML 내용 포함)
-        Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(from)); // 발신자 설정
-        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to)); // 수신자 설정
-        message.setSubject("[SEMO]비밀번호를 재설정 해주세요."); // 제목 설정
+        // 이메일 템플릿 읽어오기
+        String htmlContent = readHtmlTemplate("send-auth-code.html");
+        // 동적으로 필요한 값 삽입
+        htmlContent = htmlContent.replace("{{authCode}}", authCode)
+                .replace("{{currentDate}}", currentDate);
 
-        // 이메일 본문을 담을 HTML 내용
-        String htmlContent = "<html>"
-                + "<head>"
-                + "<style>"
-                + "@font-face {"
-                + "    font-family: 'Pretendard-Regular';"
-                + "    src: url('https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff') format('woff');"
-                + "    font-weight: 400;"
-                + "    font-style: normal;"
-                + "}"
-                + "body {"
-                + "    font-family: 'Pretendard-Regular', sans-serif;" // 기본 폰트 설정
-                + "    margin: 0; padding: 20px; font-size: 16px;" // 여백 및 기본 글꼴 크기 설정
-                + "}"
-                + "h2, p {"
-                + "    font-family: 'Pretendard-Regular', sans-serif; " // 헤더와 단락에도 폰트 적용
-                + "}"
-                + "</style>"
-                + "</head>"
-                + "<body>"
-                + "<img src='cid:blockImage' />" // 이미지 삽입
-                + "<h2>Hello, We are SEMO!</h2>"
-                + "<p>SEMO 서비스를 이용해주시는 고객 여러분 감사합니다.</p>"
-                + "<p>비밀번호 재설정을 위한 인증 코드는 아래와 같습니다.</p>"
-                + "<br>"
-                + "<a href='#' style='background-color:#42526E; color:white; padding:10px 135px; text-decoration:none; border-radius:50px; font-weight:bold;'>"
-                + authCode + "</a>" // 인증 코드를 버튼 스타일로 강조
-                + "<br><br>"
-                + "<p style='font-size:10px;'>본 메일은 " + currentDate + " 기준으로 작성되었습니다.</p>"
-                + "</body>"
-                + "</html>";
-
-        // MIME 메시지 작성
         MimeBodyPart messageBodyPart = new MimeBodyPart();
         messageBodyPart.setContent(htmlContent, "text/html; charset=utf-8");
 
-        // 이미지 첨부를 위한 BodyPart
         MimeBodyPart imagePart = new MimeBodyPart();
-        ClassPathResource imgResource = new ClassPathResource("img/Block.png"); // 이미지 파일 경로
-        imagePart.attachFile(imgResource.getFile()); // 이미지 파일 첨부
-        imagePart.setContentID("<blockImage>"); // 이미지 CID 설정
-        imagePart.setDisposition(MimeBodyPart.INLINE); // 이미지 인라인 설정
+        ClassPathResource imgResource = new ClassPathResource("img/Block.png");
+        imagePart.attachFile(imgResource.getFile());
+        imagePart.setContentID("<blockImage>");
+        imagePart.setDisposition(MimeBodyPart.INLINE);
 
-        // 멀티파트로 이메일 구성 (이미지 + 본문)
         Multipart multipart = new MimeMultipart();
-        multipart.addBodyPart(messageBodyPart); // HTML 본문 추가
-        multipart.addBodyPart(imagePart); // 이미지 추가
+        multipart.addBodyPart(messageBodyPart);
+        multipart.addBodyPart(imagePart);
 
-        message.setContent(multipart); // 멀티파트로 설정
+        Message message = new MimeMessage(session);
+        message.setFrom(new InternetAddress(from));
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
+        message.setSubject("[SEMO]비밀번호를 재설정 해주세요."); // 제목 설정
+        message.setContent(multipart);
 
         try {
-            // 이메일 전송
             Transport.send(message);
-            // 성공 로그 출력
             log.info(">>> [ ✅ 이메일 전송 성공 - 수신자: {} ]", to);
         } catch (MessagingException e) {
-            // 에러 로그 출력 및 예외 발생
             log.error(">>> [ ❌ 이메일 전송 실패: {} ]", e.getMessage());
             throw new RuntimeException("이메일 전송 실패: " + e.getMessage(), e);
         }
     }
 
-    // 회사등록 완료 이메일 발송 메서드: 고객사 회사등록 정보를 사용하여 이메일 발송
     @Override
     public void sendCompanyRegistrationConfirmationEmail(CompanyFormRegister companyFormRegister)
             throws MessagingException, IOException {
-        String to = companyFormRegister.getEmail(); // 수신자의 이메일 주소 가져오기
-        String subject = "[SEMO] 회사 등록이 완료되었습니다."; // 이메일 제목
+        String to = companyFormRegister.getEmail();
+        String subject = "[SEMO] 회사 등록이 완료되었습니다.";
+        log.info(">>> [ 📧 회사등록 완료 이메일 발송 준비 - 수신자: {} 제목: {} ]", to, subject);
 
-        // 이메일 발송 정보 로그 출력
-        log.info(">>> [ 📧 회원가입 완료 이메일 발송 준비 - 수신자: {} 제목: {} ]", to, subject);
-
-        // 현재 날짜를 원하는 형식으로 포맷팅
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분");
         String currentDate = dateFormat.format(new Date());
 
-        // Gmail SMTP 서버 설정
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.host", "smtp.gmail.com");
         props.put("mail.smtp.port", "587");
 
-        // SMTP 인증을 위한 세션 생성
         Session session = Session.getInstance(props, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
@@ -171,100 +133,56 @@ public class EmailServiceImpl implements EmailService {
             }
         });
 
-        // MIME 멀티파트 메시지 작성
-        Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(from)); // 발신자 설정
-        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to)); // 수신자 설정
-        message.setSubject(subject); // 제목 설정
+        String htmlContent = readHtmlTemplate("company-registration.html");
+        htmlContent = htmlContent.replace("{{companyName}}", companyFormRegister.getCompanyName())
+                .replace("{{ownerName}}", companyFormRegister.getOwnerName())
+                .replace("{{currentDate}}", currentDate);
 
-        // 이메일 본문을 담을 HTML 내용
-        String htmlContent = "<html>"
-                + "<head>"
-                + "<style>"
-                + "@font-face {"
-                + "    font-family: 'Pretendard-Regular';"
-                + "    src: url('https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff') format('woff');"
-                + "    font-weight: 400;"
-                + "    font-style: normal;"
-                + "}"
-                + "body {"
-                + "    font-family: 'Pretendard-Regular', sans-serif;" // 기본 폰트 설정
-                + "    margin: 0; padding: 20px; font-size: 16px;" // 여백 및 기본 글꼴 크기 설정
-                + "}"
-                + "h2, p {"
-                + "    font-family: 'Pretendard-Regular', sans-serif; " // 헤더와 단락에도 폰트 적용
-                + "}"
-                + "</style>"
-                + "</head>"
-                + "<body>"
-                + "<img src='cid:blockImage' />" // 이미지 삽입
-                + "<h2>Hello, We are SEMO!</h2>"
-                + "<p>" + companyFormRegister.getOwnerName() + "님 안녕하세요, SEMO 서비스를 이용해주셔서 감사드립니다.</p>"
-                + "<p>아래와 같은 회사명으로 회사가 등록되었습니다. 이어서 SEMO 서비스 등록 신청을 이용해주세요.</p>"
-                + "<br>"
-                + "<a href='#' style='background-color:#42526E; color:white; padding:10px 135px; text-decoration:none; border-radius:50px; font-weight:bold;'>"
-                + companyFormRegister.getCompanyName() + "</a>"
-                + "<br><br>"
-                + "<p>SEMO 는 서비스를 더욱 편리하게 이용하실 수 있도록 항상 최선을 다하겠습니다.</p>"
-                + "<br>"
-                + "<p>감사합니다.</p>"
-                + "<br><br>"
-                + "<p style='font-size:10px;'>본 메일은 " + currentDate + " 기준으로 작성되었습니다.</p>"
-                + "</body>"
-                + "</html>";
-
-        // MIME 메시지 작성
         MimeBodyPart messageBodyPart = new MimeBodyPart();
         messageBodyPart.setContent(htmlContent, "text/html; charset=utf-8");
 
-        // 이미지 첨부를 위한 BodyPart
         MimeBodyPart imagePart = new MimeBodyPart();
-        ClassPathResource imgResource = new ClassPathResource("img/Block.png"); // 이미지 파일 경로
-        imagePart.attachFile(imgResource.getFile()); // 이미지 파일 첨부
-        imagePart.setContentID("<blockImage>"); // 이미지 CID 설정
-        imagePart.setDisposition(MimeBodyPart.INLINE); // 이미지 인라인 설정
+        ClassPathResource imgResource = new ClassPathResource("img/Block.png");
+        imagePart.attachFile(imgResource.getFile());
+        imagePart.setContentID("<blockImage>");
+        imagePart.setDisposition(MimeBodyPart.INLINE);
 
-        // 멀티파트로 이메일 구성
         Multipart multipart = new MimeMultipart();
-        multipart.addBodyPart(messageBodyPart); // HTML 본문 추가
-        multipart.addBodyPart(imagePart); // 이미지 추가
-        message.setContent(multipart); // 멀티파트로 설정
+        multipart.addBodyPart(messageBodyPart);
+        multipart.addBodyPart(imagePart);
+
+        Message message = new MimeMessage(session);
+        message.setFrom(new InternetAddress(from));
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
+        message.setSubject(subject);
+        message.setContent(multipart);
 
         try {
-            // 이메일 전송
             Transport.send(message);
-            // 성공 로그 출력
-            log.info(">>> [ ✅ 회원가입 완료 이메일 전송 성공 - 수신자: {} ]", to);
+            log.info(">>> [ ✅ 회사등록 완료 이메일 전송 성공 - 수신자: {} ]", to);
         } catch (MessagingException e) {
-            // 에러 로그 출력 및 예외 발생
             log.error(">>> [ ❌ 이메일 전송 실패: {} ]", e.getMessage());
             throw new RuntimeException("이메일 전송 실패: " + e.getMessage(), e);
         }
     }
 
-    // 회원가입 완료 이메일 발송 메서드: 회원가입 정보를 사용하여 이메일 발송
     @Override
     public void sendMemberRegistrationConfirmationEmail(MemberRegister memberRegister)
             throws MessagingException, IOException {
-
-        String to = memberRegister.getEmail(); // 수신자의 이메일 주소 설정
-        String subject = "[SEMO] 계정 등록이 완료되었습니다."; // 이메일 제목
-
-        // 이메일 발송 정보 로그 출력
+        String to = memberRegister.getEmail();
+        String subject = "[SEMO] 계정 등록이 완료되었습니다.";
         log.info(">>> [ 📧 회원가입 완료 이메일 발송 준비 - 수신자: {} 제목: {} ]", to, subject);
 
-        // 현재 날짜를 원하는 형식으로 포맷팅
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분");
         String currentDate = dateFormat.format(new Date());
 
-        // Gmail SMTP 서버 설정
+        // 이메일 세션 설정
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.host", "smtp.gmail.com");
         props.put("mail.smtp.port", "587");
 
-        // SMTP 인증을 위한 세션 생성
         Session session = Session.getInstance(props, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
@@ -272,81 +190,47 @@ public class EmailServiceImpl implements EmailService {
             }
         });
 
-        // MIME 멀티파트 메시지 작성
-        Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(from)); // 발신자 설정
-        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to)); // 수신자 설정
-        message.setSubject(subject); // 제목 설정
+        // 이메일 템플릿 읽어오기
+        String htmlContent = readHtmlTemplate("member-registration.html");
 
-        // 이메일 본문을 담을 HTML 내용
-        String htmlContent = "<html>"
-                + "<head>"
-                + "<style>"
-                + "@font-face {"
-                + "    font-family: 'Pretendard-Regular';"
-                + "    src: url('https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff') format('woff');"
-                + "    font-weight: 400;"
-                + "    font-style: normal;"
-                + "}"
-                + "body {"
-                + "    font-family: 'Pretendard-Regular', sans-serif;" // 기본 폰트 설정
-                + "    margin: 0; padding: 20px; font-size: 16px;" // 여백 및 기본 글꼴 크기 설정
-                + "}"
-                + "h2, p {"
-                + "    font-family: 'Pretendard-Regular', sans-serif; " // 헤더와 단락에도 폰트 적용
-                + "}"
-                + "</style>"
-                + "</head>"
-                + "<body>"
-                + "<img src='cid:blockImage' />" // 이미지 삽입
-                + "<h2>Hello, We are SEMO!</h2>"
-                + "<p>SEMO 서비스를 이용해주시는 고객 여러분 감사합니다.</p>"
-                + "<br>"
-                + "<p>" + memberRegister.getOwnerName() + "님 안녕하세요, SEMO 서비스 이용 신청을 주셔서 감사드립니다.</p>"
-                + "<p>아래의 아이디를 통해 SEMO 서비스를 정상적으로 이용 가능합니다.(초기 비밀번호:" + memberRegister.getPassword() + ")</p>"
-                + "<br><br>"
-                + "<a href='#' style='background-color:#42526E; color:white; padding:10px 135px; text-decoration:none; border-radius:50px; font-weight:bold;'>"
-                + memberRegister.getLoginId() + "</a>"
-                + "<br><br>"
-                + "<p>SEMO 는 서비스를 더욱 편리하게 이용하실 수 있도록 항상 최선을 다하겠습니다.</p>"
-                + "<br>"
-                + "<p>감사합니다.</p>"
-                + "<br><br>"
-                + "<p style='font-size:10px;'>본 메일은 " + currentDate + " 기준으로 작성되었습니다.</p>"
-                + "</body>"
-                + "</html>";
+        // 동적으로 필요한 값 삽입
+        htmlContent = htmlContent.replace("{{ownerName}}", memberRegister.getOwnerName())
+                .replace("{{loginId}}", memberRegister.getLoginId())
+                .replace("{{password}}", memberRegister.getPassword())
+                .replace("{{currentDate}}", currentDate);
 
-        // MIME 메시지 작성
+        // 이메일 본문 작성
         MimeBodyPart messageBodyPart = new MimeBodyPart();
         messageBodyPart.setContent(htmlContent, "text/html; charset=utf-8");
 
-        // 이미지 첨부를 위한 BodyPart
+        // 이메일에 첨부할 이미지 파일 설정
         MimeBodyPart imagePart = new MimeBodyPart();
-        ClassPathResource imgResource = new ClassPathResource("img/Block.png"); // 이미지 파일 경로
-        imagePart.attachFile(imgResource.getFile()); // 이미지 파일 첨부
-        imagePart.setContentID("<blockImage>"); // 이미지 CID 설정
-        imagePart.setDisposition(MimeBodyPart.INLINE); // 이미지 인라인 설정
+        ClassPathResource imgResource = new ClassPathResource("img/Block.png");
+        imagePart.attachFile(imgResource.getFile());
+        imagePart.setContentID("<blockImage>");
+        imagePart.setDisposition(MimeBodyPart.INLINE);
 
-        // 멀티파트로 이메일 구성
+        // 멀티파트로 구성된 이메일 설정
         Multipart multipart = new MimeMultipart();
-        multipart.addBodyPart(messageBodyPart); // HTML 본문 추가
-        multipart.addBodyPart(imagePart); // 이미지 추가
+        multipart.addBodyPart(messageBodyPart);
+        multipart.addBodyPart(imagePart);
 
-        message.setContent(multipart); // 멀티파트로 설정
+        Message message = new MimeMessage(session);
+        message.setFrom(new InternetAddress(from));
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
+        message.setSubject(subject);
+        message.setContent(multipart);
 
+        // 이메일 발송
         try {
-            // 이메일 전송
             Transport.send(message);
-            // 성공 로그 출력
             log.info(">>> [ ✅ 회원가입 완료 이메일 전송 성공 - 수신자: {} ]", to);
         } catch (MessagingException e) {
-            // 에러 로그 출력 및 예외 발생
             log.error(">>> [ ❌ 이메일 전송 실패: {} ]", e.getMessage());
             throw new RuntimeException("이메일 전송 실패: " + e.getMessage(), e);
         }
     }
 
-    // 회원가입 반려 이메일 발송 메서드
     @Override
     public void sendMemberRegistrationRejectionEmail(MemberRegisterRejection memberRegisterRejection)
             throws MessagingException, IOException {
@@ -376,28 +260,11 @@ public class EmailServiceImpl implements EmailService {
             }
         });
 
-        // MIME 멀티파트 메시지 작성
-        Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(from)); // 발신자 설정
-        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to)); // 수신자 설정
-        message.setSubject(subject); // 제목 설정
+        // 이메일 템플릿 파일 읽어오기
+        String htmlContent = readHtmlTemplate("member-rejection.html");
 
-        // 이메일 본문을 담을 HTML 내용
-        String htmlContent = "<html>"
-                + "<head>"
-                + "<img src='cid:blockImage' />" // 이미지 삽입
-                + "<h2>Hello, We are SEMO!</h2>"
-                + "</head>"
-                + "<body>"
-                + "<h2>회원가입 반려 안내</h2>"
-                + "<p>안녕하세요, 귀하의 회원가입 신청이 반려되었습니다.</p>"
-                + "<p>추가 문의사항은 고객센터로 연락주시기 바랍니다.</p>"
-                + "<br>"
-                + "<p>감사합니다.</p>"
-                + "<br><br>"
-                + "<p style='font-size:10px;'>본 메일은 " + currentDate + " 기준으로 작성되었습니다.</p>"
-                + "</body>"
-                + "</html>";
+        // 동적으로 필요한 값 삽입
+        htmlContent = htmlContent.replace("{{currentDate}}", currentDate);
 
         // MIME 메시지 작성
         MimeBodyPart messageBodyPart = new MimeBodyPart();
@@ -415,17 +282,23 @@ public class EmailServiceImpl implements EmailService {
         multipart.addBodyPart(messageBodyPart); // HTML 본문 추가
         multipart.addBodyPart(imagePart); // 이미지 추가
 
+        Message message = new MimeMessage(session);
+        message.setFrom(new InternetAddress(from)); // 발신자 설정
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to)); // 수신자 설정
+        message.setSubject(subject); // 제목 설정
         message.setContent(multipart); // 멀티파트로 설정
 
         try {
             // 이메일 전송
             Transport.send(message);
             // 성공 로그 출력
-            log.info(">>> [ ✅ 회원가입 완료 이메일 전송 성공 - 수신자: {} ]", to);
+            log.info(">>> [ ✅ 회원가입 반려 이메일 전송 성공 - 수신자: {} ]", to);
         } catch (MessagingException e) {
             // 에러 로그 출력 및 예외 발생
             log.error(">>> [ ❌ 이메일 전송 실패: {} ]", e.getMessage());
             throw new RuntimeException("이메일 전송 실패: " + e.getMessage(), e);
         }
     }
+
+
 }
