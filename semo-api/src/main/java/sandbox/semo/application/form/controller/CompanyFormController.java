@@ -57,12 +57,12 @@ public class CompanyFormController {
     @PatchMapping
     public ApiResponse<?> formUpdate(
             @RequestBody @Valid CompanyFormUpdate updateForm) {
-        String response = companyFormService.updateStatus(updateForm);
+        String data = companyFormService.updateStatus(updateForm);
 
         return ApiResponse.successResponse(
                 OK,
                 "성공적으로 처리되었습니다.",
-                response
+                data
         );
     }
 
