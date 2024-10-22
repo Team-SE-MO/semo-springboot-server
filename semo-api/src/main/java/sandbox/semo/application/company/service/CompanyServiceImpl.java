@@ -3,6 +3,7 @@ package sandbox.semo.application.company.service;
 import static sandbox.semo.application.company.exception.CompanyErrorCode.STATUS_NOT_APPROVED;
 import static sandbox.semo.application.form.exception.CompanyFormErrorCode.FORM_DOES_NOT_EXIST;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,5 +40,10 @@ public class CompanyServiceImpl implements CompanyService {
 
         companyRepository.save(company);
         return companyForm.getId();
+    }
+
+    @Override
+    public List<Company> searchCompanyByName(String keyword) {
+        return companyRepository.findAllContainsKeywords(keyword);
     }
 }
