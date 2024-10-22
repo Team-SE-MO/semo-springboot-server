@@ -55,7 +55,7 @@ public class CompanyFormController {
 
     @PreAuthorize("hasAnyRole('SUPER')")
     @PatchMapping
-    public ApiResponse<?> formUpdate(
+    public ApiResponse<String> formUpdate(
             @RequestBody @Valid CompanyFormUpdate updateForm) {
         String data = companyFormService.updateStatus(updateForm);
 
