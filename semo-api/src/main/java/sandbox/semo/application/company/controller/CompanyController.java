@@ -2,14 +2,19 @@ package sandbox.semo.application.company.controller;
 
 import static org.springframework.http.HttpStatus.OK;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.company.service.CompanyService;
+import sandbox.semo.domain.company.dto.response.CompanyInfo;
+import sandbox.semo.domain.company.entity.Company;
 
 
 @Log4j2
@@ -26,6 +31,17 @@ public class CompanyController {
         return ApiResponse.successResponse(
                 OK,
                 "성공적으로 회사가 등록되었습니다.",
+                data
+        );
+    }
+
+    @GetMapping
+    public ApiResponse<CompanyInfo> companyList(@RequestParam(required = false) String keyword) {
+        List<Company> companyList = companyService.searchCompanyByName(keyword);
+        CompanyInfo data = new CompanyInfo(companyList);
+        return ApiResponse.successResponse(
+                OK,
+                "성공적으로 회사 목록을 조회하였습니다.",
                 data
         );
     }
