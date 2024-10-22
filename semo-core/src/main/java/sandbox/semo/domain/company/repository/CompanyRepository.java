@@ -10,7 +10,7 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     boolean existsByTaxId(String taxId);
 
-    @Query("SELECT c FROM Company c WHERE :keyword IS NULL OR"
-            + " c.companyName LIKE CONCAT('%', :keyword, '%') AND c.id != 1")
+    @Query("SELECT c FROM Company c WHERE (:keyword IS NULL OR"
+            + " c.companyName LIKE CONCAT('%', :keyword, '%')) AND c.id != 1")
     List<Company> findAllContainsKeywords(@Param("keyword") String keyword);
 }
