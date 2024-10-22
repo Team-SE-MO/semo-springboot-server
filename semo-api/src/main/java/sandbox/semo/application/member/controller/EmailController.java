@@ -40,26 +40,13 @@ public class EmailController {
         session.setAttribute("authCode", authCode);
 
         // 성공 응답 (ApiResponse 객체로 성공 메시지 전송)
-        return ApiResponse.successResponse(
-                OK,
-                "이메일 전송 성공",
-                authCode
-        );
+        return ApiResponse.successResponse(OK, "이메일 전송 성공", authCode);
     }
 
     // 인증 코드 검증 API
     @PostMapping("/verify-auth-code")
     public ApiResponse<String> verifyAuthCode(@RequestBody String inputAuthCode) {
-
-        // 세션에 저장된 인증 코드 가져오기
-        String storedAuthCode = (String) session.getAttribute("authCode");
-
-        // 인증 코드 검증
-        if (storedAuthCode != null && storedAuthCode.equals(inputAuthCode)) {
-            return ApiResponse.successResponse(OK, "인증 성공", null);
-        } else {
-            return ApiResponse.errorResponse(400, "인증코드가 일치하지 않습니다.");
-        }
+        return emailService.verifyAuthCode(inputAuthCode);
     }
 
     // 회사등록 완료 이메일 발송 API

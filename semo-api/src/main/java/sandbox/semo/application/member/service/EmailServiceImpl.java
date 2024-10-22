@@ -11,6 +11,7 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
@@ -21,22 +22,39 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import sandbox.semo.domain.form.dto.response.CompanyFormRegister;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
+import sandbox.semo.application.common.response.ApiResponse;
 
 @Log4j2
 @Service
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
+    private final HttpSession session;
+
     @Value("${spring.mail.username}")
     private String from;
 
     @Value("${spring.mail.password}")
     private String password;
+
+    @Override
+    public ApiResponse<String> verifyAuthCode(String inputAuthCode) {
+        // 세션에 저장된 인증 코드 가져오기
+        String storedAuthCode = (String) session.getAttribute("authCode");
+
+        // 인증 코드 검증
+        if (storedAuthCode != null && storedAuthCode.equals(inputAuthCode)) {
+            return ApiResponse.successResponse(HttpStatus.OK, "인증 성공", null);
+        } else {
+            return ApiResponse.errorResponse(400, "인증코드가 일치하지 않습니다.");
+        }
+    }
 
     @Override
     public String generateAuthCode() {
