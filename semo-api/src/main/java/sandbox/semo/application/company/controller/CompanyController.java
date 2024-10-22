@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.company.service.CompanyService;
-import sandbox.semo.domain.company.dto.response.CompanyInfo;
 import sandbox.semo.domain.company.entity.Company;
 
 
@@ -38,9 +37,8 @@ public class CompanyController {
     }
 
     @GetMapping
-    public ApiResponse<CompanyInfo> companyList(@RequestParam(required = false) String keyword) {
-        List<Company> companyList = companyService.searchCompanyByName(keyword);
-        CompanyInfo data = new CompanyInfo(companyList);
+    public ApiResponse<List<Company>> companyList(@RequestParam(required = false) String keyword) {
+        List<Company> data = companyService.searchCompanyByName(keyword);
         return ApiResponse.successResponse(
                 OK,
                 "성공적으로 회사 목록을 조회하였습니다.",
