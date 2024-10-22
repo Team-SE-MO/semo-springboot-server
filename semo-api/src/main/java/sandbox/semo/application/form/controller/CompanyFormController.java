@@ -38,7 +38,7 @@ public class CompanyFormController {
                 "성공적으로 폼을 제출하였습니다.");
     }
 
-    @PreAuthorize("hasAnyRole('SUPER')")
+    @PreAuthorize("hasRole('SUPER')")
     @GetMapping
     public ApiResponse<Page<CompanyFormList>> registerList(
             @RequestParam(defaultValue = "0") int page,
@@ -53,7 +53,7 @@ public class CompanyFormController {
 
     }
 
-    @PreAuthorize("hasAnyRole('SUPER')")
+    @PreAuthorize("hasRole('SUPER')")
     @PatchMapping
     public ApiResponse<String> formUpdate(
             @RequestBody @Valid CompanyFormUpdate updateForm) {

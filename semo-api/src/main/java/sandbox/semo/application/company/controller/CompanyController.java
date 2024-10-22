@@ -26,7 +26,7 @@ public class CompanyController {
 
     private final CompanyService companyService;
 
-    @PreAuthorize("hasAnyRole('SUPER')")
+    @PreAuthorize("hasRole('SUPER')")
     @PostMapping("/{id}")
     public ApiResponse<Long> companyRegister(@PathVariable(value = "id") Long formId) {
         Long data = companyService.companyRegister(formId);
