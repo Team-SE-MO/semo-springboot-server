@@ -25,6 +25,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import sandbox.semo.application.common.response.ApiResponse;
+import sandbox.semo.application.member.exception.EmailBusinessException;
+import sandbox.semo.application.member.exception.EmailErrorCode;
 import sandbox.semo.domain.form.dto.response.CompanyRegister;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegister;
@@ -119,13 +121,28 @@ public class EmailServiceImpl implements EmailService {
         message.setSubject("[SEMO]비밀번호를 재설정 해주세요."); // 제목 설정
         message.setContent(multipart);
 
-        Transport.send(message);
-        log.info(">>> [ ✅ 이메일 전송 성공 - 수신자: {} ]", to);
+        try {
+            Transport.send(message);
+            log.info(">>> [ ✅ 이메일 전송 성공 - 수신자: {} ]", to);
+        } catch (MessagingException e) {
+            log.error(">>> [ ❌ 이메일 전송 실패 - 수신자: {} ]", to, e);
+            throw new EmailBusinessException(EmailErrorCode.EMAIL_SEND_FAILED);
+        }
     }
 
     @Override
     public void sendCompanyRegistrationConfirmationEmail(CompanyRegister companyFormRegister)
             throws MessagingException, IOException {
+
+        // Validate company and owner name
+        if (companyFormRegister.getCompanyName() == null || companyFormRegister.getCompanyName().isEmpty()) {
+            throw new EmailBusinessException(EmailErrorCode.COMPANY_NAME_MISSING);
+        }
+
+        if (companyFormRegister.getOwnerName() == null || companyFormRegister.getOwnerName().isEmpty()) {
+            throw new EmailBusinessException(EmailErrorCode.OWNER_NAME_MISSING);
+        }
+
         String to = companyFormRegister.getEmail();
         String subject = "[SEMO] 회사 등록이 완료되었습니다.";
         log.info(">>> [ 📧 회사등록 완료 이메일 발송 준비 - 수신자: {} 제목: {} ]", to, subject);
@@ -170,8 +187,14 @@ public class EmailServiceImpl implements EmailService {
         message.setSubject(subject);
         message.setContent(multipart);
 
-        Transport.send(message);
-        log.info(">>> [ ✅ 회사등록 완료 이메일 전송 성공 - 수신자: {} ]", to);
+        try {
+            Transport.send(message);
+            log.info(">>> [ ✅ 회사등록 완료 이메일 전송 성공 - 수신자: {} ]", to);
+        } catch (MessagingException e) {
+            log.error(">>> [ ❌ 이메일 전송 실패 - 수신자: {} ]", to, e);
+            throw new EmailBusinessException(EmailErrorCode.EMAIL_SEND_FAILED);
+        }
+
     }
 
     @Override
