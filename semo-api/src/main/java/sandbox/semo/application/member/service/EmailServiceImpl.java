@@ -24,11 +24,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import sandbox.semo.domain.form.dto.response.CompanyFormRegister;
+import sandbox.semo.application.common.response.ApiResponse;
+import sandbox.semo.domain.form.dto.response.CompanyRegister;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
-import sandbox.semo.application.common.response.ApiResponse;
 
 @Log4j2
 @Service
@@ -50,7 +50,7 @@ public class EmailServiceImpl implements EmailService {
 
         // 인증 코드 검증
         if (storedAuthCode != null && storedAuthCode.equals(inputAuthCode)) {
-            return ApiResponse.successResponse(HttpStatus.OK, "인증 성공", null);
+            return ApiResponse.successResponse(HttpStatus.OK, "인증 성공");
         } else {
             return ApiResponse.errorResponse(400, "인증코드가 일치하지 않습니다.");
         }
@@ -72,10 +72,10 @@ public class EmailServiceImpl implements EmailService {
 
     // 이메일 발송 메서드: 수신자, 제목, 인증코드 받아서 이메일 발송
     @Override
-    public void sendEmail(EmailRegister email, String subject, String authCode)
+    public void sendEmail(EmailRegister email, String authCode)
             throws MessagingException, IOException {
         String to = email.getEmail();
-        log.info(">>> [ 📧 이메일 발송 준비 - 수신자: {} 제목: {} ]", to, subject);
+        log.info(">>> [ 📧 이메일 발송 준비 - 수신자: {} ]", to);
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분");
         String currentDate = dateFormat.format(new Date());
@@ -129,7 +129,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public void sendCompanyRegistrationConfirmationEmail(CompanyFormRegister companyFormRegister)
+    public void sendCompanyRegistrationConfirmationEmail(CompanyRegister companyFormRegister)
             throws MessagingException, IOException {
         String to = companyFormRegister.getEmail();
         String subject = "[SEMO] 회사 등록이 완료되었습니다.";

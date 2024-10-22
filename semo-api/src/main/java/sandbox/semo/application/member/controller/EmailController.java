@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.member.service.EmailService;
-import sandbox.semo.domain.form.dto.response.CompanyFormRegister;
+import sandbox.semo.domain.form.dto.response.CompanyRegister;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
@@ -25,7 +25,7 @@ public class EmailController {
     private final EmailService emailService;
     private final HttpSession session;
 
-    //비밀번호 재설정 인증코드 발송 API
+    // 비밀번호 재설정 인증코드 발송 API
     @PostMapping("/send-auth-code")
     public ApiResponse<String> sendEmail(@RequestBody EmailRegister emailRegister)
             throws MessagingException, IOException {
@@ -34,7 +34,7 @@ public class EmailController {
         String authCode = emailService.generateAuthCode();
 
         // 인증 코드 이메일 발송
-        emailService.sendEmail(emailRegister, "인증 코드", authCode);
+        emailService.sendEmail(emailRegister, authCode);
 
         // 생성된 인증 코드를 세션에 저장
         session.setAttribute("authCode", authCode);
@@ -51,14 +51,14 @@ public class EmailController {
 
     // 회사등록 완료 이메일 발송 API
     @PostMapping("/send-company-registration-confirmation")
-    public ApiResponse<String> sendCompanyRegistrationConfirmationEmail(@RequestBody CompanyFormRegister companyFormRegister)
+    public ApiResponse<String> sendCompanyRegistrationConfirmationEmail(@RequestBody CompanyRegister companyFormRegister)
             throws MessagingException, IOException {
 
         // 회사등록 완료 이메일 발송
         emailService.sendCompanyRegistrationConfirmationEmail(companyFormRegister);
 
         // 성공 응답
-        return ApiResponse.successResponse(OK, "회사등록 완료 이메일 전송 성공", null);
+        return ApiResponse.successResponse(OK, "회사등록 완료 이메일 전송 성공");
     }
 
     // 회원가입 완료 확인 이메일 발송 API
@@ -70,7 +70,7 @@ public class EmailController {
         emailService.sendMemberRegistrationConfirmationEmail(memberRegister);
 
         // 성공 응답
-        return ApiResponse.successResponse(OK, "회원가입 확인 이메일 전송 성공", null);
+        return ApiResponse.successResponse(OK, "회원가입 확인 이메일 전송 성공");
     }
 
     // 회원가입 반려 이메일 발송 API
@@ -82,7 +82,6 @@ public class EmailController {
         emailService.sendMemberRegistrationRejectionEmail(memberRegisterRejection);
 
         // 성공 응답
-        return ApiResponse.successResponse(OK, "회원가입 반려 이메일 전송 성공", null);
+        return ApiResponse.successResponse(OK, "회원가입 반려 이메일 전송 성공");
     }
-
 }

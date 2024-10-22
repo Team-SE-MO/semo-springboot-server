@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class CompanyFormRegister {
+public class CompanyRegister {
 
     @NotNull
     private String companyName;
@@ -15,7 +15,7 @@ public class CompanyFormRegister {
     @NotNull
     private String ownerName;
 
-    public CompanyFormRegister(String companyName, String email, String ownerName) {
+    public CompanyRegister(String companyName, String email, String ownerName) {
         this.companyName = companyName;
         this.email = email;
         this.ownerName = ownerName;
