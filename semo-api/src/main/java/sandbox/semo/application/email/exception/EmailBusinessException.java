@@ -1,4 +1,4 @@
-package sandbox.semo.application.member.exception;
+package sandbox.semo.application.email.exception;
 
 import lombok.Getter;
 

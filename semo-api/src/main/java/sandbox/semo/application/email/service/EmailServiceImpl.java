@@ -1,4 +1,4 @@
-package sandbox.semo.application.member.service;
+package sandbox.semo.application.email.service;
 
 import jakarta.mail.Authenticator;
 import jakarta.mail.Message;
@@ -25,8 +25,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import sandbox.semo.application.common.response.ApiResponse;
-import sandbox.semo.application.member.exception.EmailBusinessException;
-import sandbox.semo.application.member.exception.EmailErrorCode;
+import sandbox.semo.application.email.exception.EmailBusinessException;
+import sandbox.semo.application.email.exception.EmailErrorCode;
 import sandbox.semo.domain.form.dto.response.CompanyRegister;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegister;

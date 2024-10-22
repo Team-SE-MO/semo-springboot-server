@@ -1,8 +1,4 @@
-package sandbox.semo.application.member.exception;
-
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+package sandbox.semo.application.email.exception;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
