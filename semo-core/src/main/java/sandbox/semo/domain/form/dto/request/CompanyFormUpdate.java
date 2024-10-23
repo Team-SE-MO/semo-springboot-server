@@ -5,17 +5,11 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class CompanyFormRegister {
+public class CompanyFormUpdate {
 
     @NotNull
-    private String companyName;
+    private Long formId;
 
     @NotBlank
-    private String taxId;
-
-    @NotBlank
-    private String email;
-
-    @NotBlank
-    private String ownerName;
+    private String updateStatus;
 }

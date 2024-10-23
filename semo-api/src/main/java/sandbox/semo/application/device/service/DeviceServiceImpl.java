@@ -5,6 +5,8 @@ import static sandbox.semo.application.device.exception.DeviceErrorCode.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -14,8 +16,10 @@ import sandbox.semo.application.device.exception.DeviceBusinessException;
 import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.device.dto.request.DeviceRegister;
 import sandbox.semo.domain.device.dto.request.DataBaseInfo;
+import sandbox.semo.domain.device.dto.response.DeviceInfo;
 import sandbox.semo.domain.device.entity.Device;
 import sandbox.semo.domain.device.repository.DeviceRepository;
+import sandbox.semo.domain.member.entity.Role;
 
 @Service
 @Log4j2
@@ -24,6 +28,24 @@ import sandbox.semo.domain.device.repository.DeviceRepository;
 public class DeviceServiceImpl implements DeviceService {
 
     private final DeviceRepository deviceRepository;
+
+    @Override
+    public List<DeviceInfo> getDeviceInfo(Role role, Company company) {
+        List<DeviceInfo> data = new ArrayList<>();
+        switch (role) {
+            case ADMIN, USER -> data = readDeviceOfAdminAndUserRole(company);
+            case SUPER -> data = readDeviceOfSuperRole(company);
+        }
+        return data;
+    }
+
+    private List<DeviceInfo> readDeviceOfAdminAndUserRole(Company company) {
+        return deviceRepository.findByCompanyId(company.getId());
+    }
+
+    private List<DeviceInfo> readDeviceOfSuperRole(Company company) {
+        return deviceRepository.findAllExceptByCompanyId(company.getId());
+    }
 
     @Transactional
     @Override
