@@ -27,8 +27,7 @@ public class EmailController {
 
     // 비밀번호 재설정 인증코드 발송 API
     @PostMapping("/auth-code/send")
-    public ApiResponse<String> sendEmail(@RequestBody EmailRegister emailRegister)
-            throws MessagingException, IOException {
+    public ApiResponse<String> sendEmail(@RequestBody EmailRegister emailRegister) {
 
         // 인증 코드 생성
         String authCode = emailService.generateAuthCode();
@@ -51,8 +50,7 @@ public class EmailController {
 
     // 회사등록 완료 이메일 발송 API
     @PostMapping("/company/registration-confirm")
-    public ApiResponse<String> sendCompanyRegistrationConfirmationEmail(@RequestBody CompanyRegister companyFormRegister)
-            throws MessagingException, IOException {
+    public ApiResponse<String> sendCompanyRegistrationConfirmationEmail(@RequestBody CompanyRegister companyFormRegister) {
 
         // 회사등록 완료 이메일 발송
         emailService.sendCompanyRegistrationConfirmationEmail(companyFormRegister);
@@ -63,8 +61,7 @@ public class EmailController {
 
     // 회원가입 완료 확인 이메일 발송 API
     @PostMapping("/registration/confirm")
-    public ApiResponse<String> sendRegistrationConfirmationEmail(@RequestBody MemberRegister memberRegister)
-            throws MessagingException, IOException {
+    public ApiResponse<String> sendRegistrationConfirmationEmail(@RequestBody MemberRegister memberRegister) {
 
         // 회원가입 완료 이메일 발송
         emailService.sendMemberRegistrationConfirmationEmail(memberRegister);
@@ -75,8 +72,7 @@ public class EmailController {
 
     // 회원가입 반려 이메일 발송 API
     @PostMapping("/registration/reject")
-    public ApiResponse<String> sendMemberRegistrationRejectionEmail(@RequestBody MemberRegisterRejection memberRegisterRejection)
-            throws MessagingException, IOException {
+    public ApiResponse<String> sendMemberRegistrationRejectionEmail(@RequestBody MemberRegisterRejection memberRegisterRejection) {
 
         // 회원가입 반려 이메일 발송
         emailService.sendMemberRegistrationRejectionEmail(memberRegisterRejection);

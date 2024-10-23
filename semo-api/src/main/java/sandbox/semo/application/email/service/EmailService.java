@@ -17,18 +17,14 @@ public interface EmailService {
     String generateAuthCode();
 
     // 이메일 발송 메서드
-    void sendEmail(EmailRegister email, String text)
-            throws MessagingException, IOException;
+    void sendEmail(EmailRegister email, String text);
 
     // 회사등록 완료 이메일 발송 메서드
-    void sendCompanyRegistrationConfirmationEmail(CompanyRegister companyFormRegister)
-            throws MessagingException, IOException;
+    void sendCompanyRegistrationConfirmationEmail(CompanyRegister companyFormRegister);
 
     // 회원가입 완료 이메일 발송 메서드
-    void sendMemberRegistrationConfirmationEmail(MemberRegister memberRegister)
-            throws  MessagingException, IOException;
+    void sendMemberRegistrationConfirmationEmail(MemberRegister memberRegister);
 
     // 회원가입 반려 이메일 발송 메서드
-    void sendMemberRegistrationRejectionEmail(MemberRegisterRejection memberRegisterRejection)
-            throws MessagingException, IOException;
+    void sendMemberRegistrationRejectionEmail(MemberRegisterRejection memberRegisterRejection);
 }

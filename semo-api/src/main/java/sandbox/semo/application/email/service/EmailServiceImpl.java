@@ -1,5 +1,7 @@
 package sandbox.semo.application.email.service;
 
+import static sandbox.semo.application.email.exception.EmailErrorCode.EMAIL_SEND_FAILED;
+
 import jakarta.mail.Authenticator;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
@@ -32,6 +34,8 @@ import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
 
+// 기존 import 문은 그대로 유지
+
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -47,10 +51,7 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public ApiResponse<String> verifyAuthCode(String inputAuthCode) {
-        // 세션에 저장된 인증 코드 가져오기
         String storedAuthCode = (String) session.getAttribute("authCode");
-
-        // 인증 코드 검증
         if (storedAuthCode != null && storedAuthCode.equals(inputAuthCode)) {
             return ApiResponse.successResponse(HttpStatus.OK, "인증 성공");
         } else {
@@ -66,75 +67,72 @@ public class EmailServiceImpl implements EmailService {
         return String.format("%06d", authCode);
     }
 
-    // HTML 파일을 문자열로 읽어오는 유틸리티 메서드
-    private String readHtmlTemplate(String fileName) throws IOException {
-        ClassPathResource resource = new ClassPathResource("templates/" + fileName);
-        return new String(Files.readAllBytes(resource.getFile().toPath()), "UTF-8");
+    private String readHtmlTemplate(String fileName) {
+        try {
+            ClassPathResource resource = new ClassPathResource("templates/" + fileName);
+            return new String(Files.readAllBytes(resource.getFile().toPath()), "UTF-8");
+        } catch (IOException e) {
+            log.error(">>> [ ❌ HTML 템플릿 로드 실패 ]", e);
+            throw new EmailBusinessException(EmailErrorCode.EMAIL_TEMPLATE_LOAD_FAILED);
+        }
     }
 
-    // 이메일 발송 메서드: 수신자, 제목, 인증코드 받아서 이메일 발송
-    @Override
-    public void sendEmail(EmailRegister email, String authCode)
-            throws MessagingException, IOException {
-        String to = email.getEmail();
-        log.info(">>> [ 📧 이메일 발송 준비 - 수신자: {} ]", to);
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분");
-        String currentDate = dateFormat.format(new Date());
-
-        // Gmail SMTP 설정
+    private Session createMailSession() {
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.host", "smtp.gmail.com");
         props.put("mail.smtp.port", "587");
 
-        Session session = Session.getInstance(props, new Authenticator() {
+        return Session.getInstance(props, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
                 return new PasswordAuthentication(from, password);
             }
         });
+    }
 
-        // 이메일 템플릿 읽어오기
-        String htmlContent = readHtmlTemplate("send-auth-code.html");
-        // 동적으로 필요한 값 삽입
-        htmlContent = htmlContent.replace("{{authCode}}", authCode)
-                .replace("{{currentDate}}", currentDate);
-
-        MimeBodyPart messageBodyPart = new MimeBodyPart();
-        messageBodyPart.setContent(htmlContent, "text/html; charset=utf-8");
-
-        MimeBodyPart imagePart = new MimeBodyPart();
-        ClassPathResource imgResource = new ClassPathResource("img/Block.png");
-        imagePart.attachFile(imgResource.getFile());
-        imagePart.setContentID("<blockImage>");
-        imagePart.setDisposition(MimeBodyPart.INLINE);
-
-        Multipart multipart = new MimeMultipart();
-        multipart.addBodyPart(messageBodyPart);
-        multipart.addBodyPart(imagePart);
-
-        Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(from));
-        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
-        message.setSubject("[SEMO]비밀번호를 재설정 해주세요."); // 제목 설정
-        message.setContent(multipart);
-
+    private void sendMail(String to, String subject, String htmlContent) {
         try {
+            Session session = createMailSession();
+
+            MimeBodyPart messageBodyPart = new MimeBodyPart();
+            messageBodyPart.setContent(htmlContent, "text/html; charset=utf-8");
+
+            MimeBodyPart imagePart = new MimeBodyPart();
+            ClassPathResource imgResource = new ClassPathResource("img/Block.png");
+            imagePart.attachFile(imgResource.getFile());
+            imagePart.setContentID("<blockImage>");
+            imagePart.setDisposition(MimeBodyPart.INLINE);
+
+            Multipart multipart = new MimeMultipart();
+            multipart.addBodyPart(messageBodyPart);
+            multipart.addBodyPart(imagePart);
+
+            Message message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(from));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
+            message.setSubject(subject);
+            message.setContent(multipart);
+
             Transport.send(message);
             log.info(">>> [ ✅ 이메일 전송 성공 - 수신자: {} ]", to);
-        } catch (MessagingException e) {
+        } catch (MessagingException | IOException e) {
             log.error(">>> [ ❌ 이메일 전송 실패 - 수신자: {} ]", to, e);
-            throw new EmailBusinessException(EmailErrorCode.EMAIL_SEND_FAILED);
+            throw new EmailBusinessException(EMAIL_SEND_FAILED);
         }
     }
 
     @Override
-    public void sendCompanyRegistrationConfirmationEmail(CompanyRegister companyFormRegister)
-            throws MessagingException, IOException {
+    public void sendEmail(EmailRegister email, String authCode) {
+        String htmlContent = readHtmlTemplate("send-auth-code.html")
+                .replace("{{authCode}}", authCode)
+                .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
+        sendMail(email.getEmail(), "[SEMO] 비밀번호를 재설정 해주세요.", htmlContent);
+    }
 
-        // Validate company and owner name
+    @Override
+    public void sendCompanyRegistrationConfirmationEmail(CompanyRegister companyFormRegister) {
         if (companyFormRegister.getCompanyName() == null || companyFormRegister.getCompanyName().isEmpty()) {
             throw new EmailBusinessException(EmailErrorCode.COMPANY_NAME_MISSING);
         }
@@ -143,181 +141,30 @@ public class EmailServiceImpl implements EmailService {
             throw new EmailBusinessException(EmailErrorCode.OWNER_NAME_MISSING);
         }
 
-        String to = companyFormRegister.getEmail();
-        String subject = "[SEMO] 회사 등록이 완료되었습니다.";
-        log.info(">>> [ 📧 회사등록 완료 이메일 발송 준비 - 수신자: {} 제목: {} ]", to, subject);
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분");
-        String currentDate = dateFormat.format(new Date());
-
-        Properties props = new Properties();
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.host", "smtp.gmail.com");
-        props.put("mail.smtp.port", "587");
-
-        Session session = Session.getInstance(props, new Authenticator() {
-            @Override
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(from, password);
-            }
-        });
-
-        String htmlContent = readHtmlTemplate("company-registration.html");
-        htmlContent = htmlContent.replace("{{companyName}}", companyFormRegister.getCompanyName())
+        String htmlContent = readHtmlTemplate("company-registration.html")
+                .replace("{{companyName}}", companyFormRegister.getCompanyName())
                 .replace("{{ownerName}}", companyFormRegister.getOwnerName())
-                .replace("{{currentDate}}", currentDate);
+                .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
-        MimeBodyPart messageBodyPart = new MimeBodyPart();
-        messageBodyPart.setContent(htmlContent, "text/html; charset=utf-8");
-
-        MimeBodyPart imagePart = new MimeBodyPart();
-        ClassPathResource imgResource = new ClassPathResource("img/Block.png");
-        imagePart.attachFile(imgResource.getFile());
-        imagePart.setContentID("<blockImage>");
-        imagePart.setDisposition(MimeBodyPart.INLINE);
-
-        Multipart multipart = new MimeMultipart();
-        multipart.addBodyPart(messageBodyPart);
-        multipart.addBodyPart(imagePart);
-
-        Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(from));
-        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
-        message.setSubject(subject);
-        message.setContent(multipart);
-
-        try {
-            Transport.send(message);
-            log.info(">>> [ ✅ 회사등록 완료 이메일 전송 성공 - 수신자: {} ]", to);
-        } catch (MessagingException e) {
-            log.error(">>> [ ❌ 이메일 전송 실패 - 수신자: {} ]", to, e);
-            throw new EmailBusinessException(EmailErrorCode.EMAIL_SEND_FAILED);
-        }
-
+        sendMail(companyFormRegister.getEmail(), "[SEMO] 회사 등록이 완료되었습니다.", htmlContent);
     }
 
     @Override
-    public void sendMemberRegistrationConfirmationEmail(MemberRegister memberRegister)
-            throws MessagingException, IOException {
-        String to = memberRegister.getEmail();
-        String subject = "[SEMO] 계정 등록이 완료되었습니다.";
-        log.info(">>> [ 📧 회원가입 완료 이메일 발송 준비 - 수신자: {} 제목: {} ]", to, subject);
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분");
-        String currentDate = dateFormat.format(new Date());
-
-        // 이메일 세션 설정
-        Properties props = new Properties();
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.host", "smtp.gmail.com");
-        props.put("mail.smtp.port", "587");
-
-        Session session = Session.getInstance(props, new Authenticator() {
-            @Override
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(from, password);
-            }
-        });
-
-        // 이메일 템플릿 읽어오기
-        String htmlContent = readHtmlTemplate("member-registration.html");
-
-        // 동적으로 필요한 값 삽입
-        htmlContent = htmlContent.replace("{{ownerName}}", memberRegister.getOwnerName())
+    public void sendMemberRegistrationConfirmationEmail(MemberRegister memberRegister) {
+        String htmlContent = readHtmlTemplate("member-registration.html")
+                .replace("{{ownerName}}", memberRegister.getOwnerName())
                 .replace("{{loginId}}", memberRegister.getLoginId())
                 .replace("{{password}}", memberRegister.getPassword())
-                .replace("{{currentDate}}", currentDate);
+                .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
-        // 이메일 본문 작성
-        MimeBodyPart messageBodyPart = new MimeBodyPart();
-        messageBodyPart.setContent(htmlContent, "text/html; charset=utf-8");
-
-        // 이메일에 첨부할 이미지 파일 설정
-        MimeBodyPart imagePart = new MimeBodyPart();
-        ClassPathResource imgResource = new ClassPathResource("img/Block.png");
-        imagePart.attachFile(imgResource.getFile());
-        imagePart.setContentID("<blockImage>");
-        imagePart.setDisposition(MimeBodyPart.INLINE);
-
-        // 멀티파트로 구성된 이메일 설정
-        Multipart multipart = new MimeMultipart();
-        multipart.addBodyPart(messageBodyPart);
-        multipart.addBodyPart(imagePart);
-
-        Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(from));
-        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
-        message.setSubject(subject);
-        message.setContent(multipart);
-
-        // 이메일 발송
-        Transport.send(message);
-        log.info(">>> [ ✅ 회원가입 완료 이메일 전송 성공 - 수신자: {} ]", to);
+        sendMail(memberRegister.getEmail(), "[SEMO] 계정 등록이 완료되었습니다.", htmlContent);
     }
 
     @Override
-    public void sendMemberRegistrationRejectionEmail(MemberRegisterRejection memberRegisterRejection)
-            throws MessagingException, IOException {
+    public void sendMemberRegistrationRejectionEmail(MemberRegisterRejection memberRegisterRejection) {
+        String htmlContent = readHtmlTemplate("member-rejection.html")
+                .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
-        String to = memberRegisterRejection.getEmail(); // 수신자의 이메일 주소 설정
-        String subject = "[SEMO] 회원가입 반려 안내"; // 이메일 제목
-
-        // 이메일 발송 정보 로그 출력
-        log.info(">>> [ 📧 회원가입 반려 이메일 발송 준비 - 수신자: {} 제목: {} ]", to, subject);
-
-        // 현재 날짜를 원하는 형식으로 포맷팅
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분");
-        String currentDate = dateFormat.format(new Date());
-
-        // Gmail SMTP 서버 설정
-        Properties props = new Properties();
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.host", "smtp.gmail.com");
-        props.put("mail.smtp.port", "587");
-
-        // SMTP 인증을 위한 세션 생성
-        Session session = Session.getInstance(props, new Authenticator() {
-            @Override
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(from, password);
-            }
-        });
-
-        // 이메일 템플릿 파일 읽어오기
-        String htmlContent = readHtmlTemplate("member-rejection.html");
-
-        // 동적으로 필요한 값 삽입
-        htmlContent = htmlContent.replace("{{currentDate}}", currentDate);
-
-        // MIME 메시지 작성
-        MimeBodyPart messageBodyPart = new MimeBodyPart();
-        messageBodyPart.setContent(htmlContent, "text/html; charset=utf-8");
-
-        // 이미지 첨부를 위한 BodyPart
-        MimeBodyPart imagePart = new MimeBodyPart();
-        ClassPathResource imgResource = new ClassPathResource("img/Block.png"); // 이미지 파일 경로
-        imagePart.attachFile(imgResource.getFile()); // 이미지 파일 첨부
-        imagePart.setContentID("<blockImage>"); // 이미지 CID 설정
-        imagePart.setDisposition(MimeBodyPart.INLINE); // 이미지 인라인 설정
-
-        // 멀티파트로 이메일 구성
-        Multipart multipart = new MimeMultipart();
-        multipart.addBodyPart(messageBodyPart); // HTML 본문 추가
-        multipart.addBodyPart(imagePart); // 이미지 추가
-
-        Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(from)); // 발신자 설정
-        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to)); // 수신자 설정
-        message.setSubject(subject); // 제목 설정
-        message.setContent(multipart); // 멀티파트로 설정
-
-        // 이메일 전송
-        Transport.send(message);
-        // 성공 로그 출력
-        log.info(">>> [ ✅ 회원가입 반려 이메일 전송 성공 - 수신자: {} ]", to);
+        sendMail(memberRegisterRejection.getEmail(), "[SEMO] 회원가입 반려 안내", htmlContent);
     }
-
 }

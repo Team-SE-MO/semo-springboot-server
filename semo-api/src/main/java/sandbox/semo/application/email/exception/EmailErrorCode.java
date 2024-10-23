@@ -10,6 +10,7 @@ import sandbox.semo.application.common.exception.ErrorCode;
 public enum EmailErrorCode implements ErrorCode {
 
     EMAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이메일 전송에 실패했습니다."),
+    EMAIL_TEMPLATE_LOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이메일 템플릿 로드에 실패했습니다."),
     COMPANY_NAME_MISSING(HttpStatus.BAD_REQUEST, "회사 이름이 누락되었습니다."),
     OWNER_NAME_MISSING(HttpStatus.BAD_REQUEST, "소유자 이름이 누락되었습니다.");
 
