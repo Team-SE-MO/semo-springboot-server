@@ -14,9 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.form.exception.CompanyFormBusinessException;
 import sandbox.semo.domain.company.repository.CompanyRepository;
+import sandbox.semo.domain.form.dto.request.CompanyFormDecision;
 import sandbox.semo.domain.form.dto.request.CompanyFormRegister;
-import sandbox.semo.domain.form.dto.request.CompanyFormUpdate;
-import sandbox.semo.domain.form.dto.response.CompanyFormList;
+import sandbox.semo.domain.form.dto.response.CompanyFormInfo;
 import sandbox.semo.domain.form.entity.CompanyForm;
 import sandbox.semo.domain.form.entity.Status;
 import sandbox.semo.domain.form.repository.CompanyFormRepository;
@@ -50,16 +50,21 @@ public class CompanyFormServiceImpl implements CompanyFormService {
         }
     }
 
+    //TODO:
 
+    /**
+     * TODO: 0번째 에지부터 data가 없으면, 빈배열
+     * totalPage를 넘어갔을 때 data가 없으면 예외처리 발생
+     **/
     @Override
-    public Page<CompanyFormList> findAllForms(int page, int size) {
+    public Page<CompanyFormInfo> findAllForms(int page, int size) {
         List<Sort.Order> sorts = new ArrayList<>();
         sorts.add(Sort.Order.desc("requestDate"));
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(sorts));
         Page<CompanyForm> companyFormPage = companyFormRepository.findAll(pageable);
 
-        return companyFormPage.map(companyForm -> CompanyFormList.builder()
+        return companyFormPage.map(companyForm -> CompanyFormInfo.builder()
                 .formId(companyForm.getId())
                 .companyName(companyForm.getCompanyName())
                 .ownerName(companyForm.getOwnerName())
@@ -73,11 +78,11 @@ public class CompanyFormServiceImpl implements CompanyFormService {
 
     @Override
     @Transactional
-    public String updateStatus(CompanyFormUpdate request) {
+    public String updateStatus(CompanyFormDecision request) {
         CompanyForm companyForm = companyFormRepository.findById(request.getFormId())
                 .orElseThrow(() -> new CompanyFormBusinessException(FORM_DOES_NOT_EXIST));
 
-        Status newStatus = Status.valueOf(request.getUpdateStatus().toUpperCase());
+        Status newStatus = Status.valueOf(request.getDecisionStatus().toUpperCase());
         companyForm.changeStatus(newStatus);
         return companyFormRepository.save(companyForm).getStatus().toString();
 

@@ -10,7 +10,7 @@ import sandbox.semo.domain.form.entity.Status;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CompanyFormList {
+public class CompanyFormInfo {
 
     private Long formId;
     private String companyName;
@@ -26,7 +26,7 @@ public class CompanyFormList {
     private LocalDateTime approvedAt;
 
     @Builder
-    public CompanyFormList(Long formId, String companyName, String taxId, String ownerName,
+    public CompanyFormInfo(Long formId, String companyName, String taxId, String ownerName,
             String email, Status status, LocalDateTime requestDate, LocalDateTime approvedAt) {
         this.formId = formId;
         this.companyName = companyName;

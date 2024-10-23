@@ -1,6 +1,5 @@
 package sandbox.semo.application.form.controller;
 
-
 import static org.springframework.http.HttpStatus.OK;
 
 import jakarta.validation.Valid;
@@ -16,23 +15,22 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
-import sandbox.semo.application.form.service.CompanyFormService;
-import sandbox.semo.domain.form.dto.request.CompanyFormDecision;
-import sandbox.semo.domain.form.dto.request.CompanyFormRegister;
-import sandbox.semo.domain.form.dto.response.CompanyFormInfo;
+import sandbox.semo.application.form.service.MemberFormService;
+import sandbox.semo.domain.form.dto.request.MemberFormDecision;
+import sandbox.semo.domain.form.dto.request.MemberFormRegister;
+import sandbox.semo.domain.form.dto.response.MemberFormInfo;
 
 @Log4j2
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/form/company")
-public class CompanyFormController {
+@RequestMapping("/api/v1/form/member")
+public class MemberFormController {
 
-    private final CompanyFormService companyFormService;
+    private final MemberFormService memberFormService;
 
     @PostMapping
-    public ApiResponse<Void> formRegister(
-            @RequestBody @Valid CompanyFormRegister registerForm) {
-        companyFormService.formRegister(registerForm);
+    public ApiResponse<Void> formRegister(@RequestBody @Valid MemberFormRegister registerForm) {
+        memberFormService.formRegister(registerForm);
         return ApiResponse.successResponse(
                 OK,
                 "성공적으로 폼을 제출하였습니다.");
@@ -40,30 +38,27 @@ public class CompanyFormController {
 
     @PreAuthorize("hasRole('SUPER')")
     @GetMapping
-    public ApiResponse<Page<CompanyFormInfo>> registerList(
+    public ApiResponse<Page<MemberFormInfo>> getFormList(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Page<CompanyFormInfo> companyFormLists = companyFormService.findAllForms(page, size);
+        Page<MemberFormInfo> data = memberFormService.findAllForms(page, size);
         return ApiResponse.successResponse(
                 OK,
                 "성공적으로 목록을 조회하였습니다.",
-                companyFormLists
+                data
         );
 
     }
 
     @PreAuthorize("hasRole('SUPER')")
     @PatchMapping
-    public ApiResponse<String> formUpdate(
-            @RequestBody @Valid CompanyFormDecision updateForm) {
-        String data = companyFormService.updateStatus(updateForm);
-
+    public ApiResponse<String> formUpdate(@RequestBody @Valid MemberFormDecision formDecision) {
+        String data = memberFormService.updateForm(formDecision);
         return ApiResponse.successResponse(
                 OK,
                 "성공적으로 처리되었습니다.",
-                data
-        );
+                data);
     }
 
 }
