@@ -2,9 +2,7 @@ package sandbox.semo.application.email.controller;
 
 import static org.springframework.http.HttpStatus.OK;
 
-import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpSession;
-import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,33 +21,27 @@ import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
 public class EmailController {
 
     private final EmailService emailService;
-    private final HttpSession session;
 
     // 비밀번호 재설정 인증코드 발송 API
-    @PostMapping("/auth-code/send")
+    @PostMapping("/code-send")
     public ApiResponse<String> sendEmail(@RequestBody EmailRegister emailRegister) {
 
-        // 인증 코드 생성
-        String authCode = emailService.generateAuthCode();
-
-        // 인증 코드 이메일 발송
-        emailService.sendEmail(emailRegister, authCode);
-
-        // 생성된 인증 코드를 세션에 저장
-        session.setAttribute("authCode", authCode);
-
-        // 성공 응답 (ApiResponse 객체로 성공 메시지 전송)
+        // 인증 코드 이메일 발송 및 세션에 저장
+        String authCode = emailService.sendAuthCode(emailRegister);
         return ApiResponse.successResponse(OK, "이메일 전송 성공", authCode);
+
     }
 
     // 인증 코드 검증 API
-    @PostMapping("/auth-code/verify")
+    @PostMapping("/code-verify")
     public ApiResponse<String> verifyAuthCode(@RequestBody String inputAuthCode) {
-        return emailService.verifyAuthCode(inputAuthCode);
+        emailService.verifyAuthCode(inputAuthCode);
+        return ApiResponse.successResponse(OK,"인증 성공");
+
     }
 
     // 회사등록 완료 이메일 발송 API
-    @PostMapping("/company/registration-confirm")
+    @PostMapping("/company-registration")
     public ApiResponse<String> sendCompanyRegistrationConfirmationEmail(@RequestBody CompanyRegister companyFormRegister) {
 
         // 회사등록 완료 이메일 발송
@@ -60,7 +52,7 @@ public class EmailController {
     }
 
     // 회원가입 완료 확인 이메일 발송 API
-    @PostMapping("/registration/confirm")
+    @PostMapping("/registration")
     public ApiResponse<String> sendRegistrationConfirmationEmail(@RequestBody MemberRegister memberRegister) {
 
         // 회원가입 완료 이메일 발송
@@ -71,7 +63,7 @@ public class EmailController {
     }
 
     // 회원가입 반려 이메일 발송 API
-    @PostMapping("/registration/reject")
+    @PostMapping("/reject")
     public ApiResponse<String> sendMemberRegistrationRejectionEmail(@RequestBody MemberRegisterRejection memberRegisterRejection) {
 
         // 회원가입 반려 이메일 발송

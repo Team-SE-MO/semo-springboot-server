@@ -24,17 +24,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.email.exception.EmailBusinessException;
 import sandbox.semo.application.email.exception.EmailErrorCode;
 import sandbox.semo.domain.form.dto.response.CompanyRegister;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
-
-// 기존 import 문은 그대로 유지
 
 @Log4j2
 @Service
@@ -50,12 +46,24 @@ public class EmailServiceImpl implements EmailService {
     private String password;
 
     @Override
-    public ApiResponse<String> verifyAuthCode(String inputAuthCode) {
+    public String sendAuthCode(EmailRegister emailRegister) {
+        // 인증 코드 생성
+        String authCode = generateAuthCode();
+
+        // 인증 코드 이메일 발송
+        sendEmail(emailRegister, authCode);
+
+        // 생성된 인증 코드를 세션에 저장
+        session.setAttribute("authCode", authCode);
+
+        return authCode; // 생성된 인증 코드 반환
+    }
+
+    @Override
+    public void verifyAuthCode (String inputAuthCode){
         String storedAuthCode = (String) session.getAttribute("authCode");
-        if (storedAuthCode != null && storedAuthCode.equals(inputAuthCode)) {
-            return ApiResponse.successResponse(HttpStatus.OK, "인증 성공");
-        } else {
-            return ApiResponse.errorResponse(400, "인증코드가 일치하지 않습니다.");
+        if(storedAuthCode == null || storedAuthCode.equals(inputAuthCode)){
+            throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE);
         }
     }
 
