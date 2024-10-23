@@ -1,7 +1,7 @@
-package sandbox.semo.application.form.service;
+package sandbox.semo.application.company.service;
 
-import static sandbox.semo.application.form.exception.CompanyFormErrorCode.COMPANY_ALREADY_EXISTS;
-import static sandbox.semo.application.form.exception.CompanyFormErrorCode.FORM_DOES_NOT_EXIST;
+import static sandbox.semo.application.company.exception.CompanyErrorCode.COMPANY_ALREADY_EXISTS;
+import static sandbox.semo.application.company.exception.CompanyErrorCode.FORM_DOES_NOT_EXIST;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,14 +12,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sandbox.semo.application.form.exception.CompanyFormBusinessException;
+import sandbox.semo.application.company.exception.CompanyBusinessException;
+import sandbox.semo.domain.common.entity.FormStatus;
+import sandbox.semo.domain.company.dto.request.CompanyFormDecision;
+import sandbox.semo.domain.company.dto.request.CompanyFormRegister;
+import sandbox.semo.domain.company.dto.response.CompanyFormInfo;
+import sandbox.semo.domain.company.entity.CompanyForm;
+import sandbox.semo.domain.company.repository.CompanyFormRepository;
 import sandbox.semo.domain.company.repository.CompanyRepository;
-import sandbox.semo.domain.form.dto.request.CompanyFormDecision;
-import sandbox.semo.domain.form.dto.request.CompanyFormRegister;
-import sandbox.semo.domain.form.dto.response.CompanyFormInfo;
-import sandbox.semo.domain.form.entity.CompanyForm;
-import sandbox.semo.domain.form.entity.Status;
-import sandbox.semo.domain.form.repository.CompanyFormRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -38,7 +38,7 @@ public class CompanyFormServiceImpl implements CompanyFormService {
                 .ownerName(request.getOwnerName())
                 .taxId(request.getTaxId())
                 .email(request.getEmail())
-                .status(Status.PENDING)
+                .formStatus(FormStatus.PENDING)
                 .build();
 
         companyFormRepository.save(companyForm);
@@ -46,7 +46,7 @@ public class CompanyFormServiceImpl implements CompanyFormService {
 
     private void checkCompanyExists(String taxId) {
         if (companyRepository.existsByTaxId(taxId)) {
-            throw new CompanyFormBusinessException(COMPANY_ALREADY_EXISTS);
+            throw new CompanyBusinessException(COMPANY_ALREADY_EXISTS);
         }
     }
 
@@ -70,7 +70,7 @@ public class CompanyFormServiceImpl implements CompanyFormService {
                 .ownerName(companyForm.getOwnerName())
                 .taxId(companyForm.getTaxId())
                 .email(companyForm.getEmail())
-                .status(companyForm.getStatus())
+                .formStatus(companyForm.getFormStatus())
                 .requestDate(companyForm.getRequestDate())
                 .approvedAt(companyForm.getApprovedAt())
                 .build());
@@ -80,11 +80,11 @@ public class CompanyFormServiceImpl implements CompanyFormService {
     @Transactional
     public String updateStatus(CompanyFormDecision request) {
         CompanyForm companyForm = companyFormRepository.findById(request.getFormId())
-                .orElseThrow(() -> new CompanyFormBusinessException(FORM_DOES_NOT_EXIST));
+                .orElseThrow(() -> new CompanyBusinessException(FORM_DOES_NOT_EXIST));
 
-        Status newStatus = Status.valueOf(request.getDecisionStatus().toUpperCase());
-        companyForm.changeStatus(newStatus);
-        return companyFormRepository.save(companyForm).getStatus().toString();
+        FormStatus newFormStatus = FormStatus.valueOf(request.getDecisionStatus().toUpperCase());
+        companyForm.changeStatus(newFormStatus);
+        return companyFormRepository.save(companyForm).getFormStatus().toString();
 
     }
 }

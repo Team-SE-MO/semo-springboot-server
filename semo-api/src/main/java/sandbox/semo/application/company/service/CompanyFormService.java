@@ -1,9 +1,9 @@
-package sandbox.semo.application.form.service;
+package sandbox.semo.application.company.service;
 
 import org.springframework.data.domain.Page;
-import sandbox.semo.domain.form.dto.request.CompanyFormDecision;
-import sandbox.semo.domain.form.dto.request.CompanyFormRegister;
-import sandbox.semo.domain.form.dto.response.CompanyFormInfo;
+import sandbox.semo.domain.company.dto.request.CompanyFormDecision;
+import sandbox.semo.domain.company.dto.request.CompanyFormRegister;
+import sandbox.semo.domain.company.dto.response.CompanyFormInfo;
 
 public interface CompanyFormService {
 
