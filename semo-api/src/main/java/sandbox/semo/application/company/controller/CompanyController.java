@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
-import sandbox.semo.application.company.service.CompanyFormService;
 import sandbox.semo.application.company.service.CompanyService;
 import sandbox.semo.domain.company.dto.request.CompanyFormDecision;
 import sandbox.semo.domain.company.dto.request.CompanyFormRegister;
@@ -32,7 +31,6 @@ import sandbox.semo.domain.company.entity.Company;
 public class CompanyController {
 
     private final CompanyService companyService;
-    private final CompanyFormService companyFormService;
 
     @PreAuthorize("hasRole('SUPER')")
     @PostMapping("/{id}")
@@ -58,7 +56,7 @@ public class CompanyController {
     @PostMapping("/form")
     public ApiResponse<Void> formRegister(
             @RequestBody @Valid CompanyFormRegister registerForm) {
-        companyFormService.formRegister(registerForm);
+        companyService.formRegister(registerForm);
         return ApiResponse.successResponse(
                 OK,
                 "성공적으로 폼을 제출하였습니다.");
@@ -70,7 +68,7 @@ public class CompanyController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Page<CompanyFormInfo> companyFormLists = companyFormService.findAllForms(page, size);
+        Page<CompanyFormInfo> companyFormLists = companyService.findAllForms(page, size);
         return ApiResponse.successResponse(
                 OK,
                 "성공적으로 목록을 조회하였습니다.",
@@ -83,7 +81,7 @@ public class CompanyController {
     @PatchMapping("/form")
     public ApiResponse<String> formUpdate(
             @RequestBody @Valid CompanyFormDecision updateForm) {
-        String data = companyFormService.updateStatus(updateForm);
+        String data = companyService.updateStatus(updateForm);
 
         return ApiResponse.successResponse(
                 OK,
