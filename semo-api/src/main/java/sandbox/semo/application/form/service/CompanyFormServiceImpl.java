@@ -14,8 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.form.exception.CompanyFormBusinessException;
 import sandbox.semo.domain.company.repository.CompanyRepository;
+import sandbox.semo.domain.form.dto.request.CompanyFormDecision;
 import sandbox.semo.domain.form.dto.request.CompanyFormRegister;
-import sandbox.semo.domain.form.dto.request.CompanyFormUpdate;
 import sandbox.semo.domain.form.dto.response.CompanyFormList;
 import sandbox.semo.domain.form.entity.CompanyForm;
 import sandbox.semo.domain.form.entity.Status;
@@ -73,7 +73,7 @@ public class CompanyFormServiceImpl implements CompanyFormService {
 
     @Override
     @Transactional
-    public String updateStatus(CompanyFormUpdate request) {
+    public String updateStatus(CompanyFormDecision request) {
         CompanyForm companyForm = companyFormRepository.findById(request.getFormId())
                 .orElseThrow(() -> new CompanyFormBusinessException(FORM_DOES_NOT_EXIST));
 
