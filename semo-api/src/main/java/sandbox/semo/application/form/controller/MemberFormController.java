@@ -53,7 +53,7 @@ public class MemberFormController {
 
     @PreAuthorize("hasRole('SUPER')")
     @PatchMapping
-    public ApiResponse<String> formUpdate(MemberFormDecision formDecision) {
+    public ApiResponse<String> formUpdate(@RequestBody @Valid MemberFormDecision formDecision) {
         String data = memberFormService.updateForm(formDecision);
         return ApiResponse.successResponse(
                 OK,
