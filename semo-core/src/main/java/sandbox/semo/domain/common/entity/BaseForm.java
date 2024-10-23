@@ -1,4 +1,4 @@
-package sandbox.semo.domain.form.entity;
+package sandbox.semo.domain.common.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
