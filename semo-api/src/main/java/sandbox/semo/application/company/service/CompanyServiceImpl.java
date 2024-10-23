@@ -9,11 +9,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.company.exception.CompanyBusinessException;
 import sandbox.semo.application.form.exception.CompanyFormBusinessException;
+import sandbox.semo.domain.common.entity.FormStatus;
 import sandbox.semo.domain.company.entity.Company;
+import sandbox.semo.domain.company.entity.CompanyForm;
+import sandbox.semo.domain.company.repository.CompanyFormRepository;
 import sandbox.semo.domain.company.repository.CompanyRepository;
-import sandbox.semo.domain.form.entity.CompanyForm;
-import sandbox.semo.domain.form.entity.Status;
-import sandbox.semo.domain.form.repository.CompanyFormRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -29,7 +29,7 @@ public class CompanyServiceImpl implements CompanyService {
         CompanyForm companyForm = companyFormRepository.findById(formId)
                 .orElseThrow(() -> new CompanyFormBusinessException(FORM_DOES_NOT_EXIST));
 
-        if (!companyForm.getStatus().equals(Status.APPROVED)) {
+        if (!companyForm.getFormStatus().equals(FormStatus.APPROVED)) {
             throw new CompanyBusinessException(STATUS_NOT_APPROVED);
         }
 
