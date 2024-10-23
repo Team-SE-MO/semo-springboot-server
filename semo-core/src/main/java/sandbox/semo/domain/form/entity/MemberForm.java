@@ -32,4 +32,9 @@ public class MemberForm extends BaseForm {
         this.status = status;
     }
 
+    public void changeStatus(Status newStatus) {
+        this.status = newStatus;
+        this.markAsApproved();
+    }
+
 }
