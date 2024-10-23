@@ -1,4 +1,4 @@
-package sandbox.semo.application.common.util;
+package sandbox.semo.domain.common.crypto;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -16,7 +16,7 @@ public class AES256 {
         return Base64.getEncoder().encodeToString(encryptedBytes);
     }
 
-    private static String decrypt(String encryptedText) {
+    public static String decrypt(String encryptedText) {
         byte[] encryptedBytes = Base64.getDecoder().decode(encryptedText);
         byte[] decryptedBytes = getEncryptor().decrypt(encryptedBytes);
         return new String(decryptedBytes, StandardCharsets.UTF_8);

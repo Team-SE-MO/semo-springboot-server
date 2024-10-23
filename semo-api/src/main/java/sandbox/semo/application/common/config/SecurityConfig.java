@@ -31,12 +31,6 @@ public class SecurityConfig {
     private final AuthenticationFailureHandler failureHandler;
     private final AuthenticationEntryPoint entryPoint;
 
-    @Value("${encryption.aes.secret}")
-    private String symmetricKey;
-
-    @Value("${encryption.aes.salt}")
-    private String saltKey;
-
     @Autowired
     public void configure(AuthenticationManagerBuilder auth) {
         auth.authenticationProvider(memberAuthProvider);
@@ -74,11 +68,6 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AesBytesEncryptor aesBytesEncryptor() {
-        return new AesBytesEncryptor(symmetricKey, saltKey);
     }
 
 }

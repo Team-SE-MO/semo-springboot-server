@@ -1,4 +1,4 @@
-package sandbox.semo.application.common.util;
+package sandbox.semo.domain.common.crypto;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
