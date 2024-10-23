@@ -18,10 +18,4 @@ public class MemberRegister {
     @NotNull
     private String password;
 
-    public MemberRegister(String email, String loginId, String ownerName, String password) {
-        this.email = email;
-        this.loginId = loginId;
-        this.ownerName = ownerName;
-        this.password = password;
-    }
 }
