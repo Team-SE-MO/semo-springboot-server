@@ -1,5 +1,5 @@
 package sandbox.semo.domain.common.entity;
 
-public enum Status {
+public enum FormStatus {
     PENDING, DENIED, APPROVED;
 }
