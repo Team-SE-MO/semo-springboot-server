@@ -76,7 +76,9 @@ public class MemberFormServiceImpl implements MemberFormService {
 
         Status newStatus = Status.valueOf(request.getDecisionStatus().toUpperCase());
         memberForm.changeStatus(newStatus);
-        return memberFormRepository.save(memberForm).getStatus().toString();
+        MemberForm saveForm = memberFormRepository.save(memberForm);
+        log.info(">>> [ ✅ 고객사 회원가입 폼을 관리자가 최종 처리하였습니다. ]");
+        return saveForm.getStatus().toString();
     }
 
 }
