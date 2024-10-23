@@ -1,6 +1,7 @@
 package sandbox.semo.application.form.service;
 
 import static sandbox.semo.application.form.exception.MemberFormErrorCode.COMPANY_NOT_EXIST;
+import static sandbox.semo.application.form.exception.MemberFormErrorCode.FORM_DOES_NOT_EXIST;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.form.exception.MemberFormBusinessException;
 import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.company.repository.CompanyRepository;
+import sandbox.semo.domain.form.dto.request.MemberFormDecision;
 import sandbox.semo.domain.form.dto.request.MemberFormRegister;
 import sandbox.semo.domain.form.dto.response.MemberFormList;
 import sandbox.semo.domain.form.entity.MemberForm;
@@ -63,6 +65,18 @@ public class MemberFormServiceImpl implements MemberFormService {
                 .requestDate(memberForm.getRequestDate())
                 .approvedAt(memberForm.getApprovedAt())
                 .build());
+    }
+
+
+    @Override
+    @Transactional
+    public String updateForm(MemberFormDecision request) {
+        MemberForm memberForm = memberFormRepository.findById(request.getFormId())
+                .orElseThrow(() -> new MemberFormBusinessException(FORM_DOES_NOT_EXIST));
+
+        Status newStatus = Status.valueOf(request.getDecisionStatus().toUpperCase());
+        memberForm.changeStatus(newStatus);
+        return memberFormRepository.save(memberForm).getStatus().toString();
     }
 
 }
