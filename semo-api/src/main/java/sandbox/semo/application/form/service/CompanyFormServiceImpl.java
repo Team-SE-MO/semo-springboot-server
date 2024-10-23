@@ -77,7 +77,7 @@ public class CompanyFormServiceImpl implements CompanyFormService {
         CompanyForm companyForm = companyFormRepository.findById(request.getFormId())
                 .orElseThrow(() -> new CompanyFormBusinessException(FORM_DOES_NOT_EXIST));
 
-        Status newStatus = Status.valueOf(request.getUpdateStatus().toUpperCase());
+        Status newStatus = Status.valueOf(request.getDecisionStatus().toUpperCase());
         companyForm.changeStatus(newStatus);
         return companyFormRepository.save(companyForm).getStatus().toString();
 
