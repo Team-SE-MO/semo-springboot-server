@@ -2,14 +2,22 @@ package sandbox.semo.application.form.service;
 
 import static sandbox.semo.application.form.exception.MemberFormErrorCode.COMPANY_NOT_EXIST;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.form.exception.MemberFormBusinessException;
 import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.company.repository.CompanyRepository;
 import sandbox.semo.domain.form.dto.request.MemberFormRegister;
+import sandbox.semo.domain.form.dto.response.MemberFormList;
 import sandbox.semo.domain.form.entity.MemberForm;
 import sandbox.semo.domain.form.entity.Status;
 import sandbox.semo.domain.form.repository.MemberFormRepository;
@@ -36,6 +44,25 @@ public class MemberFormServiceImpl implements MemberFormService {
                 .status(Status.PENDING)
                 .build());
         log.info(">>> [ ✅ 고객사 회원가입 폼이 성공적으로 등록되었습니다. ]");
+    }
+
+    @Override
+    public Page<MemberFormList> findAllForms(int page, int size) {
+        List<Order> sorts = new ArrayList<>();
+        sorts.add(Sort.Order.desc("requestDate"));
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sorts));
+        Page<MemberForm> memberFormPage = memberFormRepository.findAll(pageable);
+
+        return memberFormPage.map(memberForm -> MemberFormList.builder()
+                .formId(memberForm.getId())
+                .companyName(memberForm.getCompanyName())
+                .ownerName(memberForm.getOwnerName())
+                .email(memberForm.getEmail())
+                .status(memberForm.getStatus())
+                .requestDate(memberForm.getRequestDate())
+                .approvedAt(memberForm.getApprovedAt())
+                .build());
     }
 
 }
