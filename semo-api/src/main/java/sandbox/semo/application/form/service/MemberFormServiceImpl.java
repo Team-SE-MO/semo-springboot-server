@@ -19,7 +19,7 @@ import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.company.repository.CompanyRepository;
 import sandbox.semo.domain.form.dto.request.MemberFormDecision;
 import sandbox.semo.domain.form.dto.request.MemberFormRegister;
-import sandbox.semo.domain.form.dto.response.MemberFormList;
+import sandbox.semo.domain.form.dto.response.MemberFormInfo;
 import sandbox.semo.domain.form.entity.MemberForm;
 import sandbox.semo.domain.form.entity.Status;
 import sandbox.semo.domain.form.repository.MemberFormRepository;
@@ -48,19 +48,19 @@ public class MemberFormServiceImpl implements MemberFormService {
         log.info(">>> [ ✅ 고객사 회원가입 폼이 성공적으로 등록되었습니다. ]");
     }
 
-    /*
-     * TO DO : 0번째 에지부터 data가 없으면, 빈배열
+    /**
+     * TODO: 0번째 에지부터 data가 없으면, 빈배열
      * totalPage를 넘어갔을 때 data가 없으면 예외처리 발생
-     */
+     **/
     @Override
-    public Page<MemberFormList> findAllForms(int page, int size) {
+    public Page<MemberFormInfo> findAllForms(int page, int size) {
         List<Order> sorts = new ArrayList<>();
         sorts.add(Sort.Order.desc("requestDate"));
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(sorts));
         Page<MemberForm> memberFormPage = memberFormRepository.findAll(pageable);
 
-        return memberFormPage.map(memberForm -> MemberFormList.builder()
+        return memberFormPage.map(memberForm -> MemberFormInfo.builder()
                 .formId(memberForm.getId())
                 .companyName(memberForm.getCompanyName())
                 .ownerName(memberForm.getOwnerName())

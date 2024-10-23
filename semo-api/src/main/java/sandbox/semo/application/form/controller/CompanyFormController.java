@@ -19,7 +19,7 @@ import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.form.service.CompanyFormService;
 import sandbox.semo.domain.form.dto.request.CompanyFormDecision;
 import sandbox.semo.domain.form.dto.request.CompanyFormRegister;
-import sandbox.semo.domain.form.dto.response.CompanyFormList;
+import sandbox.semo.domain.form.dto.response.CompanyFormInfo;
 
 @Log4j2
 @RestController
@@ -40,11 +40,11 @@ public class CompanyFormController {
 
     @PreAuthorize("hasRole('SUPER')")
     @GetMapping
-    public ApiResponse<Page<CompanyFormList>> registerList(
+    public ApiResponse<Page<CompanyFormInfo>> registerList(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Page<CompanyFormList> companyFormLists = companyFormService.findAllForms(page, size);
+        Page<CompanyFormInfo> companyFormLists = companyFormService.findAllForms(page, size);
         return ApiResponse.successResponse(
                 OK,
                 "성공적으로 목록을 조회하였습니다.",

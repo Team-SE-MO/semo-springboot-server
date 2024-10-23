@@ -18,7 +18,7 @@ import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.form.service.MemberFormService;
 import sandbox.semo.domain.form.dto.request.MemberFormDecision;
 import sandbox.semo.domain.form.dto.request.MemberFormRegister;
-import sandbox.semo.domain.form.dto.response.MemberFormList;
+import sandbox.semo.domain.form.dto.response.MemberFormInfo;
 
 @Log4j2
 @RestController
@@ -38,11 +38,11 @@ public class MemberFormController {
 
     @PreAuthorize("hasRole('SUPER')")
     @GetMapping
-    public ApiResponse<Page<MemberFormList>> formList(
+    public ApiResponse<Page<MemberFormInfo>> getFormList(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Page<MemberFormList> data = memberFormService.findAllForms(page, size);
+        Page<MemberFormInfo> data = memberFormService.findAllForms(page, size);
         return ApiResponse.successResponse(
                 OK,
                 "성공적으로 목록을 조회하였습니다.",
