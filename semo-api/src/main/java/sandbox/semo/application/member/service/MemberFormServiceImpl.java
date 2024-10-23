@@ -1,7 +1,7 @@
-package sandbox.semo.application.form.service;
+package sandbox.semo.application.member.service;
 
-import static sandbox.semo.application.form.exception.MemberFormErrorCode.COMPANY_NOT_EXIST;
-import static sandbox.semo.application.form.exception.MemberFormErrorCode.FORM_DOES_NOT_EXIST;
+import static sandbox.semo.application.member.exception.MemberErrorCode.COMPANY_NOT_EXIST;
+import static sandbox.semo.application.member.exception.MemberErrorCode.FORM_DOES_NOT_EXIST;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,15 +14,15 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sandbox.semo.application.form.exception.MemberFormBusinessException;
+import sandbox.semo.application.member.exception.MemberBusinessException;
+import sandbox.semo.domain.common.entity.FormStatus;
 import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.company.repository.CompanyRepository;
-import sandbox.semo.domain.form.dto.request.MemberFormDecision;
-import sandbox.semo.domain.form.dto.request.MemberFormRegister;
-import sandbox.semo.domain.form.dto.response.MemberFormInfo;
-import sandbox.semo.domain.form.entity.MemberForm;
-import sandbox.semo.domain.form.entity.Status;
-import sandbox.semo.domain.form.repository.MemberFormRepository;
+import sandbox.semo.domain.member.dto.request.MemberFormDecision;
+import sandbox.semo.domain.member.dto.request.MemberFormRegister;
+import sandbox.semo.domain.member.dto.response.MemberFormInfo;
+import sandbox.semo.domain.member.entity.MemberForm;
+import sandbox.semo.domain.member.repository.MemberFormRepository;
 
 @Service
 @Log4j2
@@ -33,17 +33,19 @@ public class MemberFormServiceImpl implements MemberFormService {
     private final MemberFormRepository memberFormRepository;
     private final CompanyRepository companyRepository;
 
+    //TODO : companyId가 1인 경우, 예외
+
     @Override
     @Transactional
     public void formRegister(MemberFormRegister request) {
         Company requestCompany = companyRepository.findById(request.getCompanyId())
-                .orElseThrow(() -> new MemberFormBusinessException(COMPANY_NOT_EXIST));
+                .orElseThrow(() -> new MemberBusinessException(COMPANY_NOT_EXIST));
 
         memberFormRepository.save(MemberForm.builder()
                 .companyName(requestCompany.getCompanyName())
                 .email(request.getEmail())
                 .ownerName(request.getOwnerName())
-                .status(Status.PENDING)
+                .formStatus(FormStatus.PENDING)
                 .build());
         log.info(">>> [ ✅ 고객사 회원가입 폼이 성공적으로 등록되었습니다. ]");
     }
@@ -65,7 +67,7 @@ public class MemberFormServiceImpl implements MemberFormService {
                 .companyName(memberForm.getCompanyName())
                 .ownerName(memberForm.getOwnerName())
                 .email(memberForm.getEmail())
-                .status(memberForm.getStatus())
+                .formStatus(memberForm.getFormStatus())
                 .requestDate(memberForm.getRequestDate())
                 .approvedAt(memberForm.getApprovedAt())
                 .build());
@@ -76,13 +78,13 @@ public class MemberFormServiceImpl implements MemberFormService {
     @Transactional
     public String updateForm(MemberFormDecision request) {
         MemberForm memberForm = memberFormRepository.findById(request.getFormId())
-                .orElseThrow(() -> new MemberFormBusinessException(FORM_DOES_NOT_EXIST));
+                .orElseThrow(() -> new MemberBusinessException(FORM_DOES_NOT_EXIST));
 
-        Status newStatus = Status.valueOf(request.getDecisionStatus().toUpperCase());
-        memberForm.changeStatus(newStatus);
+        FormStatus newFormStatus = FormStatus.valueOf(request.getDecisionStatus().toUpperCase());
+        memberForm.changeStatus(newFormStatus);
         MemberForm saveForm = memberFormRepository.save(memberForm);
         log.info(">>> [ ✅ 고객사 회원가입 폼을 관리자가 최종 처리하였습니다. ]");
-        return saveForm.getStatus().toString();
+        return saveForm.getFormStatus().toString();
     }
 
 }

@@ -1,9 +1,9 @@
-package sandbox.semo.application.form.service;
+package sandbox.semo.application.member.service;
 
 import org.springframework.data.domain.Page;
-import sandbox.semo.domain.form.dto.request.MemberFormDecision;
-import sandbox.semo.domain.form.dto.request.MemberFormRegister;
-import sandbox.semo.domain.form.dto.response.MemberFormInfo;
+import sandbox.semo.domain.member.dto.request.MemberFormDecision;
+import sandbox.semo.domain.member.dto.request.MemberFormRegister;
+import sandbox.semo.domain.member.dto.response.MemberFormInfo;
 
 public interface MemberFormService {
 
