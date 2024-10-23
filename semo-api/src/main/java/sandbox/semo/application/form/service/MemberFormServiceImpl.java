@@ -48,6 +48,10 @@ public class MemberFormServiceImpl implements MemberFormService {
         log.info(">>> [ ✅ 고객사 회원가입 폼이 성공적으로 등록되었습니다. ]");
     }
 
+    /*
+     * TO DO : 0번째 에지부터 data가 없으면, 빈배열
+     * totalPage를 넘어갔을 때 data가 없으면 예외처리 발생
+     */
     @Override
     public Page<MemberFormList> findAllForms(int page, int size) {
         List<Order> sorts = new ArrayList<>();
