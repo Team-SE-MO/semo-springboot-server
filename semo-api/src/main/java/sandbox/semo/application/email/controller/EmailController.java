@@ -12,7 +12,6 @@ import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.email.service.EmailService;
 import sandbox.semo.domain.form.dto.response.CompanyFormList;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
-import sandbox.semo.domain.member.dto.response.MemberRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
 
 @RestController

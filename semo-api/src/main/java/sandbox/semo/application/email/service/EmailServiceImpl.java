@@ -28,10 +28,7 @@ import org.springframework.stereotype.Service;
 import sandbox.semo.application.email.exception.EmailBusinessException;
 import sandbox.semo.application.email.exception.EmailErrorCode;
 import sandbox.semo.domain.form.dto.response.CompanyFormList;
-import sandbox.semo.domain.form.entity.MemberForm;
-import sandbox.semo.domain.form.repository.MemberFormRepository;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
-import sandbox.semo.domain.member.dto.response.MemberRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
 import sandbox.semo.domain.member.entity.Member;
 import sandbox.semo.domain.member.repository.MemberRepository;
@@ -42,7 +39,6 @@ import sandbox.semo.domain.member.repository.MemberRepository;
 public class EmailServiceImpl implements EmailService {
 
     private final HttpSession session;
-    private final MemberFormRepository memberFormRepository;
     private final MemberRepository memberRepository;
 
     @Value("${spring.mail.username}")
@@ -50,17 +46,6 @@ public class EmailServiceImpl implements EmailService {
 
     @Value("${spring.mail.password}")
     private String password;
-
-    @Override
-    public MemberRegister getMemberByFormId(Long formId) {
-        // formId를 이용해 MemberForm 엔티티 조회
-        return memberFormRepository.findById(formId)
-                .map(memberForm -> MemberRegister.builder()
-                        .email(memberForm.getEmail())
-                        .loginId("U345354")
-                        .build())
-                .orElseThrow(() -> new EmailBusinessException(EmailErrorCode.MEMBER_NOT_FOUND));
-    }
 
     @Override
     public String sendAuthCode(EmailRegister emailRegister) {
@@ -148,15 +133,6 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-/*
-    @Override
-    public void sendEmail(EmailRegister email, String authCode) {
-        String htmlContent = readHtmlTemplate("send-auth-code.html")
-                .replace("{{authCode}}", authCode)
-                .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
-        sendMail(email.getEmail(), "[SEMO] 비밀번호를 재설정 해주세요.", htmlContent);
-    }
-*/
     @Override
     public void sendEmail(EmailRegister email, String authCode) {
         if (authCode == null) {
@@ -198,7 +174,7 @@ public class EmailServiceImpl implements EmailService {
         String htmlContent = readHtmlTemplate("member-registration.html")
                 .replace("{{ownerName}}", member.getOwnerName())
                 .replace("{{loginId}}", member.getLoginId())
-                .replace("{{password}}", member.getPassword())
+                .replace("{{password}}", "0000")
                 .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
         sendMail(member.getEmail(), "[SEMO] 계정 등록이 완료되었습니다.", htmlContent);

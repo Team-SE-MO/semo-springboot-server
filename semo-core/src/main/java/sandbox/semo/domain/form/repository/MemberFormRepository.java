@@ -8,6 +8,4 @@ public interface MemberFormRepository extends JpaRepository<MemberForm, Long> {
 
     Optional<MemberForm> findById(Long fromId);
 
-    String findEmailById(Long formId);
-
 }
