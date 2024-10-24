@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.email.service.EmailService;
-import sandbox.semo.domain.form.dto.response.CompanyFormList;
+//import sandbox.semo.domain.form.dto.response.CompanyFormList;
+import sandbox.semo.domain.company.dto.response.CompanyFormInfo;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
 
@@ -41,10 +42,11 @@ public class EmailController {
 
     // 회사등록 완료 이메일 발송 API
     @PostMapping("/company/registration/{companyId}")
-    public ApiResponse<String> sendCompanyRegistrationConfirmationEmail(@RequestBody CompanyFormList companyFormList) {
+    //public ApiResponse<String> sendCompanyRegistrationConfirmationEmail(@RequestBody CompanyFormList companyFormList) {
+    public ApiResponse<String> sendCompanyRegistrationConfirmationEmail(@RequestBody CompanyFormInfo companyFormInfo) {
 
         // 회사등록 완료 이메일 발송
-        emailService.sendCompanyRegistrationConfirmationEmail(companyFormList);
+        emailService.sendCompanyRegistrationConfirmationEmail(companyFormInfo);
 
         // 성공 응답
         return ApiResponse.successResponse(OK, "회사등록 완료 이메일 전송 성공");

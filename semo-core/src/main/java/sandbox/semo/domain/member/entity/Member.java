@@ -42,7 +42,7 @@ public class Member extends BaseTime {
     @Column(name = "LOGIN_ID", nullable = false, unique = true, length = 50)
     private String loginId;
 
-    @Column(name = "EMAIL", nullable = false,length = 50)
+    @Column(name = "EMAIL", nullable = false, unique = true, length = 50)
     private String email;
 
     @Column(name = "PASSWORD", nullable = false)
@@ -53,7 +53,8 @@ public class Member extends BaseTime {
     private Role role;
 
     @Builder
-    public Member(Company company, String ownerName, String loginId, String email, String password, Role role) {
+    public Member(Company company, String ownerName, String loginId, String email, String password,
+            Role role) {
         this.company = company;
         this.ownerName = ownerName;
         this.loginId = loginId;

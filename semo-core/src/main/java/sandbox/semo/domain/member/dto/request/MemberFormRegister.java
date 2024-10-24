@@ -1,18 +1,17 @@
-package sandbox.semo.domain.form.dto.request;
+package sandbox.semo.domain.member.dto.request;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class CompanyFormRegister {
+public class MemberFormRegister {
 
     @NotNull
-    private String companyName;
+    private Long companyId;
 
-    @NotBlank
-    private String taxId;
-
+    @Email
     @NotBlank
     private String email;
 
