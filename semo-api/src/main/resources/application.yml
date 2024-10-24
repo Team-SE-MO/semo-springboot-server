@@ -14,8 +14,25 @@ spring:
 
 server:
   port: 8080
+  servlet:
+    session:
+      timeout: 5m
 
 logging:
   level:
     org.hibernate.type.descriptor.sql: trace
     org.springframework.security: DEBUG
+
+mail:
+  host: smtp.gmail.com
+  port: 587
+  username: ${spring.mail.username} # application-secret.yml에서 참조
+  password: ${spring.mail.password} # application-secret.yml에서 참조
+  properties:
+    mail:
+      smtp:
+        auth: true
+        starttls:
+          enable: true
+          required: true
+      debug: true
