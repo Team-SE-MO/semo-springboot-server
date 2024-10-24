@@ -1,4 +1,4 @@
-package sandbox.semo.domain.form.entity;
+package sandbox.semo.domain.member.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,6 +11,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import sandbox.semo.domain.common.entity.BaseForm;
+import sandbox.semo.domain.common.entity.FormStatus;
 
 @Entity
 @Getter
@@ -25,15 +27,15 @@ public class MemberForm extends BaseForm {
     private Long id;
 
     @Builder
-    public MemberForm(String companyName, String ownerName, String email, Status status) {
+    public MemberForm(String companyName, String ownerName, String email, FormStatus formStatus) {
         this.companyName = companyName;
         this.ownerName = ownerName;
         this.email = email;
-        this.status = status;
+        this.formStatus = formStatus;
     }
 
-    public void changeStatus(Status newStatus) {
-        this.status = newStatus;
+    public void changeStatus(FormStatus newFormStatus) {
+        this.formStatus = newFormStatus;
         this.markAsApproved();
     }
 

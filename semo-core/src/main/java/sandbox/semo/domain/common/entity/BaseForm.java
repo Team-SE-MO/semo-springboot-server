@@ -1,4 +1,4 @@
-package sandbox.semo.domain.form.entity;
+package sandbox.semo.domain.common.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
@@ -23,7 +23,7 @@ public abstract class BaseForm {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "STATUS", nullable = false, length = 20)
-    protected Status status;
+    protected FormStatus formStatus;
 
     @Column(name = "COMPANY_NAME", nullable = false, length = 50)
     protected String companyName;

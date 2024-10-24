@@ -1,4 +1,4 @@
-package sandbox.semo.domain.form.dto.response;
+package sandbox.semo.domain.member.dto.response;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import sandbox.semo.domain.form.entity.Status;
+import sandbox.semo.domain.common.entity.FormStatus;
 
 @Getter
 @NoArgsConstructor
@@ -16,7 +16,7 @@ public class MemberFormInfo {
     private String companyName;
     private String ownerName;
     private String email;
-    private Status status;
+    private FormStatus formStatus;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime requestDate;
@@ -26,12 +26,13 @@ public class MemberFormInfo {
 
     @Builder
     public MemberFormInfo(Long formId, String companyName, String ownerName,
-            String email, Status status, LocalDateTime requestDate, LocalDateTime approvedAt) {
+            String email, FormStatus formStatus, LocalDateTime requestDate,
+            LocalDateTime approvedAt) {
         this.formId = formId;
         this.companyName = companyName;
         this.ownerName = ownerName;
         this.email = email;
-        this.status = status;
+        this.formStatus = formStatus;
         this.requestDate = requestDate;
         this.approvedAt = approvedAt;
     }
