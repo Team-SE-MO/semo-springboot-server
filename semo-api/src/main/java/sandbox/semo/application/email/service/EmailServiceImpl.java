@@ -27,10 +27,14 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import sandbox.semo.application.email.exception.EmailBusinessException;
 import sandbox.semo.application.email.exception.EmailErrorCode;
-import sandbox.semo.domain.form.dto.response.CompanyRegister;
+import sandbox.semo.domain.form.dto.response.CompanyFormList;
+import sandbox.semo.domain.form.entity.MemberForm;
+import sandbox.semo.domain.form.repository.MemberFormRepository;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
+import sandbox.semo.domain.member.entity.Member;
+import sandbox.semo.domain.member.repository.MemberRepository;
 
 @Log4j2
 @Service
@@ -38,12 +42,25 @@ import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
 public class EmailServiceImpl implements EmailService {
 
     private final HttpSession session;
+    private final MemberFormRepository memberFormRepository;
+    private final MemberRepository memberRepository;
 
     @Value("${spring.mail.username}")
     private String from;
 
     @Value("${spring.mail.password}")
     private String password;
+
+    @Override
+    public MemberRegister getMemberByFormId(Long formId) {
+        // formId를 이용해 MemberForm 엔티티 조회
+        return memberFormRepository.findById(formId)
+                .map(memberForm -> MemberRegister.builder()
+                        .email(memberForm.getEmail())
+                        .loginId("U345354")
+                        .build())
+                .orElseThrow(() -> new EmailBusinessException(EmailErrorCode.MEMBER_NOT_FOUND));
+    }
 
     @Override
     public String sendAuthCode(EmailRegister emailRegister) {
@@ -131,6 +148,7 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+/*
     @Override
     public void sendEmail(EmailRegister email, String authCode) {
         String htmlContent = readHtmlTemplate("send-auth-code.html")
@@ -138,34 +156,52 @@ public class EmailServiceImpl implements EmailService {
                 .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
         sendMail(email.getEmail(), "[SEMO] 비밀번호를 재설정 해주세요.", htmlContent);
     }
+*/
+    @Override
+    public void sendEmail(EmailRegister email, String authCode) {
+        if (authCode == null) {
+            throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE); // authCode가 null인 경우 예외 발생
+        }
+
+        String htmlContent = readHtmlTemplate("send-auth-code.html")
+                .replace("{{authCode}}", authCode)
+                .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
+
+        sendMail(email.getEmail(), "[SEMO] 비밀번호를 재설정 해주세요.", htmlContent);
+    }
 
     @Override
-    public void sendCompanyRegistrationConfirmationEmail(CompanyRegister companyFormRegister) {
-        if (companyFormRegister.getCompanyName() == null || companyFormRegister.getCompanyName().isEmpty()) {
+    public void sendCompanyRegistrationConfirmationEmail(CompanyFormList companyFormList) {
+        if (companyFormList.getCompanyName() == null || companyFormList.getCompanyName().isEmpty()) {
             throw new EmailBusinessException(EmailErrorCode.COMPANY_NAME_MISSING);
         }
 
-        if (companyFormRegister.getOwnerName() == null || companyFormRegister.getOwnerName().isEmpty()) {
+        if (companyFormList.getOwnerName() == null || companyFormList.getOwnerName().isEmpty()) {
             throw new EmailBusinessException(EmailErrorCode.OWNER_NAME_MISSING);
         }
 
         String htmlContent = readHtmlTemplate("company-registration.html")
-                .replace("{{companyName}}", companyFormRegister.getCompanyName())
-                .replace("{{ownerName}}", companyFormRegister.getOwnerName())
+                .replace("{{companyName}}", companyFormList.getCompanyName())
+                .replace("{{ownerName}}", companyFormList.getOwnerName())
                 .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
-        sendMail(companyFormRegister.getEmail(), "[SEMO] 회사 등록이 완료되었습니다.", htmlContent);
+        sendMail(companyFormList.getEmail(), "[SEMO] 회사 등록이 완료되었습니다.", htmlContent);
     }
 
     @Override
-    public void sendMemberRegistrationConfirmationEmail(MemberRegister memberRegister) {
+    public void sendMemberRegistrationConfirmationEmail(String loginId) {
+        log.info(">>> [🔍 조회 중인 loginId: {}]", loginId);
+        Member member = memberRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new EmailBusinessException(EmailErrorCode.MEMBER_NOT_FOUND)); // 값이 없을 경우 예외 처리
+        log.info(">>> [✅ 사용자 조회 성공 - loginId: {}]", member.getLoginId());
+
         String htmlContent = readHtmlTemplate("member-registration.html")
-                .replace("{{ownerName}}", memberRegister.getOwnerName())
-                .replace("{{loginId}}", memberRegister.getLoginId())
-                .replace("{{password}}", memberRegister.getPassword())
+                .replace("{{ownerName}}", member.getOwnerName())
+                .replace("{{loginId}}", member.getLoginId())
+                .replace("{{password}}", member.getPassword())
                 .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
-        sendMail(memberRegister.getEmail(), "[SEMO] 계정 등록이 완료되었습니다.", htmlContent);
+        sendMail(member.getEmail(), "[SEMO] 계정 등록이 완료되었습니다.", htmlContent);
     }
 
     @Override
