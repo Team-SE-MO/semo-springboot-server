@@ -27,7 +27,6 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import sandbox.semo.application.email.exception.EmailBusinessException;
 import sandbox.semo.application.email.exception.EmailErrorCode;
-//import sandbox.semo.domain.form.dto.response.CompanyFormList;
 import sandbox.semo.domain.company.dto.response.CompanyFormInfo;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;

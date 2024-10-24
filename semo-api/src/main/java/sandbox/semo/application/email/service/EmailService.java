@@ -1,6 +1,5 @@
 package sandbox.semo.application.email.service;
 
-//import sandbox.semo.domain.form.dto.response.CompanyFormList;
 import sandbox.semo.domain.company.dto.response.CompanyFormInfo;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
@@ -20,7 +19,6 @@ public interface EmailService {
     void sendEmail(EmailRegister email, String text);
 
     // 회사등록 완료 이메일 발송 메서드
-    //void sendCompanyRegistrationConfirmationEmail(CompanyFormList companyFormList);
     void sendCompanyRegistrationConfirmationEmail(CompanyFormInfo companyFormInfo);
 
     // 회원가입 완료 이메일 발송 메서드
