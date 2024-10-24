@@ -1,15 +1,15 @@
-package sandbox.semo.domain.form.dto.request;
+package sandbox.semo.domain.company.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class CompanyFormUpdate {
+public class CompanyFormDecision {
 
     @NotNull
     private Long formId;
 
     @NotBlank
-    private String updateStatus;
+    private String decisionStatus;
 }
