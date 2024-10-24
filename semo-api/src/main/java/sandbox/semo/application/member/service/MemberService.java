@@ -15,4 +15,6 @@ public interface MemberService {
     Page<MemberFormInfo> findAllForms(int page, int size);
 
     String updateForm(MemberFormDecision request);
+
+    Boolean checkEmail(String email);
 }

@@ -117,5 +117,10 @@ public class MemberServiceImpl implements MemberService {
         return saveForm.getFormStatus().toString();
     }
 
+    @Override
+    public Boolean checkEmail(String email) {
+        return memberRepository.existsByEmail(email);
+    }
+
 
 }
