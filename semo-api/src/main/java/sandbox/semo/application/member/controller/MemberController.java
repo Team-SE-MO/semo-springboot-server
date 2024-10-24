@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
-import sandbox.semo.application.member.service.MemberFormService;
 import sandbox.semo.application.member.service.MemberService;
 import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
@@ -30,7 +29,6 @@ import sandbox.semo.domain.member.dto.response.MemberFormInfo;
 public class MemberController {
 
     private final MemberService memberService;
-    private final MemberFormService memberFormService;
 
     @PostMapping
     public ResponseEntity<?> register(@RequestBody MemberRegister memberRegister) {
@@ -42,7 +40,7 @@ public class MemberController {
 
     @PostMapping("/form")
     public ApiResponse<Void> formRegister(@RequestBody @Valid MemberFormRegister registerForm) {
-        memberFormService.formRegister(registerForm);
+        memberService.formRegister(registerForm);
         return ApiResponse.successResponse(
                 OK,
                 "성공적으로 폼을 제출하였습니다.");
@@ -54,7 +52,7 @@ public class MemberController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Page<MemberFormInfo> data = memberFormService.findAllForms(page, size);
+        Page<MemberFormInfo> data = memberService.findAllForms(page, size);
         return ApiResponse.successResponse(
                 OK,
                 "성공적으로 목록을 조회하였습니다.",
@@ -66,7 +64,7 @@ public class MemberController {
     @PreAuthorize("hasRole('SUPER')")
     @PatchMapping("/form")
     public ApiResponse<String> formUpdate(@RequestBody @Valid MemberFormDecision formDecision) {
-        String data = memberFormService.updateForm(formDecision);
+        String data = memberService.updateForm(formDecision);
         return ApiResponse.successResponse(
                 OK,
                 "성공적으로 처리되었습니다.",
