@@ -19,7 +19,7 @@ public interface EmailService {
     void sendEmail(EmailRegister email, String text);
 
     // 회사등록 완료 이메일 발송 메서드
-    void sendCompanyRegistrationConfirmationEmail(CompanyFormInfo companyFormInfo);
+    void sendCompanyRegistrationConfirmationEmail(Long formId);
 
     // 회원가입 완료 이메일 발송 메서드
     void sendMemberRegistrationConfirmationEmail(String loginId);

@@ -27,7 +27,11 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import sandbox.semo.application.email.exception.EmailBusinessException;
 import sandbox.semo.application.email.exception.EmailErrorCode;
+import sandbox.semo.domain.common.entity.FormStatus;
 import sandbox.semo.domain.company.dto.response.CompanyFormInfo;
+import sandbox.semo.domain.company.entity.Company;
+import sandbox.semo.domain.company.entity.CompanyForm;
+import sandbox.semo.domain.company.repository.CompanyFormRepository;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
 import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
 import sandbox.semo.domain.member.entity.Member;
@@ -40,6 +44,7 @@ public class EmailServiceImpl implements EmailService {
 
     private final HttpSession session;
     private final MemberRepository memberRepository;
+    private final CompanyFormRepository companyFormRepository;
 
     @Value("${spring.mail.username}")
     private String from;
@@ -147,21 +152,25 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public void sendCompanyRegistrationConfirmationEmail(CompanyFormInfo companyFormInfo) {
-        if (companyFormInfo.getCompanyName() == null || companyFormInfo.getCompanyName().isEmpty()) {
-            throw new EmailBusinessException(EmailErrorCode.COMPANY_NAME_MISSING);
-        }
+    public void sendCompanyRegistrationConfirmationEmail(Long formId) {
+        log.info(">>> [🔍 조회 중인 formId: {}]", formId);
+        CompanyForm companyForm = companyFormRepository.findById(formId)
+                .orElseThrow(() -> new EmailBusinessException(EmailErrorCode.COMPANY_NAME_MISSING));
+        log.info(">>> [✅ 회사 조회 성공 - formId: {}]", companyForm.getId());
 
-        if (companyFormInfo.getOwnerName() == null || companyFormInfo.getOwnerName().isEmpty()) {
-            throw new EmailBusinessException(EmailErrorCode.OWNER_NAME_MISSING);
+        if(companyForm.getFormStatus() != FormStatus.APPROVED){
+            log.warn(">>> [ ⛔ 이메일 전송 중지 - formStatus가 APPROVED가 아님: {} ]", companyForm.getFormStatus());
+            throw new EmailBusinessException(EmailErrorCode.APPROVAL_DENIED);
         }
 
         String htmlContent = readHtmlTemplate("company-registration.html")
-                .replace("{{companyName}}", companyFormInfo.getCompanyName())
-                .replace("{{ownerName}}", companyFormInfo.getOwnerName())
+                .replace("{{companyName}}", companyForm.getCompanyName())
+                .replace("{{ownerName}}", companyForm.getOwnerName())
                 .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
-        sendMail(companyFormInfo.getEmail(), "[SEMO] 회사 등록이 완료되었습니다.", htmlContent);
+        sendMail(companyForm.getEmail(), "[SEMO] 회사 등록이 완료되었습니다.", htmlContent);
+        log.info(">>> [ ✅ 회사 등록 완료 이메일 전송 성공 - 수신자: {} ]", companyForm.getEmail());
+
     }
 
     @Override
