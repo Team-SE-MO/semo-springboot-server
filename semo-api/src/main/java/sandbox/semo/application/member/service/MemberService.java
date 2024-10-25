@@ -5,10 +5,11 @@ import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
 import sandbox.semo.domain.member.dto.response.MemberFormInfo;
+import sandbox.semo.domain.member.entity.Role;
 
 public interface MemberService {
 
-    void register(MemberRegister request);
+    String register(MemberRegister request, Role role);
 
     void formRegister(MemberFormRegister request);
 

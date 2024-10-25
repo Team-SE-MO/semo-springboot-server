@@ -17,6 +17,7 @@ import org.springframework.data.domain.Sort.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sandbox.semo.application.common.util.LoginIdGeneratorUtil;
 import sandbox.semo.application.member.exception.MemberBusinessException;
 import sandbox.semo.domain.common.entity.FormStatus;
 import sandbox.semo.domain.company.entity.Company;
@@ -45,15 +46,28 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     @Transactional
-    public void register(MemberRegister request) {
+    public String register(MemberRegister request, Role role) {
+        checkEmailDuplicate(request.getEmail());
+        Company company = companyRepository.findById(request.getCompanyId())
+                .orElseThrow(() -> new MemberBusinessException(COMPANY_NOT_EXIST));
+
         Member member = Member.builder()
                 .company(getCompanyById(request.getCompanyId()))
                 .ownerName(request.getOwnerName())
-                .loginId(request.getLoginId())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.valueOf(request.getRole()))
+                .loginId(role.equals(Role.SUPER) ?
+                        LoginIdGeneratorUtil.generateLoginId(Role.ADMIN.toString(),
+                                company.getTaxId())
+                        : LoginIdGeneratorUtil.generateLoginId(Role.USER.toString(),
+                                company.getTaxId()))
+                .email(request.getEmail())
+                .password(passwordEncoder.encode("0000"))
+                .role(role.equals(Role.SUPER) ? Role.ADMIN : Role.USER)
                 .build();
+
         memberRepository.save(member);
+        log.info(">>> [ ✅ 회원가입이 성공적으로 이루어졌습니다. ]");
+
+        return member.getLoginId();
     }
 
     private Company getCompanyById(Long companyId) {
@@ -111,7 +125,6 @@ public class MemberServiceImpl implements MemberService {
     public String updateForm(MemberFormDecision request) {
         MemberForm memberForm = memberFormRepository.findById(request.getFormId())
                 .orElseThrow(() -> new MemberBusinessException(FORM_DOES_NOT_EXIST));
-
         FormStatus newFormStatus = FormStatus.valueOf(request.getDecisionStatus().toUpperCase());
         memberForm.changeStatus(newFormStatus);
         MemberForm saveForm = memberFormRepository.save(memberForm);
