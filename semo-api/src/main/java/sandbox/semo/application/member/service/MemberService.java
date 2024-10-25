@@ -17,5 +17,5 @@ public interface MemberService {
 
     String updateForm(MemberFormDecision request);
 
-    Boolean checkEmail(String email);
+    Boolean checkEmailDuplicate(String email);
 }
