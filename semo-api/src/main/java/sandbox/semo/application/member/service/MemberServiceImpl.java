@@ -44,6 +44,9 @@ public class MemberServiceImpl implements MemberService {
     private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
 
+    private static final String DEFAULT_PASSWORD = "0000";
+
+
     @Override
     @Transactional
     public String register(MemberRegister request, Role role) {
@@ -51,23 +54,30 @@ public class MemberServiceImpl implements MemberService {
         Company company = companyRepository.findById(request.getCompanyId())
                 .orElseThrow(() -> new MemberBusinessException(COMPANY_NOT_EXIST));
 
+        boolean isSuperRole = role.equals(Role.SUPER);
+
         Member member = Member.builder()
                 .company(getCompanyById(request.getCompanyId()))
                 .ownerName(request.getOwnerName())
-                .loginId(role.equals(Role.SUPER) ?
-                        LoginIdGeneratorUtil.generateLoginId(Role.ADMIN.toString(),
-                                company.getTaxId())
-                        : LoginIdGeneratorUtil.generateLoginId(Role.USER.toString(),
-                                company.getTaxId()))
+                .loginId(generateLoginId(isSuperRole, company))
                 .email(request.getEmail())
-                .password(passwordEncoder.encode("0000"))
-                .role(role.equals(Role.SUPER) ? Role.ADMIN : Role.USER)
+                .password(passwordEncoder.encode(DEFAULT_PASSWORD))
+                .role(determineRole(isSuperRole))
                 .build();
 
         memberRepository.save(member);
         log.info(">>> [ ✅ 회원가입이 성공적으로 이루어졌습니다. ]");
 
         return member.getLoginId();
+    }
+
+    private String generateLoginId(boolean isSuperRole, Company company) {
+        String rolePrefix = isSuperRole ? Role.ADMIN.toString() : Role.USER.toString();
+        return LoginIdGeneratorUtil.generateLoginId(rolePrefix, company.getTaxId());
+    }
+
+    private Role determineRole(boolean isSuperRole) {
+        return isSuperRole ? Role.ADMIN : Role.USER;
     }
 
     private Company getCompanyById(Long companyId) {
