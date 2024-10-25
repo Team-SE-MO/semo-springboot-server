@@ -1,5 +1,6 @@
 package sandbox.semo.application.member.service;
 
+import static sandbox.semo.application.member.exception.MemberErrorCode.ALREADY_EXISTS_EMAIL;
 import static sandbox.semo.application.member.exception.MemberErrorCode.COMPANY_NOT_EXIST;
 import static sandbox.semo.application.member.exception.MemberErrorCode.FORM_DOES_NOT_EXIST;
 import static sandbox.semo.application.member.exception.MemberErrorCode.INVALID_COMPANY_SELECTION;
@@ -119,7 +120,10 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     public Boolean checkEmail(String email) {
-        return memberRepository.existsByEmail(email);
+        if (memberRepository.existsByEmail(email)) {
+            throw new MemberBusinessException(ALREADY_EXISTS_EMAIL);
+        }
+        return true;
     }
 
 
