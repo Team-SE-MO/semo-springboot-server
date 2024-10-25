@@ -65,6 +65,7 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     @Override
     public void formRegister(MemberFormRegister request) {
+        checkEmailDuplicate(request.getEmail());
         if (request.getCompanyId() == 1L) {
             throw new MemberBusinessException(INVALID_COMPANY_SELECTION);
         }
@@ -119,7 +120,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
-    public Boolean checkEmail(String email) {
+    public Boolean checkEmailDuplicate(String email) {
         if (memberRepository.existsByEmail(email)) {
             throw new MemberBusinessException(ALREADY_EXISTS_EMAIL);
         }
