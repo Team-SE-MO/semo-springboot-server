@@ -87,7 +87,7 @@ public class MemberController {
         Boolean data = memberService.checkEmailDuplicate(email);
         return ApiResponse.successResponse(
                 OK,
-                "성공적으로 이메일을 조회하였습니다.",
+                "회원가입이 가능한 이메일입니다.",
                 data
         );
     }
