@@ -8,8 +8,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.member.service.MemberService;
+import sandbox.semo.application.security.authentication.MemberPrincipalDetails;
 import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
@@ -34,11 +35,15 @@ public class MemberController {
 
     private final MemberService memberService;
 
+
+    @PreAuthorize("hasAnyRole('SUPER','ADMIN')")
     @PostMapping
-    public ResponseEntity<?> register(@RequestBody MemberRegister memberRegister) {
-        memberService.register(memberRegister);
-        return ResponseEntity.ok()
-                .body("성공적으로 계정 생성이 완료 되었습니다.");
+    public ApiResponse<String> register(
+            @RequestBody @Valid MemberRegister memberRegister,
+            @AuthenticationPrincipal MemberPrincipalDetails memberDetails) {
+
+        String data = memberService.register(memberRegister, memberDetails.getMember().getRole());
+        return ApiResponse.successResponse(OK, "성공적으로 계정 생성이 완료되었습니다.", data);
     }
 
 
@@ -79,7 +84,7 @@ public class MemberController {
     public ApiResponse<Boolean> emailValidate(
             @RequestParam @NotBlank(message = "이메일이 빈 상태 입니다.")
             @Email(message = "유효한 이메일 형식이 아닙니다.") String email) {
-        Boolean data = memberService.checkEmail(email);
+        Boolean data = memberService.checkEmailDuplicate(email);
         return ApiResponse.successResponse(
                 OK,
                 "성공적으로 이메일을 조회하였습니다.",
