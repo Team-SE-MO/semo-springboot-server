@@ -28,8 +28,6 @@ import org.springframework.stereotype.Service;
 import sandbox.semo.application.email.exception.EmailBusinessException;
 import sandbox.semo.application.email.exception.EmailErrorCode;
 import sandbox.semo.domain.common.entity.FormStatus;
-import sandbox.semo.domain.company.dto.response.CompanyFormInfo;
-import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.company.entity.CompanyForm;
 import sandbox.semo.domain.company.repository.CompanyFormRepository;
 import sandbox.semo.domain.member.dto.request.EmailRegister;
@@ -78,7 +76,7 @@ public class EmailServiceImpl implements EmailService {
     public String generateAuthCode() {
         Random random = new Random();
         int authCode = random.nextInt(999999);
-        log.info(">>> [ 🔐 인증 코드 생성: {} ]", authCode);
+        log.info(">>> [🔐 인증 코드 생성: {} ]", authCode);
         return String.format("%06d", authCode);
     }
 
@@ -87,7 +85,7 @@ public class EmailServiceImpl implements EmailService {
             ClassPathResource resource = new ClassPathResource("templates/" + fileName);
             return new String(Files.readAllBytes(resource.getFile().toPath()), "UTF-8");
         } catch (IOException e) {
-            log.error(">>> [ ❌ HTML 템플릿 로드 실패 ]", e);
+            log.error(">>> [❌ HTML 템플릿 로드 실패 ]", e);
             throw new EmailBusinessException(EmailErrorCode.EMAIL_TEMPLATE_LOAD_FAILED);
         }
     }
@@ -131,9 +129,9 @@ public class EmailServiceImpl implements EmailService {
             message.setContent(multipart);
 
             Transport.send(message);
-            log.info(">>> [ ✅ 이메일 전송 성공 - 수신자: {} ]", to);
+            log.info(">>> [✅ 이메일 전송 성공 - 수신자: {} ]", to);
         } catch (MessagingException | IOException e) {
-            log.error(">>> [ ❌ 이메일 전송 실패 - 수신자: {} ]", to, e);
+            log.error(">>> [❌ 이메일 전송 실패 - 수신자: {} ]", to, e);
             throw new EmailBusinessException(EMAIL_SEND_FAILED);
         }
     }
@@ -159,7 +157,7 @@ public class EmailServiceImpl implements EmailService {
         log.info(">>> [✅ 회사 조회 성공 - formId: {}]", companyForm.getId());
 
         if(companyForm.getFormStatus() != FormStatus.APPROVED){
-            log.warn(">>> [ ⛔ 이메일 전송 중지 - formStatus가 APPROVED가 아님: {} ]", companyForm.getFormStatus());
+            log.warn(">>> [⛔ 이메일 전송 중지 - formStatus가 APPROVED가 아님: {} ]", companyForm.getFormStatus());
             throw new EmailBusinessException(EmailErrorCode.APPROVAL_DENIED);
         }
 
@@ -169,7 +167,7 @@ public class EmailServiceImpl implements EmailService {
                 .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
         sendMail(companyForm.getEmail(), "[SEMO] 회사 등록이 완료되었습니다.", htmlContent);
-        log.info(">>> [ ✅ 회사 등록 완료 이메일 전송 성공 - 수신자: {} ]", companyForm.getEmail());
+        log.info(">>> [✅ 회사 등록 완료 이메일 전송 성공 - 수신자: {} ]", companyForm.getEmail());
 
     }
 
