@@ -1,5 +1,7 @@
 package sandbox.semo.domain.member.dto.request;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -9,16 +11,12 @@ public class MemberRegister {
     @NotNull
     private Long companyId;
 
-    @NotNull
-    private String loginId;
-
-    @NotNull
+    @NotBlank
     private String ownerName;
 
-    @NotNull
-    private String password;
+    @NotBlank
+    @Email
+    private String email;
 
-    @NotNull
-    private String role;
 
 }
