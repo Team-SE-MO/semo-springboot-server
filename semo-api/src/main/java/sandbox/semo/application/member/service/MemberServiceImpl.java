@@ -1,5 +1,6 @@
 package sandbox.semo.application.member.service;
 
+import static sandbox.semo.application.member.exception.MemberErrorCode.ALREADY_EXISTS_EMAIL;
 import static sandbox.semo.application.member.exception.MemberErrorCode.COMPANY_NOT_EXIST;
 import static sandbox.semo.application.member.exception.MemberErrorCode.FORM_DOES_NOT_EXIST;
 import static sandbox.semo.application.member.exception.MemberErrorCode.INVALID_COMPANY_SELECTION;
@@ -17,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.member.exception.MemberBusinessException;
+import sandbox.semo.application.member.service.helper.LoginIdGenerator;
 import sandbox.semo.domain.common.entity.FormStatus;
 import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.company.repository.CompanyRepository;
@@ -41,18 +43,42 @@ public class MemberServiceImpl implements MemberService {
     private final MemberFormRepository memberFormRepository;
     private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LoginIdGenerator loginIdGenerator;
+
+    private static final String DEFAULT_PASSWORD = "0000";
+
 
     @Override
     @Transactional
-    public void register(MemberRegister request) {
+    public String register(MemberRegister request, Role role) {
+        checkEmailDuplicate(request.getEmail());
+        Company company = companyRepository.findById(request.getCompanyId())
+                .orElseThrow(() -> new MemberBusinessException(COMPANY_NOT_EXIST));
+
+        boolean isSuperRole = role.equals(Role.SUPER);
+
         Member member = Member.builder()
                 .company(getCompanyById(request.getCompanyId()))
                 .ownerName(request.getOwnerName())
-                .loginId(request.getLoginId())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.valueOf(request.getRole()))
+                .loginId(generateLoginId(isSuperRole, company))
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(DEFAULT_PASSWORD))
+                .role(determineRole(isSuperRole))
                 .build();
+
         memberRepository.save(member);
+        log.info(">>> [ ✅ 회원가입이 성공적으로 이루어졌습니다. ]");
+
+        return member.getLoginId();
+    }
+
+    private String generateLoginId(boolean isSuperRole, Company company) {
+        String rolePrefix = isSuperRole ? Role.ADMIN.toString() : Role.USER.toString();
+        return loginIdGenerator.generateLoginId(rolePrefix, company.getTaxId());
+    }
+
+    private Role determineRole(boolean isSuperRole) {
+        return isSuperRole ? Role.ADMIN : Role.USER;
     }
 
     private Company getCompanyById(Long companyId) {
@@ -64,6 +90,7 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     @Override
     public void formRegister(MemberFormRegister request) {
+        checkEmailDuplicate(request.getEmail());
         if (request.getCompanyId() == 1L) {
             throw new MemberBusinessException(INVALID_COMPANY_SELECTION);
         }
@@ -109,12 +136,19 @@ public class MemberServiceImpl implements MemberService {
     public String updateForm(MemberFormDecision request) {
         MemberForm memberForm = memberFormRepository.findById(request.getFormId())
                 .orElseThrow(() -> new MemberBusinessException(FORM_DOES_NOT_EXIST));
-
         FormStatus newFormStatus = FormStatus.valueOf(request.getDecisionStatus().toUpperCase());
         memberForm.changeStatus(newFormStatus);
         MemberForm saveForm = memberFormRepository.save(memberForm);
         log.info(">>> [ ✅ 고객사 회원가입 폼을 관리자가 최종 처리하였습니다. ]");
         return saveForm.getFormStatus().toString();
+    }
+
+    @Override
+    public Boolean checkEmailDuplicate(String email) {
+        if (memberRepository.existsByEmail(email)) {
+            throw new MemberBusinessException(ALREADY_EXISTS_EMAIL);
+        }
+        return true;
     }
 
 
