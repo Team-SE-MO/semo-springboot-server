@@ -11,8 +11,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sandbox.semo.application.common.util.AES256;
 import sandbox.semo.application.device.exception.DeviceBusinessException;
+import sandbox.semo.domain.common.crypto.AES256;
 import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.device.dto.request.DeviceRegister;
 import sandbox.semo.domain.device.dto.request.DataBaseInfo;
@@ -28,6 +28,7 @@ import sandbox.semo.domain.member.entity.Role;
 public class DeviceServiceImpl implements DeviceService {
 
     private final DeviceRepository deviceRepository;
+    private final AES256 aes256;
 
     @Override
     public List<DeviceInfo> getDeviceInfo(Role role, Company company) {
@@ -62,7 +63,7 @@ public class DeviceServiceImpl implements DeviceService {
                 .port(dataBaseInfo.getPort())
                 .sid(dataBaseInfo.getSid())
                 .username(dataBaseInfo.getUsername())
-                .password(AES256.encrypt(dataBaseInfo.getPassword()))
+                .password(aes256.encrypt(dataBaseInfo.getPassword()))
                 .status(healthCheck(dataBaseInfo))
                 .build());
         log.info(">>> [ ✅ 데이터베이스 장비가 성공적으로 등록되었습니다. ]");
