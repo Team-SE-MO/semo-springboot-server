@@ -24,25 +24,35 @@ public class DeviceStatusWriter implements ItemWriter<DeviceStatus>, StepExecuti
 
     @Override
     public void write(Chunk<? extends DeviceStatus> chunk) {
-        for (DeviceStatus item : chunk.getItems()) {
-            Device device = item.getDevice();
-            if (item.isStatusChanged()) {
-                try {
-                    boolean updateStatus = !device.getStatus();
-                    jdbcRepository.deviceStatusUpdate(updateStatus, device.getId());
-                    log.info(">>> [ 🔄 Device {} 상태 변경. 업데이트 상태: {} ]",
-                            device.getDeviceAlias(),
-                            updateStatus
-                    );
-                } catch (Exception e) {
-                    log.error(">>> [ ❌ Device {} 상태 변경 중 오류 발생: {} ]",
-                            device.getDeviceAlias(),
-                            e.getMessage());
-                }
-            } else {
-                log.info(">>> [ ⏭️ Device {} 상태 변경 없음. 업데이트 생략 ]", device.getDeviceAlias());
-            }
+        chunk.getItems().forEach(this::processDeviceStatus);
+    }
+
+    private void processDeviceStatus(DeviceStatus item) {
+        Device device = item.getDevice();
+        if (item.isStatusChanged()) {
+            updateDeviceStatus(device);
+        } else {
+            logSkippedUpdate(device);
         }
+    }
+
+    private void updateDeviceStatus(Device device) {
+        try {
+            boolean updateStatus = !device.getStatus();
+            jdbcRepository.deviceStatusUpdate(updateStatus, device.getId());
+            log.info(">>> [ 🔄 Device {} 상태 변경. 업데이트 상태: {} ]",
+                    device.getDeviceAlias(),
+                    updateStatus
+            );
+        } catch (Exception e) {
+            log.error(">>> [ ❌ Device {} 상태 변경 중 오류 발생: {} ]",
+                    device.getDeviceAlias(),
+                    e.getMessage());
+        }
+    }
+
+    private void logSkippedUpdate(Device device) {
+        log.info(">>> [ ⏭️ Device {} 상태 변경 없음. 업데이트 생략 ]", device.getDeviceAlias());
     }
 
     @Override

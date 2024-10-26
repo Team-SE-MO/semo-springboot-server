@@ -33,10 +33,10 @@ public class DeviceStatusProcessor implements ItemProcessor<Device, DeviceStatus
             dataSource = HikariDataSourceUtil.createDataSource(device, aes256);
             dataSource.getConnection().isValid(1);
             updatedStatus = true;
-            log.info(">>> ✅ Device {} 연결 성공. 상태: true", device.getDeviceAlias());
+            log.info(">>> [ ✅ Device {} 연결 성공 ]", device.getDeviceAlias());
         } catch (Exception e) {
             updatedStatus = false;
-            log.error(">>> ❌ Device {} 연결 실패. 상태: 오류. 에러: {}",
+            log.error(">>> [ ❌ Device {} 연결 실패. 상태: 오류. 에러: {} ]",
                     device.getDeviceAlias(),
                     e.getMessage());
         } finally {
