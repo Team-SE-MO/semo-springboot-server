@@ -1,4 +1,4 @@
-package sandbox.semo.application.common.util;
+package sandbox.semo.application.member.service.helper;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import org.springframework.stereotype.Component;
 
 @Component
-public class LoginIdGeneratorUtil {
+public class LoginIdGenerator {
 
     @PersistenceContext
     private EntityManager entityManager;
