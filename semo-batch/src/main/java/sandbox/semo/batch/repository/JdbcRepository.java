@@ -3,7 +3,7 @@ package sandbox.semo.batch.repository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import sandbox.semo.batch.util.QueryLoader;
+import sandbox.semo.batch.config.QueryLoader;
 
 @Repository
 @RequiredArgsConstructor

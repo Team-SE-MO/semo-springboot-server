@@ -1,4 +1,4 @@
-package sandbox.semo.batch.util;
+package sandbox.semo.batch.config;
 
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
