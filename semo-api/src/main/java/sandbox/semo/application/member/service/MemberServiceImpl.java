@@ -81,11 +81,6 @@ public class MemberServiceImpl implements MemberService {
         return isSuperRole ? Role.ADMIN : Role.USER;
     }
 
-    private Company getCompanyById(Long companyId) {
-        return companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-    }
-
 
     @Transactional
     @Override
