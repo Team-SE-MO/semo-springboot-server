@@ -8,6 +8,7 @@ spring:
   batch:
     jdbc:
       initialize-schema: never
+      isolation-level-for-create: default
     job:
       enabled: false
 
