@@ -25,8 +25,6 @@ public abstract class BaseForm {
     @Column(name = "STATUS", nullable = false, length = 20)
     protected FormStatus formStatus;
 
-    @Column(name = "COMPANY_NAME", nullable = false, length = 50)
-    protected String companyName;
 
     @CreatedDate
     @Column(name = "REQUEST_DATE", nullable = false, updatable = false)
