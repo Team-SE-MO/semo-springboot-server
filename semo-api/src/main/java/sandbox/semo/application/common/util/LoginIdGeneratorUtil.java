@@ -3,12 +3,12 @@ package sandbox.semo.application.common.util;
 public class LoginIdGeneratorUtil {
 
     private static int lastNumber = 1;
-    
+
     public static String generateLoginId(String role, String taxId) {
         String prefix = "";
-        if (role.equalsIgnoreCase("ADMIN")) {
+        if (role.equals("ADMIN")) {
             prefix = "A";
-        } else if (role.equalsIgnoreCase("USER")) {
+        } else {
             prefix = "U";
         }
 
