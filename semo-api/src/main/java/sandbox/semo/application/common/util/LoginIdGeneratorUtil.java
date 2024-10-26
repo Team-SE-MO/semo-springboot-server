@@ -4,7 +4,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class LoginIdGeneratorUtil {
@@ -12,7 +11,6 @@ public class LoginIdGeneratorUtil {
     @PersistenceContext
     private EntityManager entityManager;
 
-    @Transactional
     public String generateLoginId(String role, String taxId) {
         String prefix = role.equals("ADMIN") ? "A" : "U";
         String splitTaxId = taxId.replace("-", "");
