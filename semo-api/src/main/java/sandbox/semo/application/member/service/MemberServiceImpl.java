@@ -43,6 +43,7 @@ public class MemberServiceImpl implements MemberService {
     private final MemberFormRepository memberFormRepository;
     private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LoginIdGeneratorUtil loginIdGeneratorUtil;
 
     private static final String DEFAULT_PASSWORD = "0000";
 
@@ -73,7 +74,7 @@ public class MemberServiceImpl implements MemberService {
 
     private String generateLoginId(boolean isSuperRole, Company company) {
         String rolePrefix = isSuperRole ? Role.ADMIN.toString() : Role.USER.toString();
-        return LoginIdGeneratorUtil.generateLoginId(rolePrefix, company.getTaxId());
+        return loginIdGeneratorUtil.generateLoginId(rolePrefix, company.getTaxId());
     }
 
     private Role determineRole(boolean isSuperRole) {

@@ -1,24 +1,30 @@
 package sandbox.semo.application.common.util;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import java.math.BigDecimal;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+@Component
 public class LoginIdGeneratorUtil {
 
-    private static final Map<String, AtomicInteger> lastNumberMap = new ConcurrentHashMap<>();
+    @PersistenceContext
+    private EntityManager entityManager;
 
-    public static String generateLoginId(String role, String taxId) {
+    @Transactional
+    public String generateLoginId(String role, String taxId) {
         String prefix = role.equals("ADMIN") ? "A" : "U";
-
         String splitTaxId = taxId.replace("-", "");
 
-        //taxId가 이미 존재하면 pass, 존재하지 않다면 taxId로 키와 초기값 생성해 Map에 넣어줌
-        AtomicInteger lastNumber = lastNumberMap.computeIfAbsent(splitTaxId,
-                k -> new AtomicInteger(1));
+        BigDecimal sequenceValue = (BigDecimal) entityManager.createNativeQuery(
+                        "SELECT GENERATE_LOGIN_ID_SEQ.NEXTVAL FROM DUAL")
+                .getSingleResult();
+        Long currentSequenceValue = sequenceValue.longValue();
 
-        String lastTwoDigits = String.format("%02d", lastNumber.getAndIncrement());
+        String formattedNum = String.format("%d", currentSequenceValue);
 
-        return prefix + splitTaxId + lastTwoDigits;
+        return prefix + splitTaxId + formattedNum;
+
     }
 }
