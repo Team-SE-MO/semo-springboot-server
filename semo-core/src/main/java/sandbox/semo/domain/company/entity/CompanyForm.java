@@ -30,6 +30,9 @@ public class CompanyForm extends BaseForm {
     @Column(name = "TAX_ID", nullable = false, unique = true, length = 30)
     private String taxId;
 
+    @Column(name = "COMPANY_NAME", nullable = false, length = 50)
+    protected String companyName;
+
     @Builder
     public CompanyForm(String companyName, String taxId, String ownerName, String email,
             FormStatus formStatus) {
