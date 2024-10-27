@@ -31,7 +31,7 @@ public class SessionData {
     @JoinColumn(name = "DEVICE_ID", nullable = false)
     private Device device;
 
-    @Column(name = "SERIAL#")
+    @Column(name = "SERIAL")
     private Long serial;
 
     @Column(name = "USERNAME", length = 30)
@@ -85,7 +85,7 @@ public class SessionData {
     @Column(name = "MODULE", length = 48)
     private String module;
 
-    @Column(name = "ACTION", length = 32)
+    @Column(name = "ACTION", length = 64)
     private String action;
 
     @Column(name = "LOGON_TIME")
