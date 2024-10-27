@@ -16,7 +16,7 @@ public class SessionDataScheduler {
     private final JobLauncher jobLauncher;
     private final Job job;
 
-    @Scheduled(fixedRate = 5_000)
+    @Scheduled(cron = "0/5 * * * * *")
     public void runCollector() throws Exception {
         log.info(">>> [ 📑 Run Collect Session Data ... ]");
         jobLauncher.run(job, new JobParametersBuilder()
