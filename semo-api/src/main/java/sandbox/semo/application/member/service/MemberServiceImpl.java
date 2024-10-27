@@ -1,9 +1,11 @@
 package sandbox.semo.application.member.service;
 
+import static sandbox.semo.application.common.exception.CommonErrorCode.FORBIDDEN_ACCESS;
 import static sandbox.semo.application.member.exception.MemberErrorCode.ALREADY_EXISTS_EMAIL;
 import static sandbox.semo.application.member.exception.MemberErrorCode.COMPANY_NOT_EXIST;
 import static sandbox.semo.application.member.exception.MemberErrorCode.FORM_DOES_NOT_EXIST;
 import static sandbox.semo.application.member.exception.MemberErrorCode.INVALID_COMPANY_SELECTION;
+import static sandbox.semo.application.member.exception.MemberErrorCode.MEMBER_NOT_FOUND;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,14 +19,17 @@ import org.springframework.data.domain.Sort.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sandbox.semo.application.common.exception.GlobalBusinessException;
 import sandbox.semo.application.member.exception.MemberBusinessException;
 import sandbox.semo.application.member.service.helper.LoginIdGenerator;
+import sandbox.semo.application.security.authentication.MemberPrincipalDetails;
 import sandbox.semo.domain.common.entity.FormStatus;
 import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.company.repository.CompanyRepository;
 import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
+import sandbox.semo.domain.member.dto.request.PasswordUpdate;
 import sandbox.semo.domain.member.dto.response.MemberFormInfo;
 import sandbox.semo.domain.member.entity.Member;
 import sandbox.semo.domain.member.entity.MemberForm;
@@ -32,7 +37,7 @@ import sandbox.semo.domain.member.entity.Role;
 import sandbox.semo.domain.member.repository.MemberFormRepository;
 import sandbox.semo.domain.member.repository.MemberRepository;
 
-// TODO: Security 설정 확인 용도로 가볍게 구현 했음. Member API 개발시 추가 코드 필요.
+
 @Service
 @Log4j2
 @Transactional(readOnly = true)
@@ -146,5 +151,20 @@ public class MemberServiceImpl implements MemberService {
         return true;
     }
 
+
+    @Transactional
+    @Override
+    public void updatePassword(MemberPrincipalDetails memberDetails, PasswordUpdate request) {
+        Member member = memberRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new MemberBusinessException(MEMBER_NOT_FOUND));
+
+        if (!memberDetails.getMember().getEmail().equals(request.getEmail())) {
+            throw new GlobalBusinessException(FORBIDDEN_ACCESS);
+        }
+
+        member.changePassword(passwordEncoder.encode(request.getUpdatePassword()));
+        memberRepository.save(member);
+        log.info(">>> [ ✅ 비밀번호 수정이 완료되었습니다. ]");
+    }
 
 }
