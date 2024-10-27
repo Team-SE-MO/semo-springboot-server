@@ -24,6 +24,7 @@ import sandbox.semo.application.security.authentication.MemberPrincipalDetails;
 import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
+import sandbox.semo.domain.member.dto.request.PasswordUpdate;
 import sandbox.semo.domain.member.dto.response.MemberFormInfo;
 
 @Log4j2
@@ -91,4 +92,19 @@ public class MemberController {
                 data
         );
     }
+
+    //TODO: 자기자신의 비밀번호만 수정되어야 함(이메일을 통해 자기 자신인지 검증이 필요)
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
+    @PatchMapping
+    public ApiResponse<String> updatePassword(
+            @RequestBody @Valid PasswordUpdate request,
+            @AuthenticationPrincipal MemberPrincipalDetails memberDetails) {
+
+        memberService.updatePassword(memberDetails, request);
+        return ApiResponse.successResponse(
+                OK,
+                "성공적으로 비밀번호 수정이 완료되었습니다."
+        );
+    }
+
 }
