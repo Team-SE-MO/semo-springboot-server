@@ -4,12 +4,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import sandbox.semo.batch.config.QueryLoader;
@@ -55,48 +57,61 @@ public class JdbcRepository {
 
     public void saveSessionData(List<SessionData> sessionDataList) {
         String query = queryLoader.getQuery("insertSessionData");
+        Instant start = Instant.now();
         log.info(">>> [ 💾 SessionData 저장 시작. 데이터 개수: {} ]", sessionDataList.size());
-        sessionDataList.forEach(sessionData -> {
-            try {
-                jdbcTemplate.update(query,
-                        sessionData.getId().getCollectedAt(),
-                        sessionData.getId().getSid(),
-                        sessionData.getId().getDeviceId(),
-                        sessionData.getSerial() != null ? sessionData.getSerial() : 0,
-                        sessionData.getUsername() != null ? sessionData.getUsername() : "-",
-                        sessionData.getCommand() != null ? sessionData.getCommand() : 0,
-                        sessionData.getCommandName() != null ? sessionData.getCommandName() : "-",
-                        sessionData.getStatus() != null ? sessionData.getStatus() : "-",
-                        sessionData.getSchemaName() != null ? sessionData.getSchemaName() : "-",
-                        sessionData.getOsUser() != null ? sessionData.getOsUser() : "-",
-                        sessionData.getProcess() != null ? sessionData.getProcess() : "-",
-                        sessionData.getMachine() != null ? sessionData.getMachine() : "-",
-                        sessionData.getPort() != null ? sessionData.getPort() : -1,
-                        sessionData.getTerminal() != null ? sessionData.getTerminal() : "-",
-                        sessionData.getProgram() != null ? sessionData.getProgram() : "-",
-                        sessionData.getType() != null ? sessionData.getType() : "-",
-                        sessionData.getSqlId() != null ? sessionData.getSqlId() : "-",
-                        sessionData.getSqlExecStart() != null ? sessionData.getSqlExecStart() : null,
-                        sessionData.getSqlExecId() != null ? sessionData.getSqlExecId() : 0,
-                        sessionData.getSqlText() != null ? sessionData.getSqlText() : "-",
-                        sessionData.getModule() != null ? sessionData.getModule() : "-",
-                        sessionData.getAction() != null ? sessionData.getAction() : "-",
-                        sessionData.getLogonTime() != null ? sessionData.getLogonTime() : null,
-                        sessionData.getLastCallEt() != null ? sessionData.getLastCallEt() : 0,
-                        sessionData.getFailedOver() != null ? sessionData.getFailedOver() : "-",
-                        sessionData.getBlockingSessionStatus() != null ? sessionData.getBlockingSessionStatus() : "-",
-                        sessionData.getEvent() != null ? sessionData.getEvent() : "-",
-                        sessionData.getWaitClass() != null ? sessionData.getWaitClass() : "-",
-                        sessionData.getState() != null ? sessionData.getState() : "-",
-                        sessionData.getWaitTimeMicro() != null ? sessionData.getWaitTimeMicro() : 0,
-                        sessionData.getTimeRemainingMicro() != null ? sessionData.getTimeRemainingMicro() : 0,
-                        sessionData.getServiceName() != null ? sessionData.getServiceName() : "-"
-                );
-            } catch (Exception e) {
-                log.error(">>> [ ❌ SessionData 저장 실패: SID {}. 에러: {} ]",
-                        sessionData.getId().getSid(), e.getMessage());
-            }
-        });
-        log.info(">>> [ ✅ SessionData 저장 완료 ]");
+
+        try {
+            jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
+                @Override
+                public void setValues(PreparedStatement ps, int i) throws SQLException {
+                    setSessionDataValues(ps, sessionDataList.get(i));
+                }
+
+                @Override
+                public int getBatchSize() {
+                    return sessionDataList.size();
+                }
+            });
+            Instant end = Instant.now();
+            log.info(">>> [ ✅ SessionData 저장 완료 - 소요 시간: {}ms ]", end.toEpochMilli() - start.toEpochMilli());
+        } catch (Exception e) {
+            log.error(">>> [ ❌ SessionData 저장 실패: 에러: {} ]", e.getMessage(), e);
+        }
     }
+
+    private void setSessionDataValues(PreparedStatement ps, SessionData sessionData) throws SQLException {
+        ps.setObject(1, sessionData.getId().getCollectedAt());
+        ps.setLong(2, sessionData.getId().getSid());
+        ps.setLong(3, sessionData.getId().getDeviceId());
+        ps.setLong(4, sessionData.getSerial() != null ? sessionData.getSerial() : 0);
+        ps.setString(5, sessionData.getUsername() != null ? sessionData.getUsername() : "-");
+        ps.setLong(6, sessionData.getCommand() != null ? sessionData.getCommand() : 0);
+        ps.setString(7, sessionData.getCommandName() != null ? sessionData.getCommandName() : "-");
+        ps.setString(8, sessionData.getStatus() != null ? sessionData.getStatus() : "-");
+        ps.setString(9, sessionData.getSchemaName() != null ? sessionData.getSchemaName() : "-");
+        ps.setString(10, sessionData.getOsUser() != null ? sessionData.getOsUser() : "-");
+        ps.setString(11, sessionData.getProcess() != null ? sessionData.getProcess() : "-");
+        ps.setString(12, sessionData.getMachine() != null ? sessionData.getMachine() : "-");
+        ps.setInt(13, sessionData.getPort() != null ? sessionData.getPort() : -1);
+        ps.setString(14, sessionData.getTerminal() != null ? sessionData.getTerminal() : "-");
+        ps.setString(15, sessionData.getProgram() != null ? sessionData.getProgram() : "-");
+        ps.setString(16, sessionData.getType() != null ? sessionData.getType() : "-");
+        ps.setString(17, sessionData.getSqlId() != null ? sessionData.getSqlId() : "-");
+        ps.setObject(18, sessionData.getSqlExecStart());
+        ps.setLong(19, sessionData.getSqlExecId() != null ? sessionData.getSqlExecId() : 0);
+        ps.setString(20, sessionData.getSqlText() != null ? sessionData.getSqlText() : "-");
+        ps.setString(21, sessionData.getModule() != null ? sessionData.getModule() : "-");
+        ps.setString(22, sessionData.getAction() != null ? sessionData.getAction() : "-");
+        ps.setObject(23, sessionData.getLogonTime());
+        ps.setLong(24, sessionData.getLastCallEt() != null ? sessionData.getLastCallEt() : 0);
+        ps.setString(25, sessionData.getFailedOver() != null ? sessionData.getFailedOver() : "-");
+        ps.setString(26, sessionData.getBlockingSessionStatus() != null ? sessionData.getBlockingSessionStatus() : "-");
+        ps.setString(27, sessionData.getEvent() != null ? sessionData.getEvent() : "-");
+        ps.setString(28, sessionData.getWaitClass() != null ? sessionData.getWaitClass() : "-");
+        ps.setString(29, sessionData.getState() != null ? sessionData.getState() : "-");
+        ps.setLong(30, sessionData.getWaitTimeMicro() != null ? sessionData.getWaitTimeMicro() : 0);
+        ps.setLong(31, sessionData.getTimeRemainingMicro() != null ? sessionData.getTimeRemainingMicro() : 0);
+        ps.setString(32, sessionData.getServiceName() != null ? sessionData.getServiceName() : "-");
+    }
+
 }
