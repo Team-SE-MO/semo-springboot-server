@@ -39,9 +39,7 @@ public class DeviceProcessor implements ItemProcessor<Device, DeviceInfo>,
 
         try {
             dataSource = HikariDataSourceUtil.createDataSource(device, aes256);
-            dataSource.getConnection().isValid(1);
-            updatedStatus = true;
-            log.info(">>> [ ✅ Device {} 연결 성공 ]", device.getDeviceAlias());
+            updatedStatus = checkDeviceConnection(dataSource, device);
             sessionDataList = jdbcRepository.fetchSessionData(dataSource, device, collectedAt);
         } catch (Exception e) {
             updatedStatus = false;
@@ -49,13 +47,26 @@ public class DeviceProcessor implements ItemProcessor<Device, DeviceInfo>,
                     device.getDeviceAlias(),
                     e.getMessage());
         } finally {
-            if (dataSource != null) {
-                dataSource.close();
-            }
+            closeDataSource(dataSource);
         }
 
         boolean statusChanged = device.getStatus() != updatedStatus;
         return new DeviceInfo(device, statusChanged, sessionDataList);
+    }
+
+    private boolean checkDeviceConnection(HikariDataSource dataSource, Device device) throws Exception {
+        if (dataSource.getConnection().isValid(1)) {
+            log.info(">>> [ ✅ Device {} 연결 성공 ]", device.getDeviceAlias());
+            return true;
+        }
+        return false;
+    }
+
+    private void closeDataSource(HikariDataSource dataSource) {
+        if (dataSource != null) {
+            dataSource.close();
+            log.info(">>> [ 🔌 DataSource Close - 리소스 제거 ]");
+        }
     }
 
     @Override
