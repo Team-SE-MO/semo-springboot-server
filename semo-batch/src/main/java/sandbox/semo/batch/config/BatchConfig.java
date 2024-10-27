@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 import sandbox.semo.batch.dto.DeviceInfo;
 import sandbox.semo.batch.repository.JdbcRepository;
-import sandbox.semo.batch.service.step.DeviceStatusProcessor;
+import sandbox.semo.batch.service.step.DeviceProcessor;
 import sandbox.semo.batch.service.step.DeviceReader;
 import sandbox.semo.batch.service.step.DeviceStatusWriter;
 import sandbox.semo.domain.common.crypto.AES256;
@@ -36,7 +36,7 @@ public class BatchConfig {
 
     @Bean
     public ItemProcessor<Device, DeviceInfo> deviceProcessor() {
-        return new DeviceStatusProcessor(aes256, jdbcRepository);
+        return new DeviceProcessor(aes256, jdbcRepository);
     }
 
     @Bean

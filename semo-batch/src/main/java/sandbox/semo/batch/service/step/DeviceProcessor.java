@@ -18,7 +18,7 @@ import sandbox.semo.domain.device.entity.Device;
 
 @Log4j2
 @RequiredArgsConstructor
-public class DeviceStatusProcessor implements ItemProcessor<Device, DeviceInfo>,
+public class DeviceProcessor implements ItemProcessor<Device, DeviceInfo>,
         StepExecutionListener {
 
     private final AES256 aes256;
