@@ -58,7 +58,7 @@ public class MemberServiceImpl implements MemberService {
         boolean isSuperRole = role.equals(Role.SUPER);
 
         Member member = Member.builder()
-                .company(getCompanyById(request.getCompanyId()))
+                .company(company)
                 .ownerName(request.getOwnerName())
                 .loginId(generateLoginId(isSuperRole, company))
                 .email(request.getEmail())
