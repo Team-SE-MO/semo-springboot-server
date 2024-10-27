@@ -13,7 +13,7 @@ import sandbox.semo.domain.device.repository.DeviceRepository;
 
 @Log4j2
 @RequiredArgsConstructor
-public class DeviceStatusReader implements ItemReader<Device>, StepExecutionListener {
+public class DeviceReader implements ItemReader<Device>, StepExecutionListener {
 
     private final DeviceRepository deviceRepository;
     private Iterator<Device> deviceIterator;

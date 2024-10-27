@@ -15,7 +15,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import sandbox.semo.batch.dto.DeviceInfo;
 import sandbox.semo.batch.repository.JdbcRepository;
 import sandbox.semo.batch.service.step.DeviceStatusProcessor;
-import sandbox.semo.batch.service.step.DeviceStatusReader;
+import sandbox.semo.batch.service.step.DeviceReader;
 import sandbox.semo.batch.service.step.DeviceStatusWriter;
 import sandbox.semo.domain.common.crypto.AES256;
 import sandbox.semo.domain.device.entity.Device;
@@ -31,7 +31,7 @@ public class BatchConfig {
 
     @Bean
     public ItemReader<Device> deviceReader() {
-        return new DeviceStatusReader(jpaRepository);
+        return new DeviceReader(jpaRepository);
     }
 
     @Bean
