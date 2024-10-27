@@ -36,7 +36,7 @@ public class BatchConfig {
 
     @Bean
     public ItemProcessor<Device, DeviceStatus> deviceProcessor() {
-        return new DeviceStatusProcessor(aes256);
+        return new DeviceStatusProcessor(aes256, jdbcRepository);
     }
 
     @Bean
