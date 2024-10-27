@@ -5,6 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -13,6 +15,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import sandbox.semo.domain.common.entity.BaseForm;
 import sandbox.semo.domain.common.entity.FormStatus;
+import sandbox.semo.domain.company.entity.Company;
 
 @Entity
 @Getter
@@ -26,9 +29,15 @@ public class MemberForm extends BaseForm {
     @Column(name = "FORM_ID", nullable = false)
     private Long id;
 
+    @ManyToOne
+    @JoinColumn(name = "COMPANY_ID", nullable = false)
+    private Company company;
+
+
     @Builder
-    public MemberForm(String companyName, String ownerName, String email, FormStatus formStatus) {
-        this.companyName = companyName;
+    public MemberForm(Company company, String ownerName, String email,
+            FormStatus formStatus) {
+        this.company = company;
         this.ownerName = ownerName;
         this.email = email;
         this.formStatus = formStatus;

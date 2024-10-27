@@ -58,7 +58,7 @@ public class MemberServiceImpl implements MemberService {
         boolean isSuperRole = role.equals(Role.SUPER);
 
         Member member = Member.builder()
-                .company(getCompanyById(request.getCompanyId()))
+                .company(company)
                 .ownerName(request.getOwnerName())
                 .loginId(generateLoginId(isSuperRole, company))
                 .email(request.getEmail())
@@ -81,11 +81,6 @@ public class MemberServiceImpl implements MemberService {
         return isSuperRole ? Role.ADMIN : Role.USER;
     }
 
-    private Company getCompanyById(Long companyId) {
-        return companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-    }
-
 
     @Transactional
     @Override
@@ -99,7 +94,7 @@ public class MemberServiceImpl implements MemberService {
                 .orElseThrow(() -> new MemberBusinessException(COMPANY_NOT_EXIST));
 
         memberFormRepository.save(MemberForm.builder()
-                .companyName(requestCompany.getCompanyName())
+                .company(requestCompany)
                 .email(request.getEmail())
                 .ownerName(request.getOwnerName())
                 .formStatus(FormStatus.PENDING)
@@ -121,7 +116,7 @@ public class MemberServiceImpl implements MemberService {
 
         return memberFormPage.map(memberForm -> MemberFormInfo.builder()
                 .formId(memberForm.getId())
-                .companyName(memberForm.getCompanyName())
+                .company(memberForm.getCompany())
                 .ownerName(memberForm.getOwnerName())
                 .email(memberForm.getEmail())
                 .formStatus(memberForm.getFormStatus())
