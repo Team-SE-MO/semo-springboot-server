@@ -1,24 +1,26 @@
-package sandbox.semo.application.common.util;
+package sandbox.semo.domain.common.crypto;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.encrypt.AesBytesEncryptor;
+import org.springframework.stereotype.Component;
 
+@Component
+@RequiredArgsConstructor
 public class AES256 {
 
-    private static AesBytesEncryptor getEncryptor() {
-        return ApplicationContextUtil.getBean(AesBytesEncryptor.class);
-    }
+    private final AesBytesEncryptor encryptor;
 
-    public static String encrypt(String plainText) {
+    public String encrypt(String plainText) {
         byte[] plainBytes = plainText.getBytes(StandardCharsets.UTF_8);
-        byte[] encryptedBytes = getEncryptor().encrypt(plainBytes);
+        byte[] encryptedBytes = encryptor.encrypt(plainBytes);
         return Base64.getEncoder().encodeToString(encryptedBytes);
     }
 
-    private static String decrypt(String encryptedText) {
+    public String decrypt(String encryptedText) {
         byte[] encryptedBytes = Base64.getDecoder().decode(encryptedText);
-        byte[] decryptedBytes = getEncryptor().decrypt(encryptedBytes);
+        byte[] decryptedBytes = encryptor.decrypt(encryptedBytes);
         return new String(decryptedBytes, StandardCharsets.UTF_8);
     }
 
