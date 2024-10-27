@@ -45,7 +45,7 @@ public class BatchConfig {
     }
 
     @Bean
-    protected Step deviceStatusValidStep(
+    protected Step deviceCollectionStep(
             JobRepository jobRepository, PlatformTransactionManager transactionManager,
             ItemReader<Device> reader,
             ItemProcessor<Device, DeviceInfo> processor,
@@ -62,7 +62,7 @@ public class BatchConfig {
     @Bean
     public Job job(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new JobBuilder("chunksJob", jobRepository)
-                .start(deviceStatusValidStep(
+                .start(deviceCollectionStep(
                         jobRepository, transactionManager,
                         deviceReader(), deviceProcessor(), deviceWriter()
                 ))
