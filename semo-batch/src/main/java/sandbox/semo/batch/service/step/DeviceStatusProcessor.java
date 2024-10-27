@@ -9,7 +9,7 @@ import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.ItemProcessor;
-import sandbox.semo.batch.dto.DeviceStatus;
+import sandbox.semo.batch.dto.DeviceInfo;
 import sandbox.semo.batch.repository.JdbcRepository;
 import sandbox.semo.batch.util.HikariDataSourceUtil;
 import sandbox.semo.domain.collection.entity.SessionData;
@@ -18,7 +18,7 @@ import sandbox.semo.domain.device.entity.Device;
 
 @Log4j2
 @RequiredArgsConstructor
-public class DeviceStatusProcessor implements ItemProcessor<Device, DeviceStatus>,
+public class DeviceStatusProcessor implements ItemProcessor<Device, DeviceInfo>,
         StepExecutionListener {
 
     private final AES256 aes256;
@@ -32,7 +32,7 @@ public class DeviceStatusProcessor implements ItemProcessor<Device, DeviceStatus
     }
 
     @Override
-    public DeviceStatus process(Device device) {
+    public DeviceInfo process(Device device) {
         HikariDataSource dataSource = null;
         boolean updatedStatus;
         List<SessionData> sessionDataList = null;
@@ -55,7 +55,7 @@ public class DeviceStatusProcessor implements ItemProcessor<Device, DeviceStatus
         }
 
         boolean statusChanged = device.getStatus() != updatedStatus;
-        return new DeviceStatus(device, statusChanged, sessionDataList);
+        return new DeviceInfo(device, statusChanged, sessionDataList);
     }
 
     @Override

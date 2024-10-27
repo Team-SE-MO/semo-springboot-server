@@ -12,7 +12,7 @@ import org.springframework.batch.item.ItemWriter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
-import sandbox.semo.batch.dto.DeviceStatus;
+import sandbox.semo.batch.dto.DeviceInfo;
 import sandbox.semo.batch.repository.JdbcRepository;
 import sandbox.semo.batch.service.step.DeviceStatusProcessor;
 import sandbox.semo.batch.service.step.DeviceStatusReader;
@@ -35,12 +35,12 @@ public class BatchConfig {
     }
 
     @Bean
-    public ItemProcessor<Device, DeviceStatus> deviceProcessor() {
+    public ItemProcessor<Device, DeviceInfo> deviceProcessor() {
         return new DeviceStatusProcessor(aes256, jdbcRepository);
     }
 
     @Bean
-    public ItemWriter<DeviceStatus> deviceWriter() {
+    public ItemWriter<DeviceInfo> deviceWriter() {
         return new DeviceStatusWriter(jdbcRepository);
     }
 
@@ -48,11 +48,11 @@ public class BatchConfig {
     protected Step deviceStatusValidStep(
             JobRepository jobRepository, PlatformTransactionManager transactionManager,
             ItemReader<Device> reader,
-            ItemProcessor<Device, DeviceStatus> processor,
-            ItemWriter<DeviceStatus> writer
+            ItemProcessor<Device, DeviceInfo> processor,
+            ItemWriter<DeviceInfo> writer
     ) {
         return new StepBuilder("deviceStatusValidStep", jobRepository)
-                .<Device, DeviceStatus>chunk(5, transactionManager)
+                .<Device, DeviceInfo>chunk(5, transactionManager)
                 .reader(reader)
                 .processor(processor)
                 .writer(writer)

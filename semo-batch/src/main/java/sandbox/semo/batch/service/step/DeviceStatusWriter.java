@@ -8,14 +8,14 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
-import sandbox.semo.batch.dto.DeviceStatus;
+import sandbox.semo.batch.dto.DeviceInfo;
 import sandbox.semo.batch.repository.JdbcRepository;
 import sandbox.semo.domain.collection.entity.SessionData;
 import sandbox.semo.domain.device.entity.Device;
 
 @Log4j2
 @RequiredArgsConstructor
-public class DeviceStatusWriter implements ItemWriter<DeviceStatus>, StepExecutionListener {
+public class DeviceStatusWriter implements ItemWriter<DeviceInfo>, StepExecutionListener {
 
     private final JdbcRepository jdbcRepository;
 
@@ -25,11 +25,11 @@ public class DeviceStatusWriter implements ItemWriter<DeviceStatus>, StepExecuti
     }
 
     @Override
-    public void write(Chunk<? extends DeviceStatus> chunk) {
+    public void write(Chunk<? extends DeviceInfo> chunk) {
         chunk.getItems().forEach(this::processDeviceStatus);
     }
 
-    private void processDeviceStatus(DeviceStatus item) {
+    private void processDeviceStatus(DeviceInfo item) {
         Device device = item.getDevice();
         if (item.isStatusChanged()) {
             updateDeviceStatus(device);

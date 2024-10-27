@@ -8,7 +8,7 @@ import sandbox.semo.domain.device.entity.Device;
 
 @Data
 @RequiredArgsConstructor
-public class DeviceStatus {
+public class DeviceInfo {
 
     private final Device device;
     private final boolean statusChanged;
