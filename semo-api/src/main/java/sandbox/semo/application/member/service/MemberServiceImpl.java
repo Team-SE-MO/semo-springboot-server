@@ -17,8 +17,8 @@ import org.springframework.data.domain.Sort.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sandbox.semo.application.common.util.LoginIdGeneratorUtil;
 import sandbox.semo.application.member.exception.MemberBusinessException;
+import sandbox.semo.application.member.service.helper.LoginIdGenerator;
 import sandbox.semo.domain.common.entity.FormStatus;
 import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.company.repository.CompanyRepository;
@@ -43,7 +43,7 @@ public class MemberServiceImpl implements MemberService {
     private final MemberFormRepository memberFormRepository;
     private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
-    private final LoginIdGeneratorUtil loginIdGeneratorUtil;
+    private final LoginIdGenerator loginIdGenerator;
 
     private static final String DEFAULT_PASSWORD = "0000";
 
@@ -74,7 +74,7 @@ public class MemberServiceImpl implements MemberService {
 
     private String generateLoginId(boolean isSuperRole, Company company) {
         String rolePrefix = isSuperRole ? Role.ADMIN.toString() : Role.USER.toString();
-        return loginIdGeneratorUtil.generateLoginId(rolePrefix, company.getTaxId());
+        return loginIdGenerator.generateLoginId(rolePrefix, company.getTaxId());
     }
 
     private Role determineRole(boolean isSuperRole) {
