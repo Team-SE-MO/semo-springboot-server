@@ -15,7 +15,7 @@ import sandbox.semo.domain.device.entity.Device;
 
 @Log4j2
 @RequiredArgsConstructor
-public class DeviceStatusWriter implements ItemWriter<DeviceInfo>, StepExecutionListener {
+public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListener {
 
     private final JdbcRepository jdbcRepository;
 

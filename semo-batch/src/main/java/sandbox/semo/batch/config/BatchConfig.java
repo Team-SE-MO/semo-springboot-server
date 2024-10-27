@@ -16,7 +16,7 @@ import sandbox.semo.batch.dto.DeviceInfo;
 import sandbox.semo.batch.repository.JdbcRepository;
 import sandbox.semo.batch.service.step.DeviceProcessor;
 import sandbox.semo.batch.service.step.DeviceReader;
-import sandbox.semo.batch.service.step.DeviceStatusWriter;
+import sandbox.semo.batch.service.step.DeviceWriter;
 import sandbox.semo.domain.common.crypto.AES256;
 import sandbox.semo.domain.device.entity.Device;
 import sandbox.semo.domain.device.repository.DeviceRepository;
@@ -41,7 +41,7 @@ public class BatchConfig {
 
     @Bean
     public ItemWriter<DeviceInfo> deviceWriter() {
-        return new DeviceStatusWriter(jdbcRepository);
+        return new DeviceWriter(jdbcRepository);
     }
 
     @Bean
