@@ -155,7 +155,7 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     @Override
     public void updatePassword(MemberPrincipalDetails memberDetails, PasswordUpdate request) {
-        Member member = memberRepository.findByEmail(request.getEmail())
+        Member member = memberRepository.findByEmailAndDeletedAtIsNull(request.getEmail())
                 .orElseThrow(() -> new MemberBusinessException(MEMBER_NOT_FOUND));
 
         if (!memberDetails.getMember().getEmail().equals(request.getEmail())) {
