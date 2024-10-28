@@ -7,15 +7,17 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
-import java.util.Date;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import sandbox.semo.domain.device.entity.Device;
 
 @Entity
 @Getter
+@Builder
 @Table(name = "SESSION_DATA")
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -29,7 +31,7 @@ public class SessionData {
     @JoinColumn(name = "DEVICE_ID", nullable = false)
     private Device device;
 
-    @Column(name = "SERIAL#")
+    @Column(name = "SERIAL")
     private Long serial;
 
     @Column(name = "USERNAME", length = 30)
@@ -72,7 +74,7 @@ public class SessionData {
     private String sqlId;
 
     @Column(name = "SQL_EXEC_START")
-    private Date sqlExecStart;
+    private LocalDateTime sqlExecStart;
 
     @Column(name = "SQL_EXEC_ID")
     private Long sqlExecId;
@@ -83,11 +85,11 @@ public class SessionData {
     @Column(name = "MODULE", length = 48)
     private String module;
 
-    @Column(name = "ACTION", length = 32)
+    @Column(name = "ACTION", length = 64)
     private String action;
 
     @Column(name = "LOGON_TIME")
-    private Date logonTime;
+    private LocalDateTime logonTime;
 
     @Column(name = "LAST_CALL_ET")
     private Long lastCallEt;
