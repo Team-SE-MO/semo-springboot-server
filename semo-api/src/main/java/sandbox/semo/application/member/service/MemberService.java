@@ -22,4 +22,6 @@ public interface MemberService {
     Boolean checkEmailDuplicate(String email);
 
     void updatePassword(MemberPrincipalDetails memberDetails, PasswordUpdate request);
+
+    void deleteMember(MemberPrincipalDetails memberDetails, String loginId);
 }
