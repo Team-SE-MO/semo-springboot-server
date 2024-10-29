@@ -177,21 +177,23 @@ public class MemberServiceImpl implements MemberService {
     private void validateDeletePermission(MemberRemove request, Member targetMember) {
         Role targetRole = targetMember.getRole();
         boolean isSuperRole = request.getRole().equals(Role.ROLE_SUPER); //자기자신이?
-        boolean isTargetSuper = targetRole.equals(Role.ROLE_SUPER);
-        boolean isTargetUser = targetRole.equals(Role.ROLE_USER);
-        Long targetCompanyId = targetMember.getCompany().getId();
 
+        boolean isTargetSuper = targetRole.equals(Role.ROLE_SUPER);
         // 본인 권한보다 아래의 권한인지 , 아니라면 예외
         if (isSuperRole && isTargetSuper) {
             log.warn(">>> [ ❌ SUPER는 자기자신을 삭제할 수 없습니다. ]");
             throw new CommonBusinessException(FORBIDDEN_ACCESS);
         }
+
         //ADMIN이면서, USER 외의 권한을 삭제하려 했을 때
+        boolean isTargetUser = targetRole.equals(Role.ROLE_USER);
         if (!isSuperRole && !isTargetUser) {
             log.warn(">>> [ ❌ ADMIN은  USER외에는 삭제할 수 없습니다. ]");
             throw new CommonBusinessException(FORBIDDEN_ACCESS);
         }
+        
         //ADMIN이 삭제할 USER랑 둘이 같은 회사인지 판별
+        Long targetCompanyId = targetMember.getCompany().getId();
         if (!isSuperRole && (!request.getCompanyId().equals(targetCompanyId))) {
             log.warn(">>> [ ❌ ADMIN은  같은 회사만의 USER만 삭제할 수 있습니다. ]");
             throw new CommonBusinessException(FORBIDDEN_ACCESS);
