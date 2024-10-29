@@ -26,7 +26,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.email.exception.EmailBusinessException;
 import sandbox.semo.application.email.exception.EmailErrorCode;
 import sandbox.semo.domain.common.entity.FormStatus;
@@ -55,6 +57,11 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public String sendAuthCode(EmailRegister emailRegister) {
+
+        if (emailRegister == null || emailRegister.getEmail() == null || emailRegister.getEmail().isEmpty()) {
+            throw new EmailBusinessException(EmailErrorCode.INVALID_EMAIL_ADDRESS);
+        }
+
         // 인증 코드 생성
         String authCode = generateAuthCode();
 
@@ -72,6 +79,10 @@ public class EmailServiceImpl implements EmailService {
         String apiType = emailRequest.getApiType();
         String value = emailRequest.getValue();
 
+        if (value == null || value.isEmpty()) {
+            throw new EmailBusinessException(EmailErrorCode.INVALID_EMAIL_ADDRESS);
+        }
+
         switch (apiType) {
             case "REGISTER_COMPANY":
                 sendCompanyRegistrationConfirmationEmail(Long.valueOf(value));
@@ -81,6 +92,7 @@ public class EmailServiceImpl implements EmailService {
                 break;
             case "AUTH_CODE":
                 EmailRegister emailRegister = new EmailRegister(value);
+                emailRegister.setEmail(value);
                 sendAuthCode(emailRegister);
                 break;
             case "FAIL_MEMBER":
