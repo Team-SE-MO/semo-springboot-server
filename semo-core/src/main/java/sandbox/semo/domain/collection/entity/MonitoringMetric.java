@@ -53,11 +53,9 @@ public class MonitoringMetric {
     @Column(name = "SESSION_COUNT_GROUP_BY_TYPE")
     private String sessionCountGroupByType;
 
-    @Lob
     @Column(name = "BLOCKING_SESSION_COUNT")
     private Integer blockingSessionCount;
 
-    @Lob
     @Column(name = "WAIT_SESSION_COUNT")
     private Integer waitSessionCount;
 
