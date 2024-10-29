@@ -55,10 +55,10 @@ public class MonitoringMetric {
 
     @Lob
     @Column(name = "BLOCKING_SESSION_COUNT")
-    private String blockingSessionCount;
+    private Integer blockingSessionCount;
 
     @Lob
     @Column(name = "WAIT_SESSION_COUNT")
-    private String waitSessionCount;
+    private Integer waitSessionCount;
 
 }
