@@ -12,6 +12,7 @@ import org.springframework.batch.item.ItemProcessor;
 import sandbox.semo.batch.dto.DeviceInfo;
 import sandbox.semo.batch.repository.JdbcRepository;
 import sandbox.semo.batch.util.HikariDataSourceUtil;
+import sandbox.semo.domain.collection.entity.MonitoringMetric;
 import sandbox.semo.domain.collection.entity.SessionData;
 import sandbox.semo.domain.common.crypto.AES256;
 import sandbox.semo.domain.device.entity.Device;
@@ -27,7 +28,7 @@ public class DeviceProcessor implements ItemProcessor<Device, DeviceInfo>,
 
     @Override
     public void beforeStep(StepExecution stepExecution) {
-        collectedAt = LocalDateTime.now();
+        collectedAt = LocalDateTime.now().withNano(0);
         log.info(">>> [ 🚀 Device Processor 초기화 ]");
     }
 
@@ -36,11 +37,13 @@ public class DeviceProcessor implements ItemProcessor<Device, DeviceInfo>,
         HikariDataSource dataSource = null;
         boolean updatedStatus;
         List<SessionData> sessionDataList = null;
+        MonitoringMetric monitoringMetric = null;
 
         try {
             dataSource = HikariDataSourceUtil.createDataSource(device, aes256);
             updatedStatus = checkDeviceConnection(dataSource, device);
             sessionDataList = jdbcRepository.fetchSessionData(dataSource, device, collectedAt);
+            monitoringMetric = jdbcRepository.fetchMetricData(dataSource, device, collectedAt);
         } catch (Exception e) {
             updatedStatus = false;
             log.error(">>> [ ❌ Device {} 연결 실패. 상태: 오류. 에러: {} ]",
@@ -51,7 +54,12 @@ public class DeviceProcessor implements ItemProcessor<Device, DeviceInfo>,
         }
 
         boolean statusChanged = device.getStatus() != updatedStatus;
-        return new DeviceInfo(device, statusChanged, sessionDataList);
+        return DeviceInfo.builder()
+                .device(device)
+                .statusChanged(statusChanged)
+                .sessionDataList(sessionDataList)
+                .monitoringMetric(monitoringMetric)
+                .build();
     }
 
     private boolean checkDeviceConnection(HikariDataSource dataSource, Device device) throws Exception {
