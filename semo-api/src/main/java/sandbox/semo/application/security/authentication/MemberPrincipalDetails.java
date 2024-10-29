@@ -30,4 +30,6 @@ public class MemberPrincipalDetails implements UserDetails {
         return member.getLoginId();
     }
 
+    public Long getCompanyId() {return member.getCompany().getId();}
+
 }
