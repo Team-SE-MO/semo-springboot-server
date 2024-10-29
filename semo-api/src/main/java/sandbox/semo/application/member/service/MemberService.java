@@ -1,7 +1,6 @@
 package sandbox.semo.application.member.service;
 
 import org.springframework.data.domain.Page;
-import sandbox.semo.application.security.authentication.MemberPrincipalDetails;
 import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
@@ -22,5 +21,5 @@ public interface MemberService {
 
     void updatePassword(Long memberId, String newPassword);
 
-    void deleteMember(MemberPrincipalDetails memberDetails, String loginId);
+    void deleteMember(Role memberRole, String loginId);
 }

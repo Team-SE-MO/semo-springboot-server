@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.common.exception.GlobalBusinessException;
 import sandbox.semo.application.member.exception.MemberBusinessException;
 import sandbox.semo.application.member.service.helper.LoginIdGenerator;
-import sandbox.semo.application.security.authentication.MemberPrincipalDetails;
 import sandbox.semo.domain.common.entity.FormStatus;
 import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.company.repository.CompanyRepository;
@@ -164,37 +163,33 @@ public class MemberServiceImpl implements MemberService {
 
     @Transactional
     @Override
-    public void deleteMember(MemberPrincipalDetails memberDetails, String loginId) {
+    public void deleteMember(Role memberRole, String loginId) {
         Member member = memberRepository.findByLoginIdAndDeletedAtIsNull(loginId)
                 .orElseThrow(() -> new MemberBusinessException(MEMBER_NOT_FOUND));
 
-        validateDeletePermission(memberDetails, member);
+        validateDeletePermission(memberRole, member);
 
         member.markAsDeleted();
         memberRepository.save(member);
     }
 
-    private void validateDeletePermission(MemberPrincipalDetails memberDetails,
-            Member targetMember) {
-        boolean isSuperRole = memberDetails.getMember().getRole().equals(Role.SUPER);
+    private void validateDeletePermission(Role memberRole, Member targetMember) {
+        Role targetRole = targetMember.getRole();
+        boolean isSuperRole = memberRole.equals(Role.SUPER);
+        boolean hasSuperRole = targetRole.equals(Role.SUPER);
+        boolean hasUserRole = targetRole.equals(Role.USER);
 
         // 본인 권한보다 아래의 권한인지 , 아니라면 예외
-        if (isSuperRole && hasSuperRole(targetMember)) {
+        if (isSuperRole && hasSuperRole) {
             log.warn(">>> [ ❌ SUPER는 자기자신을 삭제할 수 없습니다. ]");
             throw new GlobalBusinessException(FORBIDDEN_ACCESS);
         }
         //ADMIN이면서, USER 외의 권한을 삭제하려 했을 때
-        if (!isSuperRole && !hasUserRole(targetMember)) {
+        if (!isSuperRole && !hasUserRole) {
             log.warn(">>> [ ❌ ADMIN은  USER외에는 삭제할 수 없습니다. ]");
             throw new GlobalBusinessException(FORBIDDEN_ACCESS);
         }
     }
 
-    private boolean hasSuperRole(Member member) {
-        return member.getRole().equals(Role.SUPER);
-    }
 
-    private boolean hasUserRole(Member member) {
-        return member.getRole().equals(Role.USER);
-    }
 }

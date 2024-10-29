@@ -26,6 +26,7 @@ import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
 import sandbox.semo.domain.member.dto.response.MemberFormInfo;
+import sandbox.semo.domain.member.entity.Role;
 
 @Log4j2
 @RestController
@@ -114,7 +115,8 @@ public class MemberController {
             @RequestParam @NotBlank String loginId,
             @AuthenticationPrincipal MemberPrincipalDetails memberDetails) {
 
-        memberService.deleteMember(memberDetails, loginId);
+        Role memberRole = memberDetails.getMember().getRole();
+        memberService.deleteMember(memberRole, loginId);
         return ApiResponse.successResponse(OK, "성공적으로 회원을 삭제하였습니다.");
     }
 }
