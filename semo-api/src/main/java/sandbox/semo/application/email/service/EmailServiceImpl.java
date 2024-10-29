@@ -26,17 +26,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.email.exception.EmailBusinessException;
 import sandbox.semo.application.email.exception.EmailErrorCode;
 import sandbox.semo.domain.common.entity.FormStatus;
 import sandbox.semo.domain.company.entity.CompanyForm;
 import sandbox.semo.domain.company.repository.CompanyFormRepository;
-import sandbox.semo.domain.member.dto.request.EmailRegister;
-import sandbox.semo.domain.member.dto.request.EmailRequest;
-import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
+import sandbox.semo.domain.member.dto.request.EmailSend;
 import sandbox.semo.domain.member.entity.Member;
 import sandbox.semo.domain.member.repository.MemberRepository;
 
@@ -55,55 +51,30 @@ public class EmailServiceImpl implements EmailService {
     @Value("${spring.mail.password}")
     private String password;
 
-    @Override
-    public String sendAuthCode(EmailRegister emailRegister) {
-
-        if (emailRegister == null || emailRegister.getEmail() == null || emailRegister.getEmail().isEmpty()) {
-            throw new EmailBusinessException(EmailErrorCode.INVALID_EMAIL_ADDRESS);
-        }
-
-        // 인증 코드 생성
+    private String sendAuthCode(String email) {
         String authCode = generateAuthCode();
-
-        // 인증 코드 이메일 발송
-        sendEmail(emailRegister, authCode);
-
-        // 생성된 인증 코드를 세션에 저장
-        session.setAttribute("authCode" + emailRegister.getEmail(), authCode);
-
-        return authCode; // 생성된 인증 코드 반환
+        sendEmail(email, authCode);
+        session.setAttribute("authCode" + email, authCode);
+        return authCode;
     }
 
     @Override
-    public void processEmailRequest(EmailRequest emailRequest) {
-        String apiType = emailRequest.getApiType();
-        String value = emailRequest.getValue();
-
-        if (value == null || value.isEmpty()) {
-            throw new EmailBusinessException(EmailErrorCode.INVALID_EMAIL_ADDRESS);
-        }
+    public void processEmailRequest(EmailSend request) {
+        String apiType = request.getApiType();
+        String value = request.getValue();
 
         switch (apiType) {
-            case "REGISTER_COMPANY":
-                sendCompanyRegistrationConfirmationEmail(Long.valueOf(value));
-                break;
-            case "REGISTER_MEMBER":
+            case "REGISTER_COMPANY"->
+                sendCompanyRegistrationConfirmationEmail(Long.parseLong(value));
+            case "REGISTER_MEMBER"->
                 sendMemberRegistrationConfirmationEmail(value);
-                break;
-            case "AUTH_CODE":
-                EmailRegister emailRegister = new EmailRegister(value);
-                emailRegister.setEmail(value);
-                sendAuthCode(emailRegister);
-                break;
-            case "FAIL_MEMBER":
-                MemberRegisterRejection memberRegisterRejection = new MemberRegisterRejection(value);
-                memberRegisterRejection.setEmail(value);
-                sendMemberRegistrationRejectionEmail(memberRegisterRejection);
-                break;
-            case "FAIL_COMPANY":
+            case "AUTH_CODE"->
+                sendAuthCode(value);
+            case "FAIL_MEMBER"->
+                sendMemberRegistrationRejectionEmail(value);
+            case "FAIL_COMPANY"->
                 sendCompanyRegistrationRejectionEmail(value);
-                break;
-            default:
+            default->
                 throw new EmailBusinessException(EmailErrorCode.INVALID_REQUEST);
         }
     }
@@ -123,8 +94,7 @@ public class EmailServiceImpl implements EmailService {
 
     }
 
-    @Override
-    public String generateAuthCode() {
+    private String generateAuthCode() {
         Random random = new Random();
         int authCode = random.nextInt(999999);
         log.info(">>> [ 🔐 인증 코드 생성: {} ]", authCode);
@@ -188,7 +158,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public void sendEmail(EmailRegister email, String authCode) {
+    public void sendEmail(String email, String authCode) {
         if (authCode == null) {
             throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE); // authCode가 null인 경우 예외 발생
         }
@@ -197,11 +167,10 @@ public class EmailServiceImpl implements EmailService {
                 .replace("{{authCode}}", authCode)
                 .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
-        sendMail(email.getEmail(), "[SEMO] 비밀번호를 재설정 해주세요.", htmlContent);
+        sendMail(email, "[SEMO] 비밀번호를 재설정 해주세요.", htmlContent);
     }
 
-    @Override
-    public Map<String, Object> sendCompanyRegistrationConfirmationEmail(Long formId) {
+    private Map<String, Object> sendCompanyRegistrationConfirmationEmail(Long formId) {
         log.info(">>> [ 🔍 조회 중인 formId: {}]", formId);
         CompanyForm companyForm = companyFormRepository.findById(formId)
                 .orElseThrow(() -> new EmailBusinessException(EmailErrorCode.COMPANY_NAME_MISSING));
@@ -230,8 +199,7 @@ public class EmailServiceImpl implements EmailService {
 
     }
 
-    @Override
-    public Map<String, Object> sendMemberRegistrationConfirmationEmail(String loginId) {
+    private Map<String, Object> sendMemberRegistrationConfirmationEmail(String loginId) {
         log.info(">>> [ 🔍 조회 중인 loginId: {}]", loginId);
         Member member = memberRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new EmailBusinessException(EmailErrorCode.MEMBER_NOT_FOUND)); // 값이 없을 경우 예외 처리
@@ -253,16 +221,17 @@ public class EmailServiceImpl implements EmailService {
         return emailData;
     }
 
-    @Override
-    public void sendMemberRegistrationRejectionEmail(MemberRegisterRejection memberRegisterRejection) {
+    private void sendMemberRegistrationRejectionEmail(String email) {
         String htmlContent = readHtmlTemplate("member-rejection.html")
                 .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
-        sendMail(memberRegisterRejection.getEmail(), "[SEMO] 회원가입 반려 안내", htmlContent);
+        sendMail(email, "[SEMO] 회원가입 반려 안내", htmlContent);
     }
 
-    @Override
-    public void sendCompanyRegistrationRejectionEmail(String value) {
+    private void sendCompanyRegistrationRejectionEmail(String email) {
+        String htmlContent = readHtmlTemplate("company-rejection.html")
+                .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
+        sendMail(email, "[SEMO] 기업등록 반려 안내", htmlContent);
     }
 }
