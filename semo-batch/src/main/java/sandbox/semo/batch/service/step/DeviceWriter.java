@@ -27,10 +27,10 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
 
     @Override
     public void write(Chunk<? extends DeviceInfo> chunk) {
-        chunk.getItems().forEach(this::processDeviceStatus);
+        chunk.getItems().forEach(this::processDeviceCollection);
     }
 
-    private void processDeviceStatus(DeviceInfo item) {
+    private void processDeviceCollection(DeviceInfo item) {
         Device device = item.getDevice();
         if (item.isStatusChanged()) {
             updateDeviceStatus(device);
@@ -45,7 +45,6 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
         if (item.getMonitoringMetric() != null) {
             saveMonitoringMetric(item.getMonitoringMetric());
         }
-
     }
 
     private void updateDeviceStatus(Device device) {
