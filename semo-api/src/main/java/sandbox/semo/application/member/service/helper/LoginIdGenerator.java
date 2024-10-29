@@ -12,7 +12,7 @@ public class LoginIdGenerator {
     private EntityManager entityManager;
 
     public String generateLoginId(String role, String taxId) {
-        String prefix = role.equals("ADMIN") ? "A" : "U";
+        String prefix = role.equals("ROLE_ADMIN") ? "A" : "U";
         String splitTaxId = taxId.replace("-", "");
 
         BigDecimal sequenceValue = (BigDecimal) entityManager.createNativeQuery(
