@@ -14,7 +14,8 @@ public enum EmailErrorCode implements ErrorCode {
     MEMBER_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "사용자를 찾을 수 없습니다."),
     COMPANY_NAME_MISSING(HttpStatus.BAD_REQUEST, "회사 이름이 누락되었습니다."),
     APPROVAL_DENIED(HttpStatus.BAD_REQUEST, "아직 승인되지 않았습니다."),
-    INVALID_AUTH_CODE(HttpStatus.BAD_REQUEST, "인증코드가 일치하지 않습니다.");
+    INVALID_AUTH_CODE(HttpStatus.BAD_REQUEST, "인증코드가 일치하지 않습니다."),
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "유효하지 않은 요청 입니다." );
 
     private final HttpStatus httpStatus;
     private final String message;

@@ -4,18 +4,15 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class EmailRegister {
+public class EmailRequest {
 
     @NotNull
-    private String email;
-
-    @NotNull
-    private String authCode;
-
     public String apiType;
 
     public String value;
 
-    public EmailRegister(String value) {
-    }
+    public String email;
+
+    private String authCode;
+
 }

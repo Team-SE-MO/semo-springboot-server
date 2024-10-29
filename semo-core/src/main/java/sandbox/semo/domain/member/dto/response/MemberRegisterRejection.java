@@ -9,4 +9,6 @@ public class MemberRegisterRejection {
     @NotNull
     private String email;
 
+    public MemberRegisterRejection(String value) {
+    }
 }
