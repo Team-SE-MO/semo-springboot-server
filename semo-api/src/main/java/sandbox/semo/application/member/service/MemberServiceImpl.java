@@ -28,6 +28,7 @@ import sandbox.semo.domain.company.repository.CompanyRepository;
 import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
+import sandbox.semo.domain.member.dto.request.MemberRemove;
 import sandbox.semo.domain.member.dto.response.MemberFormInfo;
 import sandbox.semo.domain.member.entity.Member;
 import sandbox.semo.domain.member.entity.MemberForm;
@@ -58,7 +59,7 @@ public class MemberServiceImpl implements MemberService {
         Company company = companyRepository.findById(request.getCompanyId())
                 .orElseThrow(() -> new MemberBusinessException(COMPANY_NOT_EXIST));
 
-        boolean isSuperRole = role.equals(Role.SUPER);
+        boolean isSuperRole = role.equals(Role.ROLE_SUPER);
 
         Member member = Member.builder()
                 .company(company)
@@ -76,12 +77,12 @@ public class MemberServiceImpl implements MemberService {
     }
 
     private String generateLoginId(boolean isSuperRole, Company company) {
-        String rolePrefix = isSuperRole ? Role.ADMIN.toString() : Role.USER.toString();
+        String rolePrefix = isSuperRole ? Role.ROLE_ADMIN.toString() : Role.ROLE_USER.toString();
         return loginIdGenerator.generateLoginId(rolePrefix, company.getTaxId());
     }
 
     private Role determineRole(boolean isSuperRole) {
-        return isSuperRole ? Role.ADMIN : Role.USER;
+        return isSuperRole ? Role.ROLE_ADMIN : Role.ROLE_USER;
     }
 
 
@@ -163,32 +164,39 @@ public class MemberServiceImpl implements MemberService {
 
     @Transactional
     @Override
-    public void deleteMember(Role memberRole, String loginId) {
-        Member member = memberRepository.findByLoginIdAndDeletedAtIsNull(loginId)
+    public void deleteMember(MemberRemove request) {
+        Member member = memberRepository.findByLoginIdAndDeletedAtIsNull(request.getLoginId())
                 .orElseThrow(() -> new MemberBusinessException(MEMBER_NOT_FOUND));
 
-        validateDeletePermission(memberRole, member);
+        validateDeletePermission(request, member);
 
         member.markAsDeleted();
         memberRepository.save(member);
     }
 
-    private void validateDeletePermission(Role memberRole, Member targetMember) {
+    private void validateDeletePermission(MemberRemove request, Member targetMember) {
         Role targetRole = targetMember.getRole();
-        boolean isSuperRole = memberRole.equals(Role.SUPER);
-        boolean hasSuperRole = targetRole.equals(Role.SUPER);
-        boolean hasUserRole = targetRole.equals(Role.USER);
+        boolean isSuperRole = request.getRole().equals(Role.ROLE_SUPER); //자기자신이?
+        boolean isTargetSuper = targetRole.equals(Role.ROLE_SUPER);
+        boolean isTargetUser = targetRole.equals(Role.ROLE_USER);
+        Long targetCompanyId = targetMember.getCompany().getId();
 
         // 본인 권한보다 아래의 권한인지 , 아니라면 예외
-        if (isSuperRole && hasSuperRole) {
+        if (isSuperRole && isTargetSuper) {
             log.warn(">>> [ ❌ SUPER는 자기자신을 삭제할 수 없습니다. ]");
             throw new CommonBusinessException(FORBIDDEN_ACCESS);
         }
         //ADMIN이면서, USER 외의 권한을 삭제하려 했을 때
-        if (!isSuperRole && !hasUserRole) {
+        if (!isSuperRole && !isTargetUser) {
             log.warn(">>> [ ❌ ADMIN은  USER외에는 삭제할 수 없습니다. ]");
             throw new CommonBusinessException(FORBIDDEN_ACCESS);
         }
+        //ADMIN이 삭제할 USER랑 둘이 같은 회사인지 판별
+        if (!isSuperRole && (!request.getCompanyId().equals(targetCompanyId))) {
+            log.warn(">>> [ ❌ ADMIN은  같은 회사만의 USER만 삭제할 수 있습니다. ]");
+            throw new CommonBusinessException(FORBIDDEN_ACCESS);
+        }
+
     }
 
 
