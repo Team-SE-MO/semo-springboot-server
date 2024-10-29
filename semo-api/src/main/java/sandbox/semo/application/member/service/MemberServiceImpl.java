@@ -19,7 +19,7 @@ import org.springframework.data.domain.Sort.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sandbox.semo.application.common.exception.GlobalBusinessException;
+import sandbox.semo.application.common.exception.CommonBusinessException;
 import sandbox.semo.application.member.exception.MemberBusinessException;
 import sandbox.semo.application.member.service.helper.LoginIdGenerator;
 import sandbox.semo.domain.common.entity.FormStatus;
@@ -182,12 +182,12 @@ public class MemberServiceImpl implements MemberService {
         // 본인 권한보다 아래의 권한인지 , 아니라면 예외
         if (isSuperRole && hasSuperRole) {
             log.warn(">>> [ ❌ SUPER는 자기자신을 삭제할 수 없습니다. ]");
-            throw new GlobalBusinessException(FORBIDDEN_ACCESS);
+            throw new CommonBusinessException(FORBIDDEN_ACCESS);
         }
         //ADMIN이면서, USER 외의 권한을 삭제하려 했을 때
         if (!isSuperRole && !hasUserRole) {
             log.warn(">>> [ ❌ ADMIN은  USER외에는 삭제할 수 없습니다. ]");
-            throw new GlobalBusinessException(FORBIDDEN_ACCESS);
+            throw new CommonBusinessException(FORBIDDEN_ACCESS);
         }
     }
 

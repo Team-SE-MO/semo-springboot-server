@@ -3,11 +3,11 @@ package sandbox.semo.application.common.exception;
 import lombok.Data;
 
 @Data
-public class GlobalBusinessException extends RuntimeException {
+public class CommonBusinessException extends RuntimeException {
 
     private final CommonErrorCode commonErrorCode;
 
-    public GlobalBusinessException(CommonErrorCode commonErrorCode) {
+    public CommonBusinessException(CommonErrorCode commonErrorCode) {
         super(commonErrorCode.getMessage());
         this.commonErrorCode = commonErrorCode;
     }
