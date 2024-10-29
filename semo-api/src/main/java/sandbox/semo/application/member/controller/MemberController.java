@@ -94,7 +94,7 @@ public class MemberController {
         );
     }
 
-    //TODO: 자기자신의 비밀번호만 수정되어야 함(이메일을 통해 자기 자신인지 검증이 필요)
+
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
     @PatchMapping
     public ApiResponse<String> updatePassword(
