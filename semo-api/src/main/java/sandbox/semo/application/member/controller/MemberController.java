@@ -124,7 +124,11 @@ public class MemberController {
         Role memberRole = member.getRole();
         Long companyId = member.getCompany().getId();
 
-        MemberRemove request = MemberRemove.of(loginId, companyId, memberRole);
+        MemberRemove request = MemberRemove.builder()
+                .loginId(loginId)
+                .companyId(companyId)
+                .role(memberRole)
+                .build();
 
         memberService.deleteMember(request);
         return ApiResponse.successResponse(OK, "성공적으로 회원을 삭제하였습니다.");

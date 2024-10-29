@@ -20,12 +20,5 @@ public class MemberRemove {
     @NotNull
     private String loginId;
 
-    public static MemberRemove of(String loginId, Long companyId, Role role) {
-        return MemberRemove.builder()
-                .companyId(companyId)
-                .loginId(loginId)
-                .role(role)
-                .build();
-    }
 
 }
