@@ -7,12 +7,9 @@ import sandbox.semo.domain.member.dto.response.MemberRegisterRejection;
 public interface EmailService {
 
     // 인증 코드 발송 메서드
-    //String sendAuthCode(String email);
     String sendAuthCode(EmailRegister emailRegister);
-    //String sendAuthCode(EmailRegister emailRegister, EmailAuthCode emailAuthCode);
 
     // 인증 코드 검증 메서드
-    //void verifyAuthCode(String inputAuthCode);
     void verifyAuthCode(String email, String inputAuthCode);
 
     //인증코드 생성 메서드

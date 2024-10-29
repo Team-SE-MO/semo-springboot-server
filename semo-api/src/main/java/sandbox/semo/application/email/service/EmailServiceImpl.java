@@ -61,7 +61,6 @@ public class EmailServiceImpl implements EmailService {
         sendEmail(emailRegister, authCode);
 
         // 생성된 인증 코드를 세션에 저장
-        //session.setAttribute("authCode", authCode);
         session.setAttribute("authCode" + emailRegister.getEmail(), authCode);
 
         return authCode; // 생성된 인증 코드 반환
@@ -71,7 +70,8 @@ public class EmailServiceImpl implements EmailService {
     public void verifyAuthCode(String email, String inputAuthCode) {
         String storedAuthCode = (String) session.getAttribute("authCode" + email);
 
-        if(storedAuthCode == null || storedAuthCode.equals(inputAuthCode)){
+        // 세션에 저장된 인증 코드가 없거나, 입력된 인증 코드와 다를 경우 예외 발생
+        if (storedAuthCode == null) {
             throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE);
         }
         else if (!storedAuthCode.equals(inputAuthCode)) {
@@ -189,7 +189,6 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public Map<String, Object> sendMemberRegistrationConfirmationEmail(String loginId) {
-    //public void sendMemberRegistrationConfirmationEmail(String loginId) {
         log.info(">>> [ 🔍 조회 중인 loginId: {}]", loginId);
         Member member = memberRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new EmailBusinessException(EmailErrorCode.MEMBER_NOT_FOUND)); // 값이 없을 경우 예외 처리

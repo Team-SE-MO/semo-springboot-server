@@ -34,13 +34,9 @@ public class EmailController {
 
     // 인증 코드 검증 API
     @PostMapping("/code/verify")
-    //public ApiResponse<Object> verifyAuthCode(@RequestBody EmailAuthCode emailAuthCode) {
     public ApiResponse<String> verifyAuthCode(@RequestBody EmailRegister emailRegister) {
-    //public ApiResponse<String> verifyAuthCode(@RequestBody String inputAuthCode) {
-        //emailService.verifyAuthCode(inputAuthCode);
         String email = emailRegister.getEmail(); // 이메일을 요청 본문에서 가져옴
         String inputAuthCode = emailRegister.getAuthCode();
-        //emailService.verifyAuthCode(emailRegister.getEmail(), emailRegister.getAuthCode());
         emailService.verifyAuthCode(email, inputAuthCode);
         return ApiResponse.successResponse(OK,"인증 성공");
 
@@ -61,7 +57,6 @@ public class EmailController {
     // 회원가입 완료 확인 이메일 발송 API
     @PostMapping("/registration/{loginId}")
     public ApiResponse<Map<String, Object>> sendRegistrationConfirmationEmail(@PathVariable String loginId) {
-    //public ApiResponse<String> sendRegistrationConfirmationEmail(@PathVariable String loginId) {
         Map<String, Object> emailData = emailService.sendMemberRegistrationConfirmationEmail(loginId);
         // 회원가입 완료 이메일 발송
         emailService.sendMemberRegistrationConfirmationEmail(loginId);
