@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import lombok.RequiredArgsConstructor;
@@ -59,24 +61,30 @@ public class EmailServiceImpl implements EmailService {
         sendEmail(emailRegister, authCode);
 
         // 생성된 인증 코드를 세션에 저장
-        session.setAttribute("authCode", authCode);
+        //session.setAttribute("authCode", authCode);
+        session.setAttribute("authCode" + emailRegister.getEmail(), authCode);
 
         return authCode; // 생성된 인증 코드 반환
     }
 
     @Override
-    public void verifyAuthCode (String inputAuthCode){
-        String storedAuthCode = (String) session.getAttribute("authCode");
+    public void verifyAuthCode(String email, String inputAuthCode) {
+        String storedAuthCode = (String) session.getAttribute("authCode" + email);
+
         if(storedAuthCode == null || storedAuthCode.equals(inputAuthCode)){
             throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE);
         }
+        else if (!storedAuthCode.equals(inputAuthCode)) {
+            throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE);
+        }
+
     }
 
     @Override
     public String generateAuthCode() {
         Random random = new Random();
         int authCode = random.nextInt(999999);
-        log.info(">>> [🔐 인증 코드 생성: {} ]", authCode);
+        log.info(">>> [ 🔐 인증 코드 생성: {} ]", authCode);
         return String.format("%06d", authCode);
     }
 
@@ -85,7 +93,7 @@ public class EmailServiceImpl implements EmailService {
             ClassPathResource resource = new ClassPathResource("templates/" + fileName);
             return new String(Files.readAllBytes(resource.getFile().toPath()), "UTF-8");
         } catch (IOException e) {
-            log.error(">>> [❌ HTML 템플릿 로드 실패 ]", e);
+            log.error(">>> [ ❌ HTML 템플릿 로드 실패 ]", e);
             throw new EmailBusinessException(EmailErrorCode.EMAIL_TEMPLATE_LOAD_FAILED);
         }
     }
@@ -129,9 +137,9 @@ public class EmailServiceImpl implements EmailService {
             message.setContent(multipart);
 
             Transport.send(message);
-            log.info(">>> [✅ 이메일 전송 성공 - 수신자: {} ]", to);
+            log.info(">>> [ ✅ 이메일 전송 성공 - 수신자: {} ]", to);
         } catch (MessagingException | IOException e) {
-            log.error(">>> [❌ 이메일 전송 실패 - 수신자: {} ]", to, e);
+            log.error(">>> [ ❌ 이메일 전송 실패 - 수신자: {} ]", to, e);
             throw new EmailBusinessException(EMAIL_SEND_FAILED);
         }
     }
@@ -150,14 +158,14 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public void sendCompanyRegistrationConfirmationEmail(Long formId) {
-        log.info(">>> [🔍 조회 중인 formId: {}]", formId);
+    public Map<String, Object> sendCompanyRegistrationConfirmationEmail(Long formId) {
+        log.info(">>> [ 🔍 조회 중인 formId: {}]", formId);
         CompanyForm companyForm = companyFormRepository.findById(formId)
                 .orElseThrow(() -> new EmailBusinessException(EmailErrorCode.COMPANY_NAME_MISSING));
-        log.info(">>> [✅ 회사 조회 성공 - formId: {}]", companyForm.getId());
+        log.info(">>> [ ✅ 회사 조회 성공 - formId: {}]", companyForm.getId());
 
         if(companyForm.getFormStatus() != FormStatus.APPROVED){
-            log.warn(">>> [⛔ 이메일 전송 중지 - formStatus가 APPROVED가 아님: {} ]", companyForm.getFormStatus());
+            log.warn(">>> [ ⛔ 이메일 전송 중지 - formStatus가 APPROVED가 아님: {} ]", companyForm.getFormStatus());
             throw new EmailBusinessException(EmailErrorCode.APPROVAL_DENIED);
         }
 
@@ -167,16 +175,25 @@ public class EmailServiceImpl implements EmailService {
                 .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
         sendMail(companyForm.getEmail(), "[SEMO] 회사 등록이 완료되었습니다.", htmlContent);
-        log.info(">>> [✅ 회사 등록 완료 이메일 전송 성공 - 수신자: {} ]", companyForm.getEmail());
+        log.info(">>> [ ✅ 회사 등록 완료 이메일 전송 성공 - 수신자: {} ]", companyForm.getEmail());
+
+        Map<String, Object> emailData = new HashMap<>();
+        emailData.put("companyName", companyForm.getCompanyName());
+        emailData.put("ownerName", companyForm.getOwnerName());
+        emailData.put("email", companyForm.getEmail());
+        emailData.put("formStatus", companyForm.getFormStatus());
+
+        return emailData;
 
     }
 
     @Override
-    public void sendMemberRegistrationConfirmationEmail(String loginId) {
-        log.info(">>> [🔍 조회 중인 loginId: {}]", loginId);
+    public Map<String, Object> sendMemberRegistrationConfirmationEmail(String loginId) {
+    //public void sendMemberRegistrationConfirmationEmail(String loginId) {
+        log.info(">>> [ 🔍 조회 중인 loginId: {}]", loginId);
         Member member = memberRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new EmailBusinessException(EmailErrorCode.MEMBER_NOT_FOUND)); // 값이 없을 경우 예외 처리
-        log.info(">>> [✅ 사용자 조회 성공 - loginId: {}]", member.getLoginId());
+        log.info(">>> [ ✅ 사용자 조회 성공 - loginId: {}]", member.getLoginId());
 
         String htmlContent = readHtmlTemplate("member-registration.html")
                 .replace("{{ownerName}}", member.getOwnerName())
@@ -185,6 +202,13 @@ public class EmailServiceImpl implements EmailService {
                 .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
         sendMail(member.getEmail(), "[SEMO] 계정 등록이 완료되었습니다.", htmlContent);
+
+        Map<String, Object> emailData = new HashMap<>();
+        emailData.put("ownerName", member.getOwnerName());
+        emailData.put("loginId", member.getLoginId());
+        emailData.put("currentDate", member.getCreatedAt());
+
+        return emailData;
     }
 
     @Override

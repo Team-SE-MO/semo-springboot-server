@@ -8,4 +8,7 @@ public class EmailRegister {
 
     @NotNull
     private String email;
+
+    private String authCode;
+
 }
