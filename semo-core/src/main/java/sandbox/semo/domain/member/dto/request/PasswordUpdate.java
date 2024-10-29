@@ -13,6 +13,6 @@ public class PasswordUpdate {
 
     //     TODO: 비밀번호 조건 검증 필요 (+ 리팩토링 정규식 추가 예정)
     @NotBlank
-    private String updatePassword;
+    private String newPassword;
 
 }
