@@ -29,7 +29,6 @@ import sandbox.semo.domain.company.repository.CompanyRepository;
 import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
-import sandbox.semo.domain.member.dto.request.PasswordUpdate;
 import sandbox.semo.domain.member.dto.response.MemberFormInfo;
 import sandbox.semo.domain.member.entity.Member;
 import sandbox.semo.domain.member.entity.MemberForm;
@@ -138,9 +137,9 @@ public class MemberServiceImpl implements MemberService {
                 .orElseThrow(() -> new MemberBusinessException(FORM_DOES_NOT_EXIST));
         FormStatus newFormStatus = FormStatus.valueOf(request.getDecisionStatus().toUpperCase());
         memberForm.changeStatus(newFormStatus);
-        MemberForm saveForm = memberFormRepository.save(memberForm);
+
         log.info(">>> [ ✅ 고객사 회원가입 폼을 관리자가 최종 처리하였습니다. ]");
-        return saveForm.getFormStatus().toString();
+        return newFormStatus.toString();
     }
 
     @Override
@@ -154,16 +153,12 @@ public class MemberServiceImpl implements MemberService {
 
     @Transactional
     @Override
-    public void updatePassword(MemberPrincipalDetails memberDetails, PasswordUpdate request) {
-        Member member = memberRepository.findByEmailAndDeletedAtIsNull(request.getEmail())
+    public void updatePassword(Long memberId, String newPassword) {
+        //     TODO: 비밀번호 조건 검증 필요 (+ 리팩토링 정규식 추가 예정)
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberBusinessException(MEMBER_NOT_FOUND));
 
-        if (!memberDetails.getMember().getEmail().equals(request.getEmail())) {
-            throw new GlobalBusinessException(FORBIDDEN_ACCESS);
-        }
-
-        member.changePassword(passwordEncoder.encode(request.getUpdatePassword()));
-        memberRepository.save(member);
+        member.changePassword(passwordEncoder.encode(newPassword));
         log.info(">>> [ ✅ 비밀번호 수정이 완료되었습니다. ]");
     }
 

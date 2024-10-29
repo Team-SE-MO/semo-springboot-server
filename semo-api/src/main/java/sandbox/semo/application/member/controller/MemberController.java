@@ -25,7 +25,6 @@ import sandbox.semo.application.security.authentication.MemberPrincipalDetails;
 import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
-import sandbox.semo.domain.member.dto.request.PasswordUpdate;
 import sandbox.semo.domain.member.dto.response.MemberFormInfo;
 
 @Log4j2
@@ -98,10 +97,11 @@ public class MemberController {
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
     @PatchMapping
     public ApiResponse<String> updatePassword(
-            @RequestBody @Valid PasswordUpdate request,
+            @RequestParam @Valid String newPassword,
             @AuthenticationPrincipal MemberPrincipalDetails memberDetails) {
+        Long memberId = memberDetails.getMember().getId();
 
-        memberService.updatePassword(memberDetails, request);
+        memberService.updatePassword(memberId, newPassword);
         return ApiResponse.successResponse(
                 OK,
                 "성공적으로 비밀번호 수정이 완료되었습니다."
