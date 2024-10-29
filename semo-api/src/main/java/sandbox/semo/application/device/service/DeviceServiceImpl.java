@@ -1,6 +1,7 @@
 package sandbox.semo.application.device.service;
 
-import static sandbox.semo.application.device.exception.DeviceErrorCode.*;
+import static sandbox.semo.application.device.exception.DeviceErrorCode.ACCESS_DENIED;
+import static sandbox.semo.application.device.exception.DeviceErrorCode.DATABASE_CONNECTION_FAILURE;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -14,8 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.device.exception.DeviceBusinessException;
 import sandbox.semo.domain.common.crypto.AES256;
 import sandbox.semo.domain.company.entity.Company;
-import sandbox.semo.domain.device.dto.request.DeviceRegister;
 import sandbox.semo.domain.device.dto.request.DataBaseInfo;
+import sandbox.semo.domain.device.dto.request.DeviceRegister;
 import sandbox.semo.domain.device.dto.response.DeviceInfo;
 import sandbox.semo.domain.device.entity.Device;
 import sandbox.semo.domain.device.repository.DeviceRepository;
@@ -34,8 +35,8 @@ public class DeviceServiceImpl implements DeviceService {
     public List<DeviceInfo> getDeviceInfo(Role role, Company company) {
         List<DeviceInfo> data = new ArrayList<>();
         switch (role) {
-            case ADMIN, USER -> data = readDeviceOfAdminAndUserRole(company);
-            case SUPER -> data = readDeviceOfSuperRole(company);
+            case ROLE_ADMIN, ROLE_USER -> data = readDeviceOfAdminAndUserRole(company);
+            case ROLE_SUPER -> data = readDeviceOfSuperRole(company);
         }
         return data;
     }

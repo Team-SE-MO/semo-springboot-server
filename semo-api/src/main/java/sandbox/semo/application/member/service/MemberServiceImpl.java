@@ -1,9 +1,11 @@
 package sandbox.semo.application.member.service;
 
+import static sandbox.semo.application.common.exception.CommonErrorCode.FORBIDDEN_ACCESS;
 import static sandbox.semo.application.member.exception.MemberErrorCode.ALREADY_EXISTS_EMAIL;
 import static sandbox.semo.application.member.exception.MemberErrorCode.COMPANY_NOT_EXIST;
 import static sandbox.semo.application.member.exception.MemberErrorCode.FORM_DOES_NOT_EXIST;
 import static sandbox.semo.application.member.exception.MemberErrorCode.INVALID_COMPANY_SELECTION;
+import static sandbox.semo.application.member.exception.MemberErrorCode.MEMBER_NOT_FOUND;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.Sort.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sandbox.semo.application.common.exception.CommonBusinessException;
 import sandbox.semo.application.member.exception.MemberBusinessException;
 import sandbox.semo.application.member.service.helper.LoginIdGenerator;
 import sandbox.semo.domain.common.entity.FormStatus;
@@ -25,6 +28,7 @@ import sandbox.semo.domain.company.repository.CompanyRepository;
 import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
+import sandbox.semo.domain.member.dto.request.MemberRemove;
 import sandbox.semo.domain.member.dto.response.MemberFormInfo;
 import sandbox.semo.domain.member.entity.Member;
 import sandbox.semo.domain.member.entity.MemberForm;
@@ -32,7 +36,7 @@ import sandbox.semo.domain.member.entity.Role;
 import sandbox.semo.domain.member.repository.MemberFormRepository;
 import sandbox.semo.domain.member.repository.MemberRepository;
 
-// TODO: Security 설정 확인 용도로 가볍게 구현 했음. Member API 개발시 추가 코드 필요.
+
 @Service
 @Log4j2
 @Transactional(readOnly = true)
@@ -55,7 +59,7 @@ public class MemberServiceImpl implements MemberService {
         Company company = companyRepository.findById(request.getCompanyId())
                 .orElseThrow(() -> new MemberBusinessException(COMPANY_NOT_EXIST));
 
-        boolean isSuperRole = role.equals(Role.SUPER);
+        boolean isSuperRole = role.equals(Role.ROLE_SUPER);
 
         Member member = Member.builder()
                 .company(company)
@@ -73,12 +77,12 @@ public class MemberServiceImpl implements MemberService {
     }
 
     private String generateLoginId(boolean isSuperRole, Company company) {
-        String rolePrefix = isSuperRole ? Role.ADMIN.toString() : Role.USER.toString();
+        String rolePrefix = isSuperRole ? Role.ROLE_ADMIN.toString() : Role.ROLE_USER.toString();
         return loginIdGenerator.generateLoginId(rolePrefix, company.getTaxId());
     }
 
     private Role determineRole(boolean isSuperRole) {
-        return isSuperRole ? Role.ADMIN : Role.USER;
+        return isSuperRole ? Role.ROLE_ADMIN : Role.ROLE_USER;
     }
 
 
@@ -133,9 +137,9 @@ public class MemberServiceImpl implements MemberService {
                 .orElseThrow(() -> new MemberBusinessException(FORM_DOES_NOT_EXIST));
         FormStatus newFormStatus = FormStatus.valueOf(request.getDecisionStatus().toUpperCase());
         memberForm.changeStatus(newFormStatus);
-        MemberForm saveForm = memberFormRepository.save(memberForm);
+
         log.info(">>> [ ✅ 고객사 회원가입 폼을 관리자가 최종 처리하였습니다. ]");
-        return saveForm.getFormStatus().toString();
+        return newFormStatus.toString();
     }
 
     @Override
@@ -144,6 +148,57 @@ public class MemberServiceImpl implements MemberService {
             throw new MemberBusinessException(ALREADY_EXISTS_EMAIL);
         }
         return true;
+    }
+
+
+    @Transactional
+    @Override
+    public void updatePassword(Long memberId, String newPassword) {
+        //     TODO: 비밀번호 조건 검증 필요 (+ 리팩토링 정규식 추가 예정)
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberBusinessException(MEMBER_NOT_FOUND));
+
+        member.changePassword(passwordEncoder.encode(newPassword));
+        log.info(">>> [ ✅ 비밀번호 수정이 완료되었습니다. ]");
+    }
+
+    @Transactional
+    @Override
+    public void deleteMember(MemberRemove request) {
+        Member member = memberRepository.findByLoginIdAndDeletedAtIsNull(request.getLoginId())
+                .orElseThrow(() -> new MemberBusinessException(MEMBER_NOT_FOUND));
+
+        validateDeletePermission(request, member);
+
+        member.markAsDeleted();
+        memberRepository.save(member);
+    }
+
+    private void validateDeletePermission(MemberRemove request, Member targetMember) {
+        Role targetRole = targetMember.getRole();
+        boolean isSuperRole = request.getRole().equals(Role.ROLE_SUPER); //자기자신이?
+
+        boolean isTargetSuper = targetRole.equals(Role.ROLE_SUPER);
+        // 본인 권한보다 아래의 권한인지 , 아니라면 예외
+        if (isSuperRole && isTargetSuper) {
+            log.warn(">>> [ ❌ SUPER는 자기자신을 삭제할 수 없습니다. ]");
+            throw new CommonBusinessException(FORBIDDEN_ACCESS);
+        }
+
+        //ADMIN이면서, USER 외의 권한을 삭제하려 했을 때
+        boolean isTargetUser = targetRole.equals(Role.ROLE_USER);
+        if (!isSuperRole && !isTargetUser) {
+            log.warn(">>> [ ❌ ADMIN은  USER외에는 삭제할 수 없습니다. ]");
+            throw new CommonBusinessException(FORBIDDEN_ACCESS);
+        }
+        
+        //ADMIN이 삭제할 USER랑 둘이 같은 회사인지 판별
+        Long targetCompanyId = targetMember.getCompany().getId();
+        if (!isSuperRole && (!request.getCompanyId().equals(targetCompanyId))) {
+            log.warn(">>> [ ❌ ADMIN은  같은 회사만의 USER만 삭제할 수 있습니다. ]");
+            throw new CommonBusinessException(FORBIDDEN_ACCESS);
+        }
+
     }
 
 
