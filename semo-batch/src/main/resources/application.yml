@@ -5,12 +5,12 @@ spring:
   profiles:
     active: secret
 
-  jpa:
-    hibernate:
-      ddl-auto: none
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.OracleDialect
+  batch:
+    jdbc:
+      initialize-schema: never
+      isolation-level-for-create: default
+    job:
+      enabled: false
 
 server:
   port: 8081
@@ -18,4 +18,3 @@ server:
 logging:
   level:
     org.hibernate.type.descriptor.sql: trace
-    org.springframework.security: DEBUG

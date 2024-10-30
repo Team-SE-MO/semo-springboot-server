@@ -1,6 +1,7 @@
 package sandbox.semo.application.member.exception;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -18,7 +19,8 @@ public enum MemberErrorCode implements ErrorCode {
     WRONG_PASSWORD(BAD_REQUEST, "입력하신 비밀번호를 다시 확인해 주세요."),
     COMPANY_NOT_EXIST(NOT_FOUND, "존재하지 않는 회사입니다."),
     FORM_DOES_NOT_EXIST(NOT_FOUND, "해당 ID의 폼을 찾을 수 없습니다."),
-    INVALID_COMPANY_SELECTION(BAD_REQUEST, "선택할 수 없는 회사입니다.");
+    INVALID_COMPANY_SELECTION(BAD_REQUEST, "선택할 수 없는 회사입니다."),
+    ALREADY_EXISTS_EMAIL(CONFLICT, "이미 존재하는 이메일 입니다");
 
     private final HttpStatus httpStatus;
 
