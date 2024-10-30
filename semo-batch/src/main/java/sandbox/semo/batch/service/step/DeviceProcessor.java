@@ -12,8 +12,8 @@ import org.springframework.batch.item.ItemProcessor;
 import sandbox.semo.batch.dto.DeviceInfo;
 import sandbox.semo.batch.repository.JdbcRepository;
 import sandbox.semo.batch.util.HikariDataSourceUtil;
-import sandbox.semo.domain.collection.entity.MonitoringMetric;
-import sandbox.semo.domain.collection.entity.SessionData;
+import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
+import sandbox.semo.domain.monitoring.entity.SessionData;
 import sandbox.semo.domain.common.crypto.AES256;
 import sandbox.semo.domain.device.entity.Device;
 

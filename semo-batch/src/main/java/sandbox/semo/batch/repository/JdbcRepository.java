@@ -17,8 +17,8 @@ import org.springframework.stereotype.Repository;
 import sandbox.semo.batch.config.QueryLoader;
 import sandbox.semo.batch.repository.mapper.MetricDataRowMapper;
 import sandbox.semo.batch.repository.mapper.SessionDataRowMapper;
-import sandbox.semo.domain.collection.entity.MonitoringMetric;
-import sandbox.semo.domain.collection.entity.SessionData;
+import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
+import sandbox.semo.domain.monitoring.entity.SessionData;
 import sandbox.semo.domain.device.entity.Device;
 
 @Log4j2

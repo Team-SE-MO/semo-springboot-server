@@ -10,8 +10,8 @@ import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 import sandbox.semo.batch.dto.DeviceInfo;
 import sandbox.semo.batch.repository.JdbcRepository;
-import sandbox.semo.domain.collection.entity.MonitoringMetric;
-import sandbox.semo.domain.collection.entity.SessionData;
+import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
+import sandbox.semo.domain.monitoring.entity.SessionData;
 import sandbox.semo.domain.device.entity.Device;
 
 @Log4j2

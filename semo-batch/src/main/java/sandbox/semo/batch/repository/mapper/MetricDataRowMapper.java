@@ -5,8 +5,8 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.RowMapper;
-import sandbox.semo.domain.collection.entity.MonitoringMetric;
-import sandbox.semo.domain.collection.entity.MonitoringMetricId;
+import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
+import sandbox.semo.domain.monitoring.entity.MonitoringMetricId;
 import sandbox.semo.domain.device.entity.Device;
 
 @RequiredArgsConstructor
