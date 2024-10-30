@@ -1,11 +1,12 @@
 package sandbox.semo.application.email.service;
 
-import sandbox.semo.domain.member.dto.request.EmailSend;
+import java.util.Map;
+import sandbox.semo.domain.member.dto.request.EmailAuthVerify;
+import sandbox.semo.domain.member.dto.request.EmailSendRequest;
 
 public interface EmailService {
 
-    void processEmailRequest(EmailSend request);
+    Map<String, Object> processEmailRequest(EmailSendRequest request);
 
-    void verifyAuthCode(String email, String authCode);
-
+    void verifyEmailAuthCode(EmailAuthVerify verify);
 }

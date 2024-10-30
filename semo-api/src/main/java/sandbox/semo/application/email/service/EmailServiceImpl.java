@@ -32,7 +32,8 @@ import sandbox.semo.application.email.exception.EmailErrorCode;
 import sandbox.semo.domain.common.entity.FormStatus;
 import sandbox.semo.domain.company.entity.CompanyForm;
 import sandbox.semo.domain.company.repository.CompanyFormRepository;
-import sandbox.semo.domain.member.dto.request.EmailSend;
+import sandbox.semo.domain.member.dto.request.EmailAuthVerify;
+import sandbox.semo.domain.member.dto.request.EmailSendRequest;
 import sandbox.semo.domain.member.entity.Member;
 import sandbox.semo.domain.member.repository.MemberRepository;
 
@@ -59,15 +60,16 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public void processEmailRequest(EmailSend request) {
+    public Map<String, Object> processEmailRequest(EmailSendRequest request) {
+        log.info(">>> [ 🔄 처리 중 - apiType: {} ]", request.getApiType());
         String apiType = request.getApiType();
         String value = request.getValue();
-
+        Map<String, Object> emailData = null;
         switch (apiType) {
             case "REGISTER_COMPANY"->
-                sendCompanyRegistrationConfirmationEmail(Long.parseLong(value));
+                emailData = sendCompanyRegistrationConfirmationEmail(Long.parseLong(value));
             case "REGISTER_MEMBER"->
-                sendMemberRegistrationConfirmationEmail(value);
+                emailData = sendMemberRegistrationConfirmationEmail(value);
             case "AUTH_CODE"->
                 sendAuthCode(value);
             case "FAIL_MEMBER"->
@@ -77,21 +79,8 @@ public class EmailServiceImpl implements EmailService {
             default->
                 throw new EmailBusinessException(EmailErrorCode.INVALID_REQUEST);
         }
-    }
-
-    @Override
-    public void verifyAuthCode(String email, String authCode) {
-        String storedAuthCode = (String) session.getAttribute("authCode" + email);
-
-        // 세션에 저장된 인증 코드가 없거나, 입력된 인증 코드와 다를 경우 예외 발생
-        if (storedAuthCode == null) {
-            throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE);
-        }
-        else if (!storedAuthCode.equals(authCode)) {
-            throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE);
-        }
-        log.info(">>> [ ✅ 인증 코드 검증 성공 - 이메일: {}, 인증 코드: {} ]", email, authCode);
-
+        log.info(">>> [ 📤 응답 데이터: {} ]", emailData);
+        return emailData;
     }
 
     private String generateAuthCode() {
@@ -159,7 +148,7 @@ public class EmailServiceImpl implements EmailService {
 
     private void sendAuthEmail(String email, String authCode) {
         if (authCode == null) {
-            throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE); // authCode가 null인 경우 예외 발생
+            throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE);
         }
 
         String htmlContent = readHtmlTemplate("send-auth-code.html")
@@ -195,13 +184,12 @@ public class EmailServiceImpl implements EmailService {
         emailData.put("formStatus", companyForm.getFormStatus());
 
         return emailData;
-
     }
 
     private Map<String, Object> sendMemberRegistrationConfirmationEmail(String loginId) {
         log.info(">>> [ 🔍 조회 중인 loginId: {}]", loginId);
         Member member = memberRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new EmailBusinessException(EmailErrorCode.MEMBER_NOT_FOUND)); // 값이 없을 경우 예외 처리
+                .orElseThrow(() -> new EmailBusinessException(EmailErrorCode.MEMBER_NOT_FOUND));
         log.info(">>> [ ✅ 사용자 조회 성공 - loginId: {}]", member.getLoginId());
 
         String htmlContent = readHtmlTemplate("member-registration.html")
@@ -217,6 +205,7 @@ public class EmailServiceImpl implements EmailService {
         emailData.put("loginId", member.getLoginId());
         emailData.put("currentDate", member.getCreatedAt());
 
+        log.info(">>> [ 📤 sendMemberRegistrationConfirmationEmail 응답 데이터: {} ]", emailData);
         return emailData;
     }
 
@@ -232,5 +221,21 @@ public class EmailServiceImpl implements EmailService {
                 .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
         sendMail(email, "[SEMO] 기업등록 반려 안내", htmlContent);
+    }
+
+    @Override
+    public void verifyEmailAuthCode(EmailAuthVerify verify) {
+        String email = verify.getEmail();
+        String authCode = verify.getAuthCode();
+
+        String storedAuthCode = (String) session.getAttribute("authCode" + email);
+
+        if (storedAuthCode == null) {
+            throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE);
+        }
+        else if (!storedAuthCode.equals(authCode)) {
+            throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE);
+        }
+        log.info(">>> [ ✅ 인증 코드 검증 성공 - 이메일: {}, 인증 코드: {} ]", email, authCode);
     }
 }
