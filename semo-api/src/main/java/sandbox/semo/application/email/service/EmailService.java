@@ -4,10 +4,8 @@ import sandbox.semo.domain.member.dto.request.EmailSend;
 
 public interface EmailService {
 
-    void sendEmail(String email, String text);
+    void processEmailRequest(EmailSend request);
 
     void verifyAuthCode(String email, String authCode);
-
-    void processEmailRequest(EmailSend request);
 
 }

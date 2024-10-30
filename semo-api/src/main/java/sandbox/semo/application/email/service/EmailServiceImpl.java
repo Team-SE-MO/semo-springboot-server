@@ -53,7 +53,7 @@ public class EmailServiceImpl implements EmailService {
 
     private String sendAuthCode(String email) {
         String authCode = generateAuthCode();
-        sendEmail(email, authCode);
+        sendAuthEmail(email, authCode);
         session.setAttribute("authCode" + email, authCode);
         return authCode;
     }
@@ -157,8 +157,7 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-    @Override
-    public void sendEmail(String email, String authCode) {
+    private void sendAuthEmail(String email, String authCode) {
         if (authCode == null) {
             throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE); // authCode가 null인 경우 예외 발생
         }

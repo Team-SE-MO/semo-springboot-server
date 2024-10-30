@@ -3,7 +3,7 @@ package sandbox.semo.domain.member.dto.request;
 import lombok.Data;
 
 @Data
-public class EmailVerify {
+public class EmailAuthVerify {
 
     public String email;
 
