@@ -56,6 +56,7 @@ public class EmailServiceImpl implements EmailService {
         String authCode = generateAuthCode();
         sendAuthEmail(email, authCode);
         session.setAttribute("authCode" + email, authCode);
+        session.setMaxInactiveInterval(5*60);
         return authCode;
     }
 
@@ -228,12 +229,15 @@ public class EmailServiceImpl implements EmailService {
         String email = verify.getEmail();
         String authCode = verify.getAuthCode();
 
-        String storedAuthCode = (String) session.getAttribute("authCode" + email);
+        String sessionAuthCode  = (String) session.getAttribute("authCode" + email);
+        log.info(">>> [ 🔍 인증 코드 검증 중 - 이메일: {}, 세션 인증 코드: {}, 입력된 인증 코드: {}]",
+                email, sessionAuthCode, authCode);
 
-        if (storedAuthCode == null) {
+        if (sessionAuthCode  == null) {
+            log.error(">>> [ ❌ 인증 코드 불일치 - 이메일: {} ]", email);
             throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE);
         }
-        else if (!storedAuthCode.equals(authCode)) {
+        else if (!sessionAuthCode .equals(authCode)) {
             throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE);
         }
         log.info(">>> [ ✅ 인증 코드 검증 성공 - 이메일: {}, 인증 코드: {} ]", email, authCode);
