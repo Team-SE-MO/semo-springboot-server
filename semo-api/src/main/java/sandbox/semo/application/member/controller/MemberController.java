@@ -5,6 +5,7 @@ import static org.springframework.http.HttpStatus.OK;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
@@ -27,7 +28,9 @@ import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
 import sandbox.semo.domain.member.dto.request.MemberRemove;
+import sandbox.semo.domain.member.dto.request.MemberSearchFilter;
 import sandbox.semo.domain.member.dto.response.MemberFormInfo;
+import sandbox.semo.domain.member.dto.response.MemberInfo;
 import sandbox.semo.domain.member.entity.Member;
 import sandbox.semo.domain.member.entity.Role;
 
@@ -132,5 +135,22 @@ public class MemberController {
 
         memberService.deleteMember(request);
         return ApiResponse.successResponse(OK, "성공적으로 회원을 삭제하였습니다.");
+    }
+
+    @PreAuthorize("hasAnyRole('SUPER','ADMIN')")
+    @GetMapping
+    public ApiResponse<List<MemberInfo>> memberAllList(
+            @RequestBody MemberSearchFilter request,
+            @AuthenticationPrincipal MemberPrincipalDetails memberDetails) {
+
+        Role ownRole = memberDetails.getMember().getRole();
+        Long ownCompanyId = memberDetails.getMember().getCompany().getId();
+
+        List<MemberInfo> data = memberService.findAllMembers(ownCompanyId, ownRole, request);
+        return ApiResponse.successResponse(
+                OK,
+                "성공적으로 유저 목록을 조회하였습니다.",
+                data
+        );
     }
 }
