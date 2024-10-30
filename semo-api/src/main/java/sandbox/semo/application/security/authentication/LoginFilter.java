@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static sandbox.semo.application.security.exception.AuthErrorCode.UNAUTHORIZED_USER;
+import static sandbox.semo.application.security.constant.SecurityConstants.*;
 
 
 @Slf4j
@@ -33,7 +34,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     public LoginFilter(AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
-        setFilterProcessesUrl("/api/v1/login");
+        setFilterProcessesUrl(API_LOGIN_PATH);
     }
 
     @Override
@@ -42,7 +43,6 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         //클라이언트 요청에서 username, password 추출
         String username = obtainUsername(request);
         String password = obtainPassword(request);
-        log.info(username);
 
         //스프링 시큐리티에서 username과 password를 검증하기 위해서는 token에 담아야 함
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(username, password, null);
@@ -51,10 +51,10 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         return authenticationManager.authenticate(authToken);
     }
 
-    //로그인 성공시 실행하는 메소드 (여기서 JWT를 발급하면 됨)
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) throws IOException, ServletException {
         MemberPrincipalDetails memberPrincipalDetails = (MemberPrincipalDetails) authentication.getPrincipal();
+        
         String username = memberPrincipalDetails.getUsername();
 
         String role = authentication.getAuthorities().stream()
@@ -63,10 +63,10 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
                 .orElseThrow(() -> new BadCredentialsException(UNAUTHORIZED_USER.getMessage()));
 
         Long companyId = memberPrincipalDetails.getCompanyId();
-        System.out.println(username+""+role+""+companyId);
         String token = jwtUtil.generateToken(username, role, companyId);
 
-        response.addHeader("Authorization", "Bearer " + token);
+        response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, AUTHORIZATION_HEADER);
+        response.addHeader(AUTHORIZATION_HEADER, JWT_TOKEN_PREFIX + token);
 
         Map<String, Object> responseBody = new LinkedHashMap<>();
         responseBody.put("code", 200);
@@ -76,7 +76,6 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         JsonResponseHelper.sendJsonSuccessResponse(response, responseBody);
     }
 
-    //로그인 실패시 실행하는 메소드
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
         log.error(">>> [ ❌ 인증 실패: {} ]", exception.getMessage());

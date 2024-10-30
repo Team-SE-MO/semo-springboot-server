@@ -1,5 +1,7 @@
 package sandbox.semo.application.security.authentication;
 
+import static sandbox.semo.application.security.constant.SecurityConstants.JWT_TOKEN_PREFIX;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +22,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final MemberPrincipalDetailService memberDetailService;  // 추가
+    private final MemberPrincipalDetailService memberDetailService; 
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -28,18 +30,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         String authorization = request.getHeader("Authorization");
+        log.info("Authorization 헤더: [{}]", authorization);
 
-        //Authorization 헤더 검증
         if (authorization == null || !authorization.startsWith("Bearer ")) {
-
             log.info("토큰 정보가 존재하지 않습니다");
             filterChain.doFilter(request, response);
             return;
         }
 
-        System.out.println("authorization now");
-        //Bearer 부분 제거 후 순수 토큰만 획득
-        String token = authorization.split(" ")[1];
+        String token = authorization.substring(JWT_TOKEN_PREFIX.length());
+        System.out.println(token);
 
         //토큰 소멸 검증
         if (jwtUtil.isTokenExpired(token)) {
@@ -49,15 +49,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String username = jwtUtil.getUsername(token);
+        String role = jwtUtil.getRole(token);
+//        Long companyId = jwtUtil.getCompanyId(token);
 
-        MemberPrincipalDetails userDetails =
+        MemberPrincipalDetails principalDetails =
                 (MemberPrincipalDetails) memberDetailService.loadUserByUsername(username);
 
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(
-                        userDetails,  // Principal로 MemberPrincipalDetails 사용
+                        principalDetails,  // Principal로 MemberPrincipalDetails 사용
                         null,
-                        userDetails.getAuthorities()  // Member의 실제 권한 정보 사용
+                        principalDetails.getAuthorities()  // Member의 실제 권한 정보 사용
                 );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
