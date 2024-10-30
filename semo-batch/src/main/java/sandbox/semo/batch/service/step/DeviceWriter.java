@@ -10,6 +10,7 @@ import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 import sandbox.semo.batch.dto.DeviceInfo;
 import sandbox.semo.batch.repository.JdbcRepository;
+import sandbox.semo.domain.collection.entity.MonitoringMetric;
 import sandbox.semo.domain.collection.entity.SessionData;
 import sandbox.semo.domain.device.entity.Device;
 
@@ -26,10 +27,10 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
 
     @Override
     public void write(Chunk<? extends DeviceInfo> chunk) {
-        chunk.getItems().forEach(this::processDeviceStatus);
+        chunk.getItems().forEach(this::processDeviceCollection);
     }
 
-    private void processDeviceStatus(DeviceInfo item) {
+    private void processDeviceCollection(DeviceInfo item) {
         Device device = item.getDevice();
         if (item.isStatusChanged()) {
             updateDeviceStatus(device);
@@ -39,6 +40,10 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
 
         if (!item.getSessionDataList().isEmpty()) {
             saveSessionData(item.getSessionDataList());
+        }
+
+        if (item.getMonitoringMetric() != null) {
+            saveMonitoringMetric(item.getMonitoringMetric());
         }
     }
 
@@ -67,6 +72,15 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
             log.info(">>> [ 💾 SessionData 저장 완료. 총 데이터 개수: {} ]", sessionDataList.size());
         } catch (Exception e) {
             log.error(">>> [ ❌ SessionData 저장 중 오류 발생: {} ]", e.getMessage());
+        }
+    }
+
+    private void saveMonitoringMetric(MonitoringMetric monitoringMetric) {
+        try {
+            jdbcRepository.saveMonitoringMetric(monitoringMetric);
+            log.info(">>> [ 💾 MonitoringMetric 저장 완료 ]");
+        } catch (Exception e) {
+            log.error(">>> [ ❌ MonitoringMetric 저장 중 오류 발생: {} ]", e.getMessage());
         }
     }
 

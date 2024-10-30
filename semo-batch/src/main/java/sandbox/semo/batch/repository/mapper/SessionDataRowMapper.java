@@ -17,11 +17,11 @@ public class SessionDataRowMapper implements RowMapper<SessionData> {
 
     @Override
     public SessionData mapRow(ResultSet rs, int rowNum) throws SQLException {
-        SessionDataId id = new SessionDataId(
-                collectedAt,
-                rs.getLong("SID"),
-                device.getId()
-        );
+        SessionDataId id = SessionDataId.builder()
+                .collectedAt(collectedAt)
+                .sid(rs.getLong("SID"))
+                .deviceId(device.getId())
+                .build();
 
         LocalDateTime sqlExecStart =
                 rs.getTimestamp("SQL_EXEC_START") != null ?
