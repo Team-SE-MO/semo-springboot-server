@@ -209,4 +209,25 @@ public class MemberServiceImpl implements MemberService {
     }
 
 
+    @Override
+    public List<MemberInfo> findAllMembers(Long ownCompanyId, Role ownRole,
+            MemberSearchFilter request) {
+        boolean isSuperRole = isSuperRole(ownRole);
+        boolean isOwnCompany = ownCompanyId.equals(request.getCompanyId());
+
+        if (!isSuperRole && !isOwnCompany) {
+            log.warn(">>> [ ❌ ADMIN이 다른 회사 유저목록을 조회할 수 없습니다. ]");
+            throw new CommonBusinessException(FORBIDDEN_ACCESS);
+        }
+
+        List<Role> filterRoles = Optional.ofNullable(request.getRoleList())
+                .filter(list -> !list.isEmpty())
+                .orElse(List.of(Role.ROLE_USER, Role.ROLE_ADMIN));
+
+        return memberRepository.findAllMemberContainsRole(request.getCompanyId(),
+                request.getKeyword(),
+                filterRoles);
+    }
+
+
 }
