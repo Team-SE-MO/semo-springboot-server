@@ -1,6 +1,12 @@
 package sandbox.semo.application.email.service;
 
+import static sandbox.semo.application.email.exception.EmailErrorCode.APPROVAL_DENIED;
+import static sandbox.semo.application.email.exception.EmailErrorCode.COMPANY_NAME_MISSING;
 import static sandbox.semo.application.email.exception.EmailErrorCode.EMAIL_SEND_FAILED;
+import static sandbox.semo.application.email.exception.EmailErrorCode.EMAIL_TEMPLATE_LOAD_FAILED;
+import static sandbox.semo.application.email.exception.EmailErrorCode.INVALID_AUTH_CODE;
+import static sandbox.semo.application.email.exception.EmailErrorCode.INVALID_REQUEST;
+import static sandbox.semo.application.email.exception.EmailErrorCode.MEMBER_NOT_FOUND;
 
 import jakarta.mail.Authenticator;
 import jakarta.mail.Message;
@@ -28,7 +34,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import sandbox.semo.application.email.exception.EmailBusinessException;
-import sandbox.semo.application.email.exception.EmailErrorCode;
 import sandbox.semo.domain.common.entity.FormStatus;
 import sandbox.semo.domain.company.entity.CompanyForm;
 import sandbox.semo.domain.company.repository.CompanyFormRepository;
@@ -52,145 +57,62 @@ public class EmailServiceImpl implements EmailService {
     @Value("${spring.mail.password}")
     private String password;
 
-    private String sendAuthCode(String email) {
-        String authCode = generateAuthCode();
-        sendAuthEmail(email, authCode);
-        session.setAttribute("authCode" + email, authCode);
-        session.setMaxInactiveInterval(5*60);
-        return authCode;
+    @Override
+    public String processEmailRequest(EmailSendRequest request) {
+        String apiType = request.getApiType();
+        String value = request.getValue();
+        String successMessage;
+        log.info(">>> [ 🔄 처리 중 - apiType: {} ]", apiType);
+        switch (apiType) {
+            case "REGISTER_MEMBER"-> {
+                sendMemberConfirm(value);
+                successMessage = "사용자 등록 완료 이메일 전송 성공";
+            }
+            case "REGISTER_COMPANY"-> {
+                sendCompanyConfirm(Long.parseLong(value));
+                successMessage = "회사 등록 완료 이메일 전송 성공";
+            }
+            case "AUTH_CODE"-> {
+                sendAuthCode(value);
+                successMessage = "인증 코드 이메일 전송 성공";
+            }
+            case "FAIL_MEMBER"-> {
+                sendMemberFail(value);
+                successMessage = "사용자 등록 반려 이메일 전송 성공";
+            }
+            case "FAIL_COMPANY"-> {
+                sendCompanyFail(value);
+                successMessage = "회사 등록 반려 이메일 전송 성공";
+            }
+            default-> throw new EmailBusinessException(INVALID_REQUEST);
+        }
+        log.info(">>> [ 📤 이메일 전송 성공 메시지: {} ]", successMessage);
+        return successMessage;
     }
 
     @Override
-    public Map<String, Object> processEmailRequest(EmailSendRequest request) {
-        log.info(">>> [ 🔄 처리 중 - apiType: {} ]", request.getApiType());
-        String apiType = request.getApiType();
-        String value = request.getValue();
-        Map<String, Object> emailData = null;
-        switch (apiType) {
-            case "REGISTER_COMPANY"->
-                emailData = sendCompanyRegistrationConfirmationEmail(Long.parseLong(value));
-            case "REGISTER_MEMBER"->
-                emailData = sendMemberRegistrationConfirmationEmail(value);
-            case "AUTH_CODE"->
-                sendAuthCode(value);
-            case "FAIL_MEMBER"->
-                sendMemberRegistrationRejectionEmail(value);
-            case "FAIL_COMPANY"->
-                sendCompanyRegistrationRejectionEmail(value);
-            default->
-                throw new EmailBusinessException(EmailErrorCode.INVALID_REQUEST);
+    public void verifyEmailAuthCode(EmailAuthVerify verify) {
+        String email = verify.getEmail();
+        String authCode = verify.getAuthCode();
+
+        String sessionAuthCode  = (String) session.getAttribute("authCode" + email);
+        log.info(">>> [ 🔍 인증 코드 검증 중 - 이메일: {}, 세션 인증 코드: {}, 입력된 인증 코드: {}]",
+                email, sessionAuthCode, authCode);
+
+        if (sessionAuthCode  == null) {
+            log.error(">>> [ ❌ 인증 코드 불일치 - 이메일: {} ]", email);
+            throw new EmailBusinessException(INVALID_AUTH_CODE);
         }
-        log.info(">>> [ 📤 응답 데이터: {} ]", emailData);
-        return emailData;
-    }
-
-    private String generateAuthCode() {
-        Random random = new Random();
-        int authCode = random.nextInt(999999);
-        log.info(">>> [ 🔐 인증 코드 생성: {} ]", authCode);
-        return String.format("%06d", authCode);
-    }
-
-    private String readHtmlTemplate(String fileName) {
-        try {
-            ClassPathResource resource = new ClassPathResource("templates/" + fileName);
-            return new String(Files.readAllBytes(resource.getFile().toPath()), "UTF-8");
-        } catch (IOException e) {
-            log.error(">>> [ ❌ HTML 템플릿 로드 실패 ]", e);
-            throw new EmailBusinessException(EmailErrorCode.EMAIL_TEMPLATE_LOAD_FAILED);
+        else if (!sessionAuthCode .equals(authCode)) {
+            throw new EmailBusinessException(INVALID_AUTH_CODE);
         }
+        log.info(">>> [ ✅ 인증 코드 검증 성공 - 이메일: {}, 인증 코드: {} ]", email, authCode);
     }
 
-    private Session createMailSession() {
-        Properties props = new Properties();
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.host", "smtp.gmail.com");
-        props.put("mail.smtp.port", "587");
-
-        return Session.getInstance(props, new Authenticator() {
-            @Override
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(from, password);
-            }
-        });
-    }
-
-    private void sendMail(String to, String subject, String htmlContent) {
-        try {
-            Session session = createMailSession();
-
-            MimeBodyPart messageBodyPart = new MimeBodyPart();
-            messageBodyPart.setContent(htmlContent, "text/html; charset=utf-8");
-
-            MimeBodyPart imagePart = new MimeBodyPart();
-            ClassPathResource imgResource = new ClassPathResource("img/Block.png");
-            imagePart.attachFile(imgResource.getFile());
-            imagePart.setContentID("<blockImage>");
-            imagePart.setDisposition(MimeBodyPart.INLINE);
-
-            Multipart multipart = new MimeMultipart();
-            multipart.addBodyPart(messageBodyPart);
-            multipart.addBodyPart(imagePart);
-
-            Message message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(from));
-            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
-            message.setSubject(subject);
-            message.setContent(multipart);
-
-            Transport.send(message);
-            log.info(">>> [ ✅ 이메일 전송 성공 - 수신자: {} ]", to);
-        } catch (MessagingException | IOException e) {
-            log.error(">>> [ ❌ 이메일 전송 실패 - 수신자: {} ]", to, e);
-            throw new EmailBusinessException(EMAIL_SEND_FAILED);
-        }
-    }
-
-    private void sendAuthEmail(String email, String authCode) {
-        if (authCode == null) {
-            throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE);
-        }
-
-        String htmlContent = readHtmlTemplate("send-auth-code.html")
-                .replace("{{authCode}}", authCode)
-                .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
-
-        sendMail(email, "[SEMO] 비밀번호를 재설정 해주세요.", htmlContent);
-    }
-
-    private Map<String, Object> sendCompanyRegistrationConfirmationEmail(Long formId) {
-        log.info(">>> [ 🔍 조회 중인 formId: {}]", formId);
-        CompanyForm companyForm = companyFormRepository.findById(formId)
-                .orElseThrow(() -> new EmailBusinessException(EmailErrorCode.COMPANY_NAME_MISSING));
-        log.info(">>> [ ✅ 회사 조회 성공 - formId: {}]", companyForm.getId());
-
-        if(companyForm.getFormStatus() != FormStatus.APPROVED){
-            log.warn(">>> [ ⛔ 이메일 전송 중지 - formStatus가 APPROVED가 아님: {} ]", companyForm.getFormStatus());
-            throw new EmailBusinessException(EmailErrorCode.APPROVAL_DENIED);
-        }
-
-        String htmlContent = readHtmlTemplate("company-registration.html")
-                .replace("{{companyName}}", companyForm.getCompanyName())
-                .replace("{{ownerName}}", companyForm.getOwnerName())
-                .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
-
-        sendMail(companyForm.getEmail(), "[SEMO] 회사 등록이 완료되었습니다.", htmlContent);
-        log.info(">>> [ ✅ 회사 등록 완료 이메일 전송 성공 - 수신자: {} ]", companyForm.getEmail());
-
-        Map<String, Object> emailData = new HashMap<>();
-        emailData.put("companyName", companyForm.getCompanyName());
-        emailData.put("ownerName", companyForm.getOwnerName());
-        emailData.put("email", companyForm.getEmail());
-        emailData.put("formStatus", companyForm.getFormStatus());
-
-        return emailData;
-    }
-
-    private Map<String, Object> sendMemberRegistrationConfirmationEmail(String loginId) {
+    private Map<String, Object> sendMemberConfirm(String loginId) {
         log.info(">>> [ 🔍 조회 중인 loginId: {}]", loginId);
         Member member = memberRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new EmailBusinessException(EmailErrorCode.MEMBER_NOT_FOUND));
+                .orElseThrow(() -> new EmailBusinessException(MEMBER_NOT_FOUND));
         log.info(">>> [ ✅ 사용자 조회 성공 - loginId: {}]", member.getLoginId());
 
         String htmlContent = readHtmlTemplate("member-registration.html")
@@ -210,36 +132,129 @@ public class EmailServiceImpl implements EmailService {
         return emailData;
     }
 
-    private void sendMemberRegistrationRejectionEmail(String email) {
+    private Map<String, Object> sendCompanyConfirm(Long formId) {
+        log.info(">>> [ 🔍 조회 중인 formId: {}]", formId);
+        CompanyForm companyForm = companyFormRepository.findById(formId)
+                .orElseThrow(() -> new EmailBusinessException(COMPANY_NAME_MISSING));
+        log.info(">>> [ ✅ 회사 조회 성공 - formId: {}]", companyForm.getId());
+
+        if(companyForm.getFormStatus() != FormStatus.APPROVED){
+            log.warn(">>> [ ⛔ 이메일 전송 중지 - formStatus가 APPROVED가 아님: {} ]", companyForm.getFormStatus());
+            throw new EmailBusinessException(APPROVAL_DENIED);
+        }
+
+        String htmlContent = readHtmlTemplate("company-registration.html")
+                .replace("{{companyName}}", companyForm.getCompanyName())
+                .replace("{{ownerName}}", companyForm.getOwnerName())
+                .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
+
+        sendMail(companyForm.getEmail(), "[SEMO] 회사 등록이 완료되었습니다.", htmlContent);
+        log.info(">>> [ ✅ 회사 등록 완료 이메일 전송 성공 - 수신자: {} ]", companyForm.getEmail());
+
+        Map<String, Object> emailData = new HashMap<>();
+        emailData.put("companyName", companyForm.getCompanyName());
+        emailData.put("ownerName", companyForm.getOwnerName());
+        emailData.put("email", companyForm.getEmail());
+        emailData.put("formStatus", companyForm.getFormStatus());
+
+        return emailData;
+    }
+
+    private String sendAuthCode(String email) {
+        String authCode = generateAuthCode();
+        sendAuthEmail(email, authCode);
+        session.setAttribute("authCode" + email, authCode);
+        session.setMaxInactiveInterval(5*60);
+        return authCode;
+    }
+
+    private String generateAuthCode() {
+        Random random = new Random();
+        int authCode = random.nextInt(999999);
+        log.info(">>> [ 🔐 인증 코드 생성: {} ]", authCode);
+        return String.format("%06d", authCode);
+    }
+
+    private void sendMemberFail(String email) {
         String htmlContent = readHtmlTemplate("member-rejection.html")
                 .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
         sendMail(email, "[SEMO] 회원가입 반려 안내", htmlContent);
     }
 
-    private void sendCompanyRegistrationRejectionEmail(String email) {
+    private void sendCompanyFail(String email) {
         String htmlContent = readHtmlTemplate("company-rejection.html")
                 .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
         sendMail(email, "[SEMO] 기업등록 반려 안내", htmlContent);
     }
 
-    @Override
-    public void verifyEmailAuthCode(EmailAuthVerify verify) {
-        String email = verify.getEmail();
-        String authCode = verify.getAuthCode();
-
-        String sessionAuthCode  = (String) session.getAttribute("authCode" + email);
-        log.info(">>> [ 🔍 인증 코드 검증 중 - 이메일: {}, 세션 인증 코드: {}, 입력된 인증 코드: {}]",
-                email, sessionAuthCode, authCode);
-
-        if (sessionAuthCode  == null) {
-            log.error(">>> [ ❌ 인증 코드 불일치 - 이메일: {} ]", email);
-            throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE);
+    private String readHtmlTemplate(String fileName) {
+        try {
+            ClassPathResource resource = new ClassPathResource("templates/" + fileName);
+            return new String(Files.readAllBytes(resource.getFile().toPath()), "UTF-8");
+        } catch (IOException e) {
+            log.error(">>> [ ❌ HTML 템플릿 로드 실패 ]", e);
+            throw new EmailBusinessException(EMAIL_TEMPLATE_LOAD_FAILED);
         }
-        else if (!sessionAuthCode .equals(authCode)) {
-            throw new EmailBusinessException(EmailErrorCode.INVALID_AUTH_CODE);
-        }
-        log.info(">>> [ ✅ 인증 코드 검증 성공 - 이메일: {}, 인증 코드: {} ]", email, authCode);
     }
+
+    private void sendMail(String emailReceive, String subject, String htmlContent) {
+        try {
+            Session session = createMailSession();
+
+            MimeBodyPart messageBodyPart = new MimeBodyPart();
+            messageBodyPart.setContent(htmlContent, "text/html; charset=utf-8");
+
+            MimeBodyPart imagePart = new MimeBodyPart();
+            ClassPathResource imgResource = new ClassPathResource("img/Block.png");
+            imagePart.attachFile(imgResource.getFile());
+            imagePart.setContentID("<blockImage>");
+            imagePart.setDisposition(MimeBodyPart.INLINE);
+
+            Multipart multipart = new MimeMultipart();
+            multipart.addBodyPart(messageBodyPart);
+            multipart.addBodyPart(imagePart);
+
+            Message message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(from));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(emailReceive));
+            message.setSubject(subject);
+            message.setContent(multipart);
+
+            Transport.send(message);
+            log.info(">>> [ ✅ 이메일 전송 성공 - 수신자: {} ]", emailReceive);
+        } catch (MessagingException | IOException e) {
+            log.error(">>> [ ❌ 이메일 전송 실패 - 수신자: {} ]", emailReceive, e);
+            throw new EmailBusinessException(EMAIL_SEND_FAILED);
+        }
+    }
+
+    private Session createMailSession() {
+        Properties props = new Properties();
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.host", "smtp.gmail.com");
+        props.put("mail.smtp.port", "587");
+
+        return Session.getInstance(props, new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(from, password);
+            }
+        });
+    }
+
+    private void sendAuthEmail(String email, String authCode) {
+        if (authCode == null) {
+            throw new EmailBusinessException(INVALID_AUTH_CODE);
+        }
+
+        String htmlContent = readHtmlTemplate("send-auth-code.html")
+                .replace("{{authCode}}", authCode)
+                .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
+
+        sendMail(email, "[SEMO] 비밀번호를 재설정 해주세요.", htmlContent);
+    }
+
 }

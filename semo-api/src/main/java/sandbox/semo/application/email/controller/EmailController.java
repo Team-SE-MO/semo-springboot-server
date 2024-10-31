@@ -1,10 +1,10 @@
 package sandbox.semo.application.email.controller;
 
+import static org.springframework.http.HttpStatus.OK;
+
 import jakarta.validation.Valid;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,15 +23,15 @@ public class EmailController {
     private final EmailService emailService;
 
     @PostMapping
-    public ApiResponse<Map<String, Object>> processEmailRequest(@Valid @RequestBody EmailSendRequest request) {
-        Map<String, Object> emailData = emailService.processEmailRequest(request);
-        return ApiResponse.successResponse(HttpStatus.OK, "이메일 전송 성공", emailData);
+    public ApiResponse<String> processEmailRequest(@Valid @RequestBody EmailSendRequest request) {
+        String successMessage = emailService.processEmailRequest(request);
+        return ApiResponse.successResponse(OK, successMessage);
     }
 
     @PostMapping("/auth")
-    public ApiResponse<String> verifyEmailAuthCode(@RequestBody EmailAuthVerify verify) {
+    public ApiResponse<String> verifyEmailAuthCode(@Valid @RequestBody EmailAuthVerify verify) {
         emailService.verifyEmailAuthCode(verify);
-        return ApiResponse.successResponse(HttpStatus.OK, "인증코드 검증 성공");
+        return ApiResponse.successResponse(OK, "인증코드 검증 성공");
     }
 
 }
