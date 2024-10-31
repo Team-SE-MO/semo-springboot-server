@@ -5,13 +5,14 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.Date;
-import javax.crypto.SecretKey;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Date;
 
 @Component
 @Slf4j
@@ -27,69 +28,44 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String username, String role, Long companyId) {
-        SecretKey key = getSigningKey();
+    public String generateToken(Long memberId, String username, String role, Long companyId) {
         return Jwts.builder()
-            .subject(username)
-            .claim("role", role)
-//            .claim("username_id")
-            .claim("company_id", companyId)
-            .issuedAt(Date.from(Instant.now()))
-            .expiration(Date.from(Instant.now().plusMillis(expiration)))
-            .signWith(getSigningKey())
-            .compact();
+                .subject(String.valueOf(memberId))
+                .claim("role", role)
+                .claim("login_id", username)
+                .claim("company_id", companyId)
+                .issuedAt(Date.from(Instant.now()))
+                .expiration(Date.from(Instant.now().plusMillis(expiration)))
+                .signWith(getSigningKey())
+                .compact();
     }
 
-    public Boolean validateToken(String token, String username) {
-        final String extractedUsername = getUsername(token);
-        return (extractedUsername.equals(username) && !isTokenExpired(token));
+    public Date getExpirationDate(Claims claims) {
+        return claims.getExpiration();
     }
 
-    public String getUsername(String token) {
-        return getClaimsFromToken(token).getSubject();
+    public Long getMemberId(Claims claims) {
+        String subject = claims.getSubject();
+        return Long.parseLong(subject);
     }
 
-    public Date getExpirationDate(String token) {
-        return getClaimsFromToken(token).getExpiration();
+    public String getRole(Claims claims) {
+        return claims.get("role", String.class);
     }
 
-    public String getRole(String token) {
-        return getClaimsFromToken(token).get("role", String.class);
+    public Long getCompanyId(Claims claims) {
+        return claims.get("company_id", Long.class);
     }
 
-    public Long getCompanyId(String token) {
-        return getClaimsFromToken(token).get("company_id", Long.class);
+    public String getLoginId(Claims claims) {
+        return claims.get("login_id", String.class);
     }
 
-    private Claims getClaimsFromToken(String token) {
-        // return Jwts.parser()
-        //         .verifyWith(getSigningKey())
-        //         .build()
-        //         .parseSignedClaims(token)
-        //         .getPayload();
-        try {
-            return Jwts.parser()
+    public Claims validateAndGetClaimsFromToken(String token) throws JwtException, ExpiredJwtException {
+        return Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-        } catch (ExpiredJwtException e) {
-            log.error(">>> [ ❌ 만료된 JWT 토큰입니다. ]");
-            throw e;
-        } catch (JwtException e) {
-            log.error(">>> [ ❌ 유효하지 않은 JWT 토큰입니다. ]", e);
-            throw e;
-        }
     }
-
-    public Boolean isTokenExpired(String token) {
-             final Date expiration = getExpirationDate(token);
-             return expiration.before(new Date());
-         }
-//        final Date expiration = getExpirationDate(token);
-//        if (!expiration.before(new Date())) {
-//            throw new ExpiredJwtExeption("expore")
-//        }
-//        return true;
-//            return expiration.before(new Date());
-    }
+}

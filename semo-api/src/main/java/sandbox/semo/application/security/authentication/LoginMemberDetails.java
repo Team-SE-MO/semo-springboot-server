@@ -1,7 +1,5 @@
 package sandbox.semo.application.security.authentication;
 
-import java.util.Collection;
-import java.util.Collections;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -9,9 +7,13 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import sandbox.semo.domain.member.entity.Member;
 
+import java.util.Collection;
+import java.util.Collections;
+
+
 @Getter
 @RequiredArgsConstructor
-public class MemberPrincipalDetails implements UserDetails {
+public class LoginMemberDetails implements UserDetails {
 
     private final Member member;
 
@@ -30,6 +32,11 @@ public class MemberPrincipalDetails implements UserDetails {
         return member.getLoginId();
     }
 
-    public Long getCompanyId() {return member.getCompany().getId();}
+    public Long getCompanyId(){
+        return member.getCompany().getId();
+    }
+    public Long getMemberId(){
+        return member.getId();
+    }
 
 }

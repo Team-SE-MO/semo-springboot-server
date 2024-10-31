@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static sandbox.semo.application.security.exception.AuthErrorCode.UNAUTHORIZED_USER;
 import static sandbox.semo.application.security.constant.SecurityConstants.*;
+import static sandbox.semo.application.security.exception.AuthErrorCode.UNAUTHORIZED_USER;
 
 
 @Slf4j
@@ -40,30 +40,26 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
 
-        //클라이언트 요청에서 username, password 추출
         String username = obtainUsername(request);
         String password = obtainPassword(request);
 
-        //스프링 시큐리티에서 username과 password를 검증하기 위해서는 token에 담아야 함
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(username, password, null);
 
-        //token에 담은 검증을 위한 AuthenticationManager로 전달
         return authenticationManager.authenticate(authToken);
     }
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) throws IOException, ServletException {
-        MemberPrincipalDetails memberPrincipalDetails = (MemberPrincipalDetails) authentication.getPrincipal();
-        
-        String username = memberPrincipalDetails.getUsername();
+        LoginMemberDetails loginMemberDetails = (LoginMemberDetails) authentication.getPrincipal();
 
+        Long memberId = loginMemberDetails.getMemberId();
+        String username = loginMemberDetails.getUsername();
         String role = authentication.getAuthorities().stream()
                 .findFirst()
                 .map(GrantedAuthority::getAuthority)
                 .orElseThrow(() -> new BadCredentialsException(UNAUTHORIZED_USER.getMessage()));
-
-        Long companyId = memberPrincipalDetails.getCompanyId();
-        String token = jwtUtil.generateToken(username, role, companyId);
+        Long companyId = loginMemberDetails.getCompanyId();
+        String token = jwtUtil.generateToken(memberId, username, role, companyId);
 
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, AUTHORIZATION_HEADER);
         response.addHeader(AUTHORIZATION_HEADER, JWT_TOKEN_PREFIX + token);
@@ -84,6 +80,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     }
 
     private AuthErrorCode getErrorMessage(AuthenticationException exception) {
+
         if (exception instanceof UsernameNotFoundException
                 || exception instanceof BadCredentialsException) {
             return AuthErrorCode.INVALID_CREDENTIALS;

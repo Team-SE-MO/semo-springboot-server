@@ -1,7 +1,6 @@
 package sandbox.semo.application.common.config;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Collections;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +23,10 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import sandbox.semo.application.security.authentication.JwtAuthenticationFilter;
 import sandbox.semo.application.security.authentication.LoginFilter;
 import sandbox.semo.application.security.authentication.MemberAuthProvider;
-import sandbox.semo.application.security.authentication.MemberPrincipalDetailService;
 import sandbox.semo.application.security.exception.MemberAuthExceptionEntryPoint;
 import sandbox.semo.application.security.util.JwtUtil;
+
+import java.util.Collections;
 
 @Slf4j
 @Configuration
@@ -38,7 +38,6 @@ public class SecurityConfig {
     private final MemberAuthProvider memberAuthProvider;
     private final AuthenticationConfiguration authenticationConfiguration;
     private final JwtUtil jwtUtil;
-    private final MemberPrincipalDetailService memberDetailService;
     private final MemberAuthExceptionEntryPoint authenticationEntryPoint;
 
     @Autowired
@@ -49,7 +48,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors((corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource() {
+                .cors((corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource() {
 
                     @Override
                     public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
@@ -67,26 +66,26 @@ public class SecurityConfig {
                         return configuration;
                     }
                 })))
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/",
-                    "/api/v1/**"
-                ).permitAll()
-                .anyRequest().authenticated()
-            )
-            .formLogin(AbstractHttpConfigurer::disable)
-            .httpBasic(AbstractHttpConfigurer::disable)
-            .exceptionHandling(exception -> exception
-                .authenticationEntryPoint(authenticationEntryPoint)
-            )
-            .addFilterBefore(new JwtAuthenticationFilter(jwtUtil, memberDetailService),
-                LoginFilter.class)
-            .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil),
-                UsernamePasswordAuthenticationFilter.class)
-            .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            );
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/",
+                                "/api/v1/**"
+                        ).permitAll()
+                        .anyRequest().authenticated()
+                )
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                )
+                .addFilterBefore(new JwtAuthenticationFilter(jwtUtil),
+                        LoginFilter.class)
+                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil),
+                        UsernamePasswordAuthenticationFilter.class)
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                );
         return http.build();
     }
 
@@ -97,7 +96,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration)
-        throws Exception {
+            throws Exception {
         return configuration.getAuthenticationManager();
     }
 
