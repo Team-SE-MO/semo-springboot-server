@@ -95,18 +95,20 @@ public class EmailServiceImpl implements EmailService {
         String email = verify.getEmail();
         String authCode = verify.getAuthCode();
 
-        String sessionAuthCode  = (String) session.getAttribute("authCode" + email);
+        String sessionAuthCode = (String) session.getAttribute("authCode" + email);
         log.info(">>> [ 🔍 인증 코드 검증 중 - 이메일: {}, 세션 인증 코드: {}, 입력된 인증 코드: {}]",
                 email, sessionAuthCode, authCode);
 
-        if (sessionAuthCode  == null) {
+        if (isInvalidAuthCode(sessionAuthCode, authCode)) {
             log.error(">>> [ ❌ 인증 코드 불일치 - 이메일: {} ]", email);
             throw new EmailBusinessException(INVALID_AUTH_CODE);
         }
-        else if (!sessionAuthCode .equals(authCode)) {
-            throw new EmailBusinessException(INVALID_AUTH_CODE);
-        }
+
         log.info(">>> [ ✅ 인증 코드 검증 성공 - 이메일: {}, 인증 코드: {} ]", email, authCode);
+    }
+
+    private boolean isInvalidAuthCode(String sessionAuthCode, String authCode) {
+        return sessionAuthCode == null || !sessionAuthCode.equals(authCode);
     }
 
     private Map<String, Object> sendMemberConfirm(String loginId) {
