@@ -1,4 +1,4 @@
-package sandbox.semo.batch.util;
+package sandbox.semo.domain.common.util;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;

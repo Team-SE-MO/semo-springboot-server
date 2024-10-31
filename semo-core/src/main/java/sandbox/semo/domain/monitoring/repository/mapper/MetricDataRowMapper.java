@@ -1,4 +1,4 @@
-package sandbox.semo.batch.repository.mapper;
+package sandbox.semo.domain.monitoring.repository.mapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

@@ -9,9 +9,9 @@ import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.ItemProcessor;
-import sandbox.semo.batch.dto.DeviceInfo;
-import sandbox.semo.batch.repository.JdbcRepository;
-import sandbox.semo.batch.util.HikariDataSourceUtil;
+import sandbox.semo.domain.monitoring.dto.request.DeviceInfo;
+import sandbox.semo.domain.monitoring.repository.MonitoringRepository;
+import sandbox.semo.domain.common.util.HikariDataSourceUtil;
 import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
 import sandbox.semo.domain.monitoring.entity.SessionData;
 import sandbox.semo.domain.common.crypto.AES256;
@@ -23,7 +23,7 @@ public class DeviceProcessor implements ItemProcessor<Device, DeviceInfo>,
         StepExecutionListener {
 
     private final AES256 aes256;
-    private final JdbcRepository jdbcRepository;
+    private final MonitoringRepository monitoringRepository;
     private LocalDateTime collectedAt;
 
     @Override
@@ -42,8 +42,8 @@ public class DeviceProcessor implements ItemProcessor<Device, DeviceInfo>,
         try {
             dataSource = HikariDataSourceUtil.createDataSource(device, aes256);
             updatedStatus = checkDeviceConnection(dataSource, device);
-            sessionDataList = jdbcRepository.fetchSessionData(dataSource, device, collectedAt);
-            monitoringMetric = jdbcRepository.fetchMetricData(dataSource, device, collectedAt);
+            sessionDataList = monitoringRepository.fetchSessionData(dataSource, device, collectedAt);
+            monitoringMetric = monitoringRepository.fetchMetricData(dataSource, device, collectedAt);
         } catch (Exception e) {
             updatedStatus = false;
             log.error(">>> [ ❌ Device {} 연결 실패. 상태: 오류. 에러: {} ]",

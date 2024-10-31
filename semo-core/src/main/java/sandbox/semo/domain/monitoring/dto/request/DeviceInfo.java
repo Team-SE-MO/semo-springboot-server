@@ -1,4 +1,4 @@
-package sandbox.semo.batch.dto;
+package sandbox.semo.domain.monitoring.dto.request;
 
 import java.util.List;
 import lombok.Builder;

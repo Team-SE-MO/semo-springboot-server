@@ -8,8 +8,8 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
-import sandbox.semo.batch.dto.DeviceInfo;
-import sandbox.semo.batch.repository.JdbcRepository;
+import sandbox.semo.domain.monitoring.dto.request.DeviceInfo;
+import sandbox.semo.domain.monitoring.repository.MonitoringRepository;
 import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
 import sandbox.semo.domain.monitoring.entity.SessionData;
 import sandbox.semo.domain.device.entity.Device;
@@ -18,7 +18,7 @@ import sandbox.semo.domain.device.entity.Device;
 @RequiredArgsConstructor
 public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListener {
 
-    private final JdbcRepository jdbcRepository;
+    private final MonitoringRepository monitoringRepository;
 
     @Override
     public void beforeStep(StepExecution stepExecution) {
@@ -50,7 +50,7 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
     private void updateDeviceStatus(Device device) {
         try {
             boolean updateStatus = !device.getStatus();
-            jdbcRepository.deviceStatusUpdate(updateStatus, device.getId());
+            monitoringRepository.deviceStatusUpdate(updateStatus, device.getId());
             log.info(">>> [ 🔄 Device {} 상태 변경. 업데이트 상태: {} ]",
                     device.getDeviceAlias(),
                     updateStatus
@@ -68,7 +68,7 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
 
     private void saveSessionData(List<SessionData> sessionDataList) {
         try {
-            jdbcRepository.saveSessionData(sessionDataList);
+            monitoringRepository.saveSessionData(sessionDataList);
             log.info(">>> [ 💾 SessionData 저장 완료. 총 데이터 개수: {} ]", sessionDataList.size());
         } catch (Exception e) {
             log.error(">>> [ ❌ SessionData 저장 중 오류 발생: {} ]", e.getMessage());
@@ -77,7 +77,7 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
 
     private void saveMonitoringMetric(MonitoringMetric monitoringMetric) {
         try {
-            jdbcRepository.saveMonitoringMetric(monitoringMetric);
+            monitoringRepository.saveMonitoringMetric(monitoringMetric);
             log.info(">>> [ 💾 MonitoringMetric 저장 완료 ]");
         } catch (Exception e) {
             log.error(">>> [ ❌ MonitoringMetric 저장 중 오류 발생: {} ]", e.getMessage());
