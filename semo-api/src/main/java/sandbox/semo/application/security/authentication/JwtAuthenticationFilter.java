@@ -19,6 +19,7 @@ import sandbox.semo.application.security.util.JwtUtil;
 
 import java.io.IOException;
 
+import static sandbox.semo.application.security.constant.SecurityConstants.API_LOGIN_PATH;
 import static sandbox.semo.application.security.constant.SecurityConstants.JWT_TOKEN_PREFIX;
 
 @Slf4j
@@ -32,6 +33,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String authorization = request.getHeader("Authorization");
+
+        if (request.getRequestURI().equals(API_LOGIN_PATH)) {
+        filterChain.doFilter(request, response);
+        return;
+    }
 
         if (authorization != null && authorization.startsWith("Bearer ")) {
             try {
