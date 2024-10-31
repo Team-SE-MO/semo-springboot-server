@@ -1,8 +1,9 @@
 package sandbox.semo.application.common.exception;
 
-import lombok.Data;
 
-@Data
+import lombok.Getter;
+
+@Getter
 public class CommonBusinessException extends RuntimeException {
 
     private final CommonErrorCode commonErrorCode;
