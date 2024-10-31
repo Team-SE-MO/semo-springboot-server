@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.common.exception.CommonBusinessException;
 import sandbox.semo.application.member.exception.MemberBusinessException;
 import sandbox.semo.application.member.service.helper.LoginIdGenerator;
+import sandbox.semo.domain.common.dto.response.FormDecisionResponse;
 import sandbox.semo.domain.common.entity.FormStatus;
 import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.company.repository.CompanyRepository;
@@ -136,17 +137,18 @@ public class MemberServiceImpl implements MemberService {
     }
 
 
-    //TODO : DENIED 일때 approved_at 담기는 경우 리팩토링 예정
     @Override
     @Transactional
-    public String updateForm(MemberFormDecision request) {
+    public FormDecisionResponse updateForm(MemberFormDecision request) {
         MemberForm memberForm = memberFormRepository.findById(request.getFormId())
                 .orElseThrow(() -> new MemberBusinessException(FORM_DOES_NOT_EXIST));
         FormStatus newFormStatus = FormStatus.valueOf(request.getDecisionStatus().toUpperCase());
         memberForm.changeStatus(newFormStatus);
 
         log.info(">>> [ ✅ 고객사 회원가입 폼을 관리자가 최종 처리하였습니다. ]");
-        return newFormStatus.toString();
+        return FormDecisionResponse.builder()
+                .formStatus(memberForm.getFormStatus())
+                .approvedAt(memberForm.getApprovedAt()).build();
     }
 
     @Override

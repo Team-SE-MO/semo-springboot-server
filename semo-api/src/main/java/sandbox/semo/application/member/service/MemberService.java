@@ -2,6 +2,7 @@ package sandbox.semo.application.member.service;
 
 import java.util.List;
 import org.springframework.data.domain.Page;
+import sandbox.semo.domain.common.dto.response.FormDecisionResponse;
 import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
@@ -19,7 +20,7 @@ public interface MemberService {
 
     Page<MemberFormInfo> findAllForms(int page, int size);
 
-    String updateForm(MemberFormDecision request);
+    FormDecisionResponse updateForm(MemberFormDecision request);
 
     Boolean checkEmailDuplicate(String email);
 
