@@ -32,11 +32,14 @@ public class MonitoringRepository {
 
     private final QueryLoader queryLoader;
     private final JdbcTemplate jdbcTemplate;
-    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+    private final NamedParameterJdbcTemplate paramJdbcTemplate;
 
     public void deviceStatusUpdate(boolean status, Long deviceId) {
         String query = queryLoader.getQuery("updateDeviceStatus");
-        jdbcTemplate.update(query, status, deviceId);
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("status", status);
+        params.addValue("deviceId", deviceId);
+        paramJdbcTemplate.update(query, params);
     }
 
     public List<SessionData> fetchSessionData(DataSource dataSource, Device device, LocalDateTime collectedAt) {
@@ -165,8 +168,11 @@ public class MonitoringRepository {
 
     public MetricSummaryData fetchMetricSummaryData(Long companyId) {
         String query = queryLoader.getQuery("selectMetricSummaryData");
-        MapSqlParameterSource params = new MapSqlParameterSource("companyId", companyId);
-        return namedParameterJdbcTemplate.queryForObject(query, params, new MetricSummaryDataRowMapper());
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("companyId", companyId);
+        return paramJdbcTemplate.queryForObject(
+                query, params, new MetricSummaryDataRowMapper()
+        );
     }
 
 }
