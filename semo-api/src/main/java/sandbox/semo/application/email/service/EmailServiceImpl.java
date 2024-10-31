@@ -256,7 +256,7 @@ public class EmailServiceImpl implements EmailService {
                 .replace("{{authCode}}", authCode)
                 .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
-        sendMail(email, "[SEMO] 비밀번호를 재설정 해주세요.", htmlContent);
+        sendMail(email, "[SEMO] 이메일 인증코드 발송.", htmlContent);
     }
 
 }
