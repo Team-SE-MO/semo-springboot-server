@@ -44,8 +44,10 @@ public class CompanyForm extends BaseForm {
     }
 
     public void changeStatus(FormStatus newFormStatus) {
+        if (newFormStatus == FormStatus.APPROVED) {
+            this.markAsApproved();
+        }
         this.formStatus = newFormStatus;
-        this.markAsApproved();
     }
 
 }
