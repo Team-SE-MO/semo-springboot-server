@@ -11,6 +11,8 @@ import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 import sandbox.semo.batch.dto.DeviceInfo;
 import sandbox.semo.batch.repository.JdbcRepository;
@@ -30,6 +32,17 @@ public class BatchConfig {
     private final AES256 aes256;
 
     @Bean
+    public TaskExecutor deviceTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(4);
+        executor.setThreadNamePrefix("device-task-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.initialize();
+        return executor;
+    }
+
+    @Bean
     public ItemReader<Device> deviceReader() {
         return new DeviceReader(jpaRepository);
     }
@@ -46,27 +59,28 @@ public class BatchConfig {
 
     @Bean
     protected Step deviceCollectionStep(
-            JobRepository jobRepository, PlatformTransactionManager transactionManager,
-            ItemReader<Device> reader,
-            ItemProcessor<Device, DeviceInfo> processor,
-            ItemWriter<DeviceInfo> writer
+        JobRepository jobRepository, PlatformTransactionManager transactionManager,
+        ItemReader<Device> reader,
+        ItemProcessor<Device, DeviceInfo> processor,
+        ItemWriter<DeviceInfo> writer
     ) {
         return new StepBuilder("deviceStatusValidStep", jobRepository)
-                .<Device, DeviceInfo>chunk(5, transactionManager)
-                .reader(reader)
-                .processor(processor)
-                .writer(writer)
-                .build();
+            .<Device, DeviceInfo>chunk(5, transactionManager)
+            .reader(reader)
+            .processor(processor)
+            .writer(writer)
+            .taskExecutor(deviceTaskExecutor())
+            .build();
     }
 
     @Bean
     public Job job(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new JobBuilder("chunksJob", jobRepository)
-                .start(deviceCollectionStep(
-                        jobRepository, transactionManager,
-                        deviceReader(), deviceProcessor(), deviceWriter()
-                ))
-                .build();
+            .start(deviceCollectionStep(
+                jobRepository, transactionManager,
+                deviceReader(), deviceProcessor(), deviceWriter()
+            ))
+            .build();
     }
 
 }

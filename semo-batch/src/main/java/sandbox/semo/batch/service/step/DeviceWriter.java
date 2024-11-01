@@ -1,6 +1,9 @@
 package sandbox.semo.batch.service.step;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.batch.core.ExitStatus;
@@ -19,6 +22,7 @@ import sandbox.semo.domain.device.entity.Device;
 public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListener {
 
     private final JdbcRepository jdbcRepository;
+    private final Object lock = new Object();
 
     @Override
     public void beforeStep(StepExecution stepExecution) {
@@ -27,23 +31,36 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
 
     @Override
     public void write(Chunk<? extends DeviceInfo> chunk) {
-        chunk.getItems().forEach(this::processDeviceCollection);
-    }
+        log.info(">>> [ ✍️ Writing chunk in thread: {} ]", Thread.currentThread().getName());
+        
+        List<DeviceInfo> items = new ArrayList<>(chunk.getItems());
+        
+        // 디바이스 상태 업데이트를 동기화하여 처리
+        items.forEach(item -> {
+            if (item.isStatusChanged()) {
+                synchronized (lock) {
+                    updateDeviceStatus(item.getDevice());
+                }
+            } else {
+                logSkippedUpdate(item.getDevice());
+            }
+        });
 
-    private void processDeviceCollection(DeviceInfo item) {
-        Device device = item.getDevice();
-        if (item.isStatusChanged()) {
-            updateDeviceStatus(device);
-        } else {
-            logSkippedUpdate(device);
+        // 세션 데이터 일괄 처리
+        List<SessionData> allSessionData = items.stream()
+                .flatMap(item -> item.getSessionDataList().stream())
+                .collect(Collectors.toList());
+        if (!allSessionData.isEmpty()) {
+            saveSessionData(allSessionData);
         }
 
-        if (!item.getSessionDataList().isEmpty()) {
-            saveSessionData(item.getSessionDataList());
-        }
-
-        if (item.getMonitoringMetric() != null) {
-            saveMonitoringMetric(item.getMonitoringMetric());
+        // 모니터링 메트릭 일괄 처리
+        List<MonitoringMetric> metrics = items.stream()
+                .map(DeviceInfo::getMonitoringMetric)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        if (!metrics.isEmpty()) {
+            saveMonitoringMetrics(metrics);
         }
     }
 
@@ -51,9 +68,10 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
         try {
             boolean updateStatus = !device.getStatus();
             jdbcRepository.deviceStatusUpdate(updateStatus, device.getId());
-            log.info(">>> [ 🔄 Device {} 상태 변경. 업데이트 상태: {} ]",
+            log.info(">>> [ 🔄 Device {} 상태 변경. 업데이트 상태: {} - Thread: {} ]",
                     device.getDeviceAlias(),
-                    updateStatus
+                    updateStatus,
+                    Thread.currentThread().getName()
             );
         } catch (Exception e) {
             log.error(">>> [ ❌ Device {} 상태 변경 중 오류 발생: {} ]",
@@ -69,16 +87,19 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
     private void saveSessionData(List<SessionData> sessionDataList) {
         try {
             jdbcRepository.saveSessionData(sessionDataList);
-            log.info(">>> [ 💾 SessionData 저장 완료. 총 데이터 개수: {} ]", sessionDataList.size());
+            log.info(">>> [ 💾 SessionData 저장 완료. 총 데이터 개수: {} - Thread: {} ]", 
+                    sessionDataList.size(),
+                    Thread.currentThread().getName());
         } catch (Exception e) {
             log.error(">>> [ ❌ SessionData 저장 중 오류 발생: {} ]", e.getMessage());
         }
     }
 
-    private void saveMonitoringMetric(MonitoringMetric monitoringMetric) {
+    private void saveMonitoringMetrics(List<MonitoringMetric> metrics) {
         try {
-            jdbcRepository.saveMonitoringMetric(monitoringMetric);
-            log.info(">>> [ 💾 MonitoringMetric 저장 완료 ]");
+            metrics.forEach(jdbcRepository::saveMonitoringMetric);
+            log.info(">>> [ 💾 MonitoringMetric 저장 완료 - Thread: {} ]",
+                    Thread.currentThread().getName());
         } catch (Exception e) {
             log.error(">>> [ ❌ MonitoringMetric 저장 중 오류 발생: {} ]", e.getMessage());
         }
