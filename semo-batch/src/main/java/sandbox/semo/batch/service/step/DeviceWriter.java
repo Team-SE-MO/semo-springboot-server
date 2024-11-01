@@ -8,7 +8,7 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
-import sandbox.semo.domain.monitoring.dto.request.DeviceInfo;
+import sandbox.semo.domain.monitoring.dto.request.DeviceCollectionInfo;
 import sandbox.semo.domain.monitoring.repository.MonitoringRepository;
 import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
 import sandbox.semo.domain.monitoring.entity.SessionData;
@@ -16,7 +16,7 @@ import sandbox.semo.domain.device.entity.Device;
 
 @Log4j2
 @RequiredArgsConstructor
-public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListener {
+public class DeviceWriter implements ItemWriter<DeviceCollectionInfo>, StepExecutionListener {
 
     private final MonitoringRepository monitoringRepository;
 
@@ -26,11 +26,11 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
     }
 
     @Override
-    public void write(Chunk<? extends DeviceInfo> chunk) {
+    public void write(Chunk<? extends DeviceCollectionInfo> chunk) {
         chunk.getItems().forEach(this::processDeviceCollection);
     }
 
-    private void processDeviceCollection(DeviceInfo item) {
+    private void processDeviceCollection(DeviceCollectionInfo item) {
         Device device = item.getDevice();
         if (item.isStatusChanged()) {
             updateDeviceStatus(device);
@@ -38,12 +38,17 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
             logSkippedUpdate(device);
         }
 
-        if (!item.getSessionDataList().isEmpty()) {
-            saveSessionData(item.getSessionDataList());
-        }
+        if (device.getStatus()) {
+            List<SessionData> sessionDataList = item.getSessionDataList();
+            if (sessionDataList != null && !sessionDataList.isEmpty()) {
+                saveSessionData(sessionDataList);
+            } else {
+                log.info(">>> [ ⏭️ SessionData가 없거나 비어 있어 저장을 생략합니다. ]");
+            }
 
-        if (item.getMonitoringMetric() != null) {
-            saveMonitoringMetric(item.getMonitoringMetric());
+            if (item.getMonitoringMetric() != null) {
+                saveMonitoringMetric(item.getMonitoringMetric());
+            }
         }
     }
 

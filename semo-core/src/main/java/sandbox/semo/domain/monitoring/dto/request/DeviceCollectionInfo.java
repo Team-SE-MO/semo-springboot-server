@@ -11,7 +11,7 @@ import sandbox.semo.domain.device.entity.Device;
 @Data
 @Builder
 @RequiredArgsConstructor
-public class DeviceInfo {
+public class DeviceCollectionInfo {
 
     private final Device device;
     private final boolean statusChanged;
