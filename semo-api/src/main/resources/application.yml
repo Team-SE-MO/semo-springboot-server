@@ -19,3 +19,17 @@ logging:
   level:
     org.hibernate.type.descriptor.sql: trace
     org.springframework.security: DEBUG
+
+mail:
+  host: smtp.gmail.com
+  port: 587
+  username: ${spring.mail.username}
+  password: ${spring.mail.password}
+  properties:
+    mail:
+      smtp:
+        auth: true
+        starttls:
+          enable: true
+          required: true
+      debug: true
