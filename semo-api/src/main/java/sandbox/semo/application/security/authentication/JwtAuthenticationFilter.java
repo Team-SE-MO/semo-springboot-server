@@ -1,5 +1,8 @@
 package sandbox.semo.application.security.authentication;
 
+import static sandbox.semo.application.security.constant.SecurityConstants.API_LOGIN_PATH;
+import static sandbox.semo.application.security.constant.SecurityConstants.JWT_TOKEN_PREFIX;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -7,8 +10,9 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,27 +21,20 @@ import sandbox.semo.application.security.exception.AuthErrorCode;
 import sandbox.semo.application.security.util.JsonResponseHelper;
 import sandbox.semo.application.security.util.JwtUtil;
 
-import java.io.IOException;
-
-import static sandbox.semo.application.security.constant.SecurityConstants.API_LOGIN_PATH;
-import static sandbox.semo.application.security.constant.SecurityConstants.JWT_TOKEN_PREFIX;
-
-@Slf4j
+@Log4j2
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authorization = request.getHeader("Authorization");
 
         if (request.getRequestURI().equals(API_LOGIN_PATH)) {
-        filterChain.doFilter(request, response);
-        return;
-    }
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         if (authorization != null && authorization.startsWith("Bearer ")) {
             try {
@@ -65,22 +62,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         Claims claims = jwtUtil.validateAndGetClaimsFromToken(token);
 
         JwtMemberDetails principalDetails = new JwtMemberDetails(
-                jwtUtil.getMemberId(claims),
-                jwtUtil.getCompanyId(claims),
-                jwtUtil.getRole(claims),
-                jwtUtil.getLoginId(claims)
+            jwtUtil.getMemberId(claims),
+            jwtUtil.getCompanyId(claims),
+            jwtUtil.getRole(claims),
+            jwtUtil.getLoginId(claims)
         );
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(
-                principalDetails,
-                null,
-                principalDetails.getAuthorities()
+            principalDetails,
+            null,
+            principalDetails.getAuthorities()
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
-    private void handleAuthenticationException(HttpServletResponse response, AuthErrorCode errorCode) throws IOException {
+    private void handleAuthenticationException(HttpServletResponse response,
+        AuthErrorCode errorCode) throws IOException {
         SecurityContextHolder.clearContext();
         JsonResponseHelper.sendJsonErrorResponse(response, errorCode);
     }
