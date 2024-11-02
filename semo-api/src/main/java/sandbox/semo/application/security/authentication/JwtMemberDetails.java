@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import sandbox.semo.domain.member.entity.Role;
 
 @Getter
 @RequiredArgsConstructor
@@ -30,5 +31,9 @@ public class JwtMemberDetails implements UserDetails {
     @Override
     public String getUsername() {
         return loginId;
+    }
+
+    public Role getRole() {
+        return Role.valueOf(role);
     }
 }
