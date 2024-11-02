@@ -88,12 +88,17 @@ public class MonitoringServiceImpl implements MonitoringService {
 
         Map<String, Integer> warnDevice = data.stream()
                 .filter(this::isBlocked)
+                .sorted((a, b) -> Long.compare(b.getStatusValue(), a.getStatusValue()))
+                .limit(3)
                 .collect(Collectors.toMap(MetricSummary::getDeviceAlias,
                         m -> m.getStatusValue().intValue(),
                         (oldValue, newValue) -> oldValue, LinkedHashMap::new));
 
         Map<String, Integer> unUsedDevice = data.stream()
                 .filter(this::isInactive)
+                .filter(m -> m.getStatusValue() >= 4320L) // 3 days == 4320 min
+                .sorted((a, b) -> Long.compare(b.getStatusValue(), a.getStatusValue()))
+                .limit(3)
                 .collect(Collectors.toMap(MetricSummary::getDeviceAlias,
                         m -> m.getStatusValue().intValue(),
                         (oldValue, newValue) -> oldValue, LinkedHashMap::new));
