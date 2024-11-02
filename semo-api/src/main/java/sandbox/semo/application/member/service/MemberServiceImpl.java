@@ -55,26 +55,21 @@ public class MemberServiceImpl implements MemberService {
 
     private static final String DEFAULT_PASSWORD = "0000";
 
-
-    private boolean isSuperRole(Role role) {
-        return role.equals(Role.ROLE_SUPER);
-    }
-
-
     @Override
     @Transactional
     public String register(MemberRegister request, Role role) {
         checkEmailDuplicate(request.getEmail());
         Company company = companyRepository.findById(request.getCompanyId())
                 .orElseThrow(() -> new MemberBusinessException(COMPANY_NOT_EXIST));
+        boolean isCheckRole = isSuperRole(role);
 
         Member member = Member.builder()
                 .company(company)
                 .ownerName(request.getOwnerName())
-                .loginId(generateLoginId(isSuperRole(role), company))
+                .loginId(generateLoginId(isCheckRole, company))
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
-                .role(determineRole(isSuperRole(role)))
+                .role(determineRole(isCheckRole))
                 .build();
 
         memberRepository.save(member);
@@ -186,28 +181,33 @@ public class MemberServiceImpl implements MemberService {
     private void validateDeletePermission(MemberRemove request, Member targetMember) {
         Role targetRole = targetMember.getRole();
         Role requestRole = request.getRole();
+        boolean isCheckRole = isSuperRole(requestRole);
 
         boolean isTargetSuper = targetRole.equals(Role.ROLE_SUPER);
         // 본인 권한보다 아래의 권한인지 , 아니라면 예외
-        if (isSuperRole(requestRole) && isTargetSuper) {
+        if (isCheckRole && isTargetSuper) {
             log.warn(">>> [ ❌ SUPER는 자기자신을 삭제할 수 없습니다. ]");
             throw new CommonBusinessException(FORBIDDEN_ACCESS);
         }
 
         //ADMIN이면서, USER 외의 권한을 삭제하려 했을 때
         boolean isTargetUser = targetRole.equals(Role.ROLE_USER);
-        if (!isSuperRole(requestRole) && !isTargetUser) {
+        if (!isCheckRole && !isTargetUser) {
             log.warn(">>> [ ❌ ADMIN은  USER외에는 삭제할 수 없습니다. ]");
             throw new CommonBusinessException(FORBIDDEN_ACCESS);
         }
 
         //ADMIN이 삭제할 USER랑 둘이 같은 회사인지 판별
         Long targetCompanyId = targetMember.getCompany().getId();
-        if (!isSuperRole(requestRole) && (!request.getCompanyId().equals(targetCompanyId))) {
+        if (!isCheckRole && (!request.getCompanyId().equals(targetCompanyId))) {
             log.warn(">>> [ ❌ ADMIN은  같은 회사만의 USER만 삭제할 수 있습니다. ]");
             throw new CommonBusinessException(FORBIDDEN_ACCESS);
         }
 
+    }
+
+    private boolean isSuperRole(Role role) {
+        return role.equals(Role.ROLE_SUPER);
     }
 
 
