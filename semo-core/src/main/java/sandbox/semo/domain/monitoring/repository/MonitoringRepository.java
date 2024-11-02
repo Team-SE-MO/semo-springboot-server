@@ -20,12 +20,10 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 import sandbox.semo.domain.common.config.QueryLoader;
-import sandbox.semo.domain.monitoring.dto.response.MetricSummaryData;
 import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
 import sandbox.semo.domain.monitoring.entity.SessionData;
 import sandbox.semo.domain.device.entity.Device;
 import sandbox.semo.domain.monitoring.repository.mapper.MetricDataRowMapper;
-import sandbox.semo.domain.monitoring.repository.mapper.MetricSummaryDataRowMapper;
 import sandbox.semo.domain.monitoring.repository.mapper.SessionDataRowMapper;
 
 @Log4j2
@@ -111,15 +109,6 @@ public class MonitoringRepository {
         } catch (Exception e) {
             log.error(">>> [ ❌ MonitoringMetric 저장 실패: Device {}. 에러: {} ]", monitoringMetric.getDevice().getDeviceAlias(), e.getMessage());
         }
-    }
-
-    public MetricSummaryData fetchMetricSummaryData(Long companyId) {
-        String query = queryLoader.getQuery("selectMetricSummaryData");
-        MapSqlParameterSource params = new MapSqlParameterSource();
-        params.addValue("companyId", companyId);
-        return paramJdbcTemplate.queryForObject(
-                query, params, new MetricSummaryDataRowMapper()
-        );
     }
 
 }
