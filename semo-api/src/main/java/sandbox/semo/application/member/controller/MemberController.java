@@ -114,11 +114,9 @@ public class MemberController {
     @GetMapping
     public ApiResponse<List<MemberInfo>> memberAllList(
             @RequestBody @Valid MemberSearchFilter request,
-            @AuthenticationPrincipal MemberPrincipalDetails memberDetails) {
-
-        Role ownRole = memberDetails.getMember().getRole();
-        Long ownCompanyId = memberDetails.getMember().getCompany().getId();
-
+            @AuthenticationPrincipal JwtMemberDetails memberDetails) {
+        Role ownRole = memberDetails.getRole();
+        Long ownCompanyId = memberDetails.getCompanyId();
         List<MemberInfo> data = memberService.findAllMembers(ownCompanyId, ownRole, request);
         return ApiResponse.successResponse(OK, "성공적으로 유저 목록을 조회하였습니다.", data);
     }
