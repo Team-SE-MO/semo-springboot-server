@@ -7,27 +7,33 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import sandbox.semo.domain.member.entity.Member;
+import sandbox.semo.domain.member.entity.Role;
 
 @Getter
 @RequiredArgsConstructor
-public class MemberPrincipalDetails implements UserDetails {
+public class JwtMemberDetails implements UserDetails {
 
-    private final Member member;
+    private final Long id;
+    private final Long companyId;
+    private final String role;
+    private final String loginId;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority(member.getRole().name()));
+        return Collections.singletonList(new SimpleGrantedAuthority(role));
     }
 
     @Override
     public String getPassword() {
-        return member.getPassword();
+        return null;
     }
 
     @Override
     public String getUsername() {
-        return member.getLoginId();
+        return loginId;
     }
 
+    public Role getRole() {
+        return Role.valueOf(role);
+    }
 }
