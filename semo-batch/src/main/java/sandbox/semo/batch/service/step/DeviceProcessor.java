@@ -20,15 +20,14 @@ import sandbox.semo.domain.device.entity.Device;
 @Log4j2
 @RequiredArgsConstructor
 public class DeviceProcessor implements ItemProcessor<Device, DeviceInfo>,
-        StepExecutionListener {
+    StepExecutionListener {
 
     private final AES256 aes256;
     private final JdbcRepository jdbcRepository;
-    private LocalDateTime collectedAt;
+    private final LocalDateTime collectedAt;
 
     @Override
     public void beforeStep(StepExecution stepExecution) {
-        collectedAt = LocalDateTime.now().withNano(0);
         log.info(">>> [ 🚀 Device Processor 초기화 ]");
     }
 
@@ -47,22 +46,23 @@ public class DeviceProcessor implements ItemProcessor<Device, DeviceInfo>,
         } catch (Exception e) {
             updatedStatus = false;
             log.error(">>> [ ❌ Device {} 연결 실패. 상태: 오류. 에러: {} ]",
-                    device.getDeviceAlias(),
-                    e.getMessage());
+                device.getDeviceAlias(),
+                e.getMessage());
         } finally {
             closeDataSource(dataSource);
         }
 
         boolean statusChanged = device.getStatus() != updatedStatus;
         return DeviceInfo.builder()
-                .device(device)
-                .statusChanged(statusChanged)
-                .sessionDataList(sessionDataList)
-                .monitoringMetric(monitoringMetric)
-                .build();
+            .device(device)
+            .statusChanged(statusChanged)
+            .sessionDataList(sessionDataList)
+            .monitoringMetric(monitoringMetric)
+            .build();
     }
 
-    private boolean checkDeviceConnection(HikariDataSource dataSource, Device device) throws Exception {
+    private boolean checkDeviceConnection(HikariDataSource dataSource, Device device)
+        throws Exception {
         if (dataSource.getConnection().isValid(1)) {
             log.info(">>> [ ✅ Device {} 연결 성공 ]", device.getDeviceAlias());
             return true;
