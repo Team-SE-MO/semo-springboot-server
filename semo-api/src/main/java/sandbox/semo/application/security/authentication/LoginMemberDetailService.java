@@ -12,15 +12,15 @@ import sandbox.semo.domain.member.repository.MemberRepository;
 
 @Service
 @RequiredArgsConstructor
-public class MemberPrincipalDetailService implements UserDetailsService {
+public class LoginMemberDetailService implements UserDetailsService {
 
     private final MemberRepository repository;
 
     @Override
     public UserDetails loadUserByUsername(String loginId) throws UsernameNotFoundException {
         Member member = repository.findByLoginIdAndDeletedAtIsNull(loginId)
-                .orElseThrow(() -> new UsernameNotFoundException(INVALID_CREDENTIALS.getMessage()));
-        return new MemberPrincipalDetails(member);
+            .orElseThrow(() -> new UsernameNotFoundException(INVALID_CREDENTIALS.getMessage()));
+        return new LoginMemberDetails(member);
     }
 
 }
