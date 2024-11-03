@@ -11,12 +11,12 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 import javax.crypto.SecretKey;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-@Slf4j
+@Log4j2
 public class JwtUtil {
 
     @Value("${jwt.secret}")

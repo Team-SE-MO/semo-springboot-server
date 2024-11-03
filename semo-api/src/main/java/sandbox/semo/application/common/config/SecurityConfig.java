@@ -1,7 +1,7 @@
 package sandbox.semo.application.common.config;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +24,7 @@ import sandbox.semo.application.security.authentication.MemberAuthProvider;
 import sandbox.semo.application.security.exception.MemberAuthExceptionEntryPoint;
 import sandbox.semo.application.security.util.JwtUtil;
 
-@Slf4j
+@Log4j2
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -82,3 +82,4 @@ public class SecurityConfig {
     }
 
 }
+
