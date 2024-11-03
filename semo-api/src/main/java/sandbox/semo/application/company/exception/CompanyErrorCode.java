@@ -13,6 +13,7 @@ import sandbox.semo.application.common.exception.ErrorCode;
 @Getter
 public enum CompanyErrorCode implements ErrorCode {
 
+    COMPANY_NOT_FOUND(NOT_FOUND, "존재하지 않는 회사입니다."),
     STATUS_NOT_APPROVED(BAD_REQUEST, "승인되지 않은 상태의 폼 입니다."),
     COMPANY_ALREADY_EXISTS(CONFLICT, "이미 등록된 회사 입니다."),
     FORM_DOES_NOT_EXIST(NOT_FOUND, "해당 ID의 폼을 찾을 수 없습니다.");

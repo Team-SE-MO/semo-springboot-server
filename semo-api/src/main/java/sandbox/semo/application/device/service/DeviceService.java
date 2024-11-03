@@ -1,7 +1,6 @@
 package sandbox.semo.application.device.service;
 
 import java.util.List;
-import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.device.dto.request.DeviceRegister;
 import sandbox.semo.domain.device.dto.request.DataBaseInfo;
 import sandbox.semo.domain.device.dto.response.DeviceInfo;
@@ -11,8 +10,8 @@ public interface DeviceService {
 
     boolean healthCheck(DataBaseInfo request);
 
-    void register(Company company, DeviceRegister request);
+    void register(Long companyId, DeviceRegister request);
 
-    List<DeviceInfo> getDeviceInfo(Role role, Company company);
+    List<DeviceInfo> getDeviceInfo(Role role, Long companyId);
 
 }

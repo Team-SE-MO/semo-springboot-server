@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.device.service.DeviceService;
-import sandbox.semo.application.security.authentication.MemberPrincipalDetails;
+import sandbox.semo.application.security.authentication.JwtMemberDetails;
 import sandbox.semo.domain.device.dto.request.DeviceRegister;
 import sandbox.semo.domain.device.dto.request.DataBaseInfo;
 import sandbox.semo.domain.device.dto.response.DeviceInfo;
@@ -38,18 +38,18 @@ public class DeviceController {
     @PostMapping
     public ApiResponse<Void> register(
             @RequestBody DeviceRegister request,
-            @AuthenticationPrincipal MemberPrincipalDetails memberDetails
+            @AuthenticationPrincipal JwtMemberDetails memberDetails
     ) {
-        deviceService.register(memberDetails.getMember().getCompany(), request);
+        deviceService.register(memberDetails.getCompanyId(), request);
         return ApiResponse.successResponse(OK, "성공적으로 DEVICE가 등록되었습니다.");
     }
 
     @GetMapping
     public ApiResponse<List<DeviceInfo>> getDeviceInfoByCompany(
-            @AuthenticationPrincipal MemberPrincipalDetails memberDetails) {
+            @AuthenticationPrincipal JwtMemberDetails memberDetails) {
         List<DeviceInfo> data = deviceService.getDeviceInfo(
-                memberDetails.getMember().getRole(),
-                memberDetails.getMember().getCompany()
+                memberDetails.getRole(),
+                memberDetails.getCompanyId()
         );
         return ApiResponse.successResponse(OK, "성공적으로 DEVICE가 조회 되었습니다.", data);
     }
