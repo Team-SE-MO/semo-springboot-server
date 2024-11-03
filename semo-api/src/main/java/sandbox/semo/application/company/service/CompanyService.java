@@ -2,6 +2,7 @@ package sandbox.semo.application.company.service;
 
 import java.util.List;
 import org.springframework.data.domain.Page;
+import sandbox.semo.domain.common.dto.response.FormDecisionResponse;
 import sandbox.semo.domain.company.dto.request.CompanyFormDecision;
 import sandbox.semo.domain.company.dto.request.CompanyFormRegister;
 import sandbox.semo.domain.company.dto.response.CompanyFormInfo;
@@ -17,5 +18,5 @@ public interface CompanyService {
 
     Page<CompanyFormInfo> findAllForms(int page, int size);
 
-    String updateStatus(CompanyFormDecision request);
+    FormDecisionResponse updateStatus(CompanyFormDecision request);
 }
