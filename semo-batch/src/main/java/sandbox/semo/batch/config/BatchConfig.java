@@ -12,8 +12,8 @@ import org.springframework.batch.item.ItemWriter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
-import sandbox.semo.batch.dto.DeviceInfo;
-import sandbox.semo.batch.repository.JdbcRepository;
+import sandbox.semo.domain.monitoring.dto.request.DeviceCollectionInfo;
+import sandbox.semo.domain.monitoring.repository.MonitoringRepository;
 import sandbox.semo.batch.service.step.DeviceProcessor;
 import sandbox.semo.batch.service.step.DeviceReader;
 import sandbox.semo.batch.service.step.DeviceWriter;
@@ -26,7 +26,7 @@ import sandbox.semo.domain.device.repository.DeviceRepository;
 public class BatchConfig {
 
     private final DeviceRepository jpaRepository;
-    private final JdbcRepository jdbcRepository;
+    private final MonitoringRepository monitoringRepository;
     private final AES256 aes256;
 
     @Bean
@@ -35,24 +35,24 @@ public class BatchConfig {
     }
 
     @Bean
-    public ItemProcessor<Device, DeviceInfo> deviceProcessor() {
-        return new DeviceProcessor(aes256, jdbcRepository);
+    public ItemProcessor<Device, DeviceCollectionInfo> deviceProcessor() {
+        return new DeviceProcessor(aes256, monitoringRepository);
     }
 
     @Bean
-    public ItemWriter<DeviceInfo> deviceWriter() {
-        return new DeviceWriter(jdbcRepository);
+    public ItemWriter<DeviceCollectionInfo> deviceWriter() {
+        return new DeviceWriter(monitoringRepository);
     }
 
     @Bean
     protected Step deviceCollectionStep(
             JobRepository jobRepository, PlatformTransactionManager transactionManager,
             ItemReader<Device> reader,
-            ItemProcessor<Device, DeviceInfo> processor,
-            ItemWriter<DeviceInfo> writer
+            ItemProcessor<Device, DeviceCollectionInfo> processor,
+            ItemWriter<DeviceCollectionInfo> writer
     ) {
         return new StepBuilder("deviceStatusValidStep", jobRepository)
-                .<Device, DeviceInfo>chunk(5, transactionManager)
+                .<Device, DeviceCollectionInfo>chunk(5, transactionManager)
                 .reader(reader)
                 .processor(processor)
                 .writer(writer)

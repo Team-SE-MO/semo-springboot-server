@@ -11,14 +11,14 @@ import sandbox.semo.domain.member.entity.Role;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
 
+    Optional<Member> findByIdAndDeletedAtIsNull(Long id);
+
     Optional<Member> findByLoginId(String loginId);
 
     Optional<Member> findByLoginIdAndDeletedAtIsNull(String loginId);
 
     Boolean existsByEmail(String email);
 
-    Optional<Member> findByEmailAndDeletedAtIsNull(String email);
-    
     @Query("SELECT new sandbox.semo.domain.member.dto.response.MemberInfo" +
             "(m.loginId, m.role, m.email, m.ownerName, m.deletedAt, m.company) " +
             "FROM Member m JOIN m.company c " +

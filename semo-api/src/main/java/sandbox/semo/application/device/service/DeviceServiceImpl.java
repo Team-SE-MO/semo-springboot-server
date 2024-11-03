@@ -1,5 +1,6 @@
 package sandbox.semo.application.device.service;
 
+import static sandbox.semo.application.company.exception.CompanyErrorCode.*;
 import static sandbox.semo.application.device.exception.DeviceErrorCode.ACCESS_DENIED;
 import static sandbox.semo.application.device.exception.DeviceErrorCode.DATABASE_CONNECTION_FAILURE;
 
@@ -12,9 +13,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sandbox.semo.application.company.exception.CompanyBusinessException;
 import sandbox.semo.application.device.exception.DeviceBusinessException;
 import sandbox.semo.domain.common.crypto.AES256;
 import sandbox.semo.domain.company.entity.Company;
+import sandbox.semo.domain.company.repository.CompanyRepository;
 import sandbox.semo.domain.device.dto.request.DataBaseInfo;
 import sandbox.semo.domain.device.dto.request.DeviceRegister;
 import sandbox.semo.domain.device.dto.response.DeviceInfo;
@@ -29,11 +32,14 @@ import sandbox.semo.domain.member.entity.Role;
 public class DeviceServiceImpl implements DeviceService {
 
     private final DeviceRepository deviceRepository;
+    private final CompanyRepository companyRepository;
     private final AES256 aes256;
 
     @Override
-    public List<DeviceInfo> getDeviceInfo(Role role, Company company) {
+    public List<DeviceInfo> getDeviceInfo(Role role, Long companyId) {
         List<DeviceInfo> data = new ArrayList<>();
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new CompanyBusinessException(COMPANY_NOT_FOUND));
         switch (role) {
             case ROLE_ADMIN, ROLE_USER -> data = readDeviceOfAdminAndUserRole(company);
             case ROLE_SUPER -> data = readDeviceOfSuperRole(company);
@@ -51,11 +57,13 @@ public class DeviceServiceImpl implements DeviceService {
 
     @Transactional
     @Override
-    public void register(Company company, DeviceRegister request) {
+    public void register(Long companyId, DeviceRegister request) {
         DataBaseInfo dataBaseInfo = request.getDataBaseInfo();
         if (!healthCheck(dataBaseInfo)) {
             throw new DeviceBusinessException(DATABASE_CONNECTION_FAILURE);
         }
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new CompanyBusinessException(COMPANY_NOT_FOUND));
         deviceRepository.save(Device.builder()
                 .company(company)
                 .deviceAlias(request.getDeviceAlias())

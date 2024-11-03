@@ -1,6 +1,5 @@
 package sandbox.semo.application.common.exception;
 
-
 import lombok.Getter;
 
 @Getter

@@ -29,8 +29,8 @@ public class EmailController {
     }
 
     @PostMapping("/auth")
-    public ApiResponse<String> verifyEmailAuthCode(@Valid @RequestBody EmailAuthVerify verify) {
-        emailService.verifyEmailAuthCode(verify);
+    public ApiResponse<String> verifyEmailAuthCode(@Valid @RequestBody EmailAuthVerify request) {
+        emailService.verifyEmailAuthCode(request);
         return ApiResponse.successResponse(OK, "인증코드 검증 성공");
     }
 

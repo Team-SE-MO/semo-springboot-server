@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import lombok.RequiredArgsConstructor;
@@ -62,38 +60,38 @@ public class EmailServiceImpl implements EmailService {
         String apiType = request.getApiType();
         String value = request.getValue();
         String successMessage;
-        log.info(">>> [ 🔄 처리 중 - apiType: {} ]", apiType);
+        log.info(">>> [ 📤 이메일 전송 요청 형식: {} ]", apiType);
         switch (apiType) {
-            case "REGISTER_MEMBER"-> {
+            case "REGISTER_MEMBER" -> {
                 sendMemberConfirm(value);
                 successMessage = "사용자 등록 완료 이메일 전송 성공";
             }
-            case "REGISTER_COMPANY"-> {
+            case "REGISTER_COMPANY" -> {
                 sendCompanyConfirm(Long.parseLong(value));
                 successMessage = "회사 등록 완료 이메일 전송 성공";
             }
-            case "AUTH_CODE"-> {
+            case "AUTH_CODE" -> {
                 sendAuthCode(value);
                 successMessage = "인증 코드 이메일 전송 성공";
             }
-            case "FAIL_MEMBER"-> {
+            case "FAIL_MEMBER" -> {
                 sendMemberFail(value);
                 successMessage = "사용자 등록 반려 이메일 전송 성공";
             }
-            case "FAIL_COMPANY"-> {
+            case "FAIL_COMPANY" -> {
                 sendCompanyFail(value);
                 successMessage = "회사 등록 반려 이메일 전송 성공";
             }
-            default-> throw new EmailBusinessException(INVALID_REQUEST);
+            default -> throw new EmailBusinessException(INVALID_REQUEST);
         }
-        log.info(">>> [ 📤 이메일 전송 성공 메시지: {} ]", successMessage);
+        log.info(">>> [ ✅ 이메일 전송 성공 ]");
         return successMessage;
     }
 
     @Override
-    public void verifyEmailAuthCode(EmailAuthVerify verify) {
-        String email = verify.getEmail();
-        String authCode = verify.getAuthCode();
+    public void verifyEmailAuthCode(EmailAuthVerify request) {
+        String email = request.getEmail();
+        String authCode = request.getAuthCode();
 
         String sessionAuthCode = (String) session.getAttribute("authCode" + email);
         log.info(">>> [ 🔍 인증 코드 검증 중 - 이메일: {}, 세션 인증 코드: {}, 입력된 인증 코드: {}]",
@@ -111,7 +109,7 @@ public class EmailServiceImpl implements EmailService {
         return sessionAuthCode == null || !sessionAuthCode.equals(authCode);
     }
 
-    private Map<String, Object> sendMemberConfirm(String loginId) {
+    private void sendMemberConfirm(String loginId) {
         log.info(">>> [ 🔍 조회 중인 loginId: {}]", loginId);
         Member member = memberRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new EmailBusinessException(MEMBER_NOT_FOUND));
@@ -121,53 +119,38 @@ public class EmailServiceImpl implements EmailService {
                 .replace("{{ownerName}}", member.getOwnerName())
                 .replace("{{loginId}}", member.getLoginId())
                 .replace("{{password}}", "0000")
-                .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
+                .replace("{{currentDate}}",
+                        new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
-        sendMail(member.getEmail(), "[SEMO] 계정 등록이 완료되었습니다.", htmlContent);
-
-        Map<String, Object> emailData = new HashMap<>();
-        emailData.put("ownerName", member.getOwnerName());
-        emailData.put("loginId", member.getLoginId());
-        emailData.put("currentDate", member.getCreatedAt());
-
-        log.info(">>> [ 📤 sendMemberRegistrationConfirmationEmail 응답 데이터: {} ]", emailData);
-        return emailData;
+        sendMail(member.getEmail(), "[SEMO] 계정 등록이 완료 되었습니다.", htmlContent);
     }
 
-    private Map<String, Object> sendCompanyConfirm(Long formId) {
+    private void sendCompanyConfirm(Long formId) {
         log.info(">>> [ 🔍 조회 중인 formId: {}]", formId);
         CompanyForm companyForm = companyFormRepository.findById(formId)
                 .orElseThrow(() -> new EmailBusinessException(COMPANY_NAME_MISSING));
         log.info(">>> [ ✅ 회사 조회 성공 - formId: {}]", companyForm.getId());
 
-        if(companyForm.getFormStatus() != FormStatus.APPROVED){
-            log.warn(">>> [ ⛔ 이메일 전송 중지 - formStatus가 APPROVED가 아님: {} ]", companyForm.getFormStatus());
+        if (companyForm.getFormStatus() != FormStatus.APPROVED) {
+            log.warn(">>> [ ⛔ 이메일 전송 중지 - formStatus가 APPROVED가 아님: {} ]",
+                    companyForm.getFormStatus());
             throw new EmailBusinessException(APPROVAL_DENIED);
         }
 
         String htmlContent = readHtmlTemplate("company-registration.html")
                 .replace("{{companyName}}", companyForm.getCompanyName())
                 .replace("{{ownerName}}", companyForm.getOwnerName())
-                .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
+                .replace("{{currentDate}}",
+                        new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
-        sendMail(companyForm.getEmail(), "[SEMO] 회사 등록이 완료되었습니다.", htmlContent);
-        log.info(">>> [ ✅ 회사 등록 완료 이메일 전송 성공 - 수신자: {} ]", companyForm.getEmail());
-
-        Map<String, Object> emailData = new HashMap<>();
-        emailData.put("companyName", companyForm.getCompanyName());
-        emailData.put("ownerName", companyForm.getOwnerName());
-        emailData.put("email", companyForm.getEmail());
-        emailData.put("formStatus", companyForm.getFormStatus());
-
-        return emailData;
+        sendMail(companyForm.getEmail(), "[SEMO] 회사 등록이 완료 되었습니다.", htmlContent);
     }
 
-    private String sendAuthCode(String email) {
+    private void sendAuthCode(String email) {
         String authCode = generateAuthCode();
         sendAuthEmail(email, authCode);
         session.setAttribute("authCode" + email, authCode);
-        session.setMaxInactiveInterval(5*60);
-        return authCode;
+        session.setMaxInactiveInterval(5 * 60);
     }
 
     private String generateAuthCode() {
@@ -179,16 +162,18 @@ public class EmailServiceImpl implements EmailService {
 
     private void sendMemberFail(String email) {
         String htmlContent = readHtmlTemplate("member-rejection.html")
-                .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
+                .replace("{{currentDate}}",
+                        new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
         sendMail(email, "[SEMO] 회원가입 반려 안내", htmlContent);
     }
 
     private void sendCompanyFail(String email) {
         String htmlContent = readHtmlTemplate("company-rejection.html")
-                .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
+                .replace("{{currentDate}}",
+                        new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
-        sendMail(email, "[SEMO] 기업등록 반려 안내", htmlContent);
+        sendMail(email, "[SEMO] 회사 등록 반려 안내", htmlContent);
     }
 
     private String readHtmlTemplate(String fileName) {
@@ -254,9 +239,10 @@ public class EmailServiceImpl implements EmailService {
 
         String htmlContent = readHtmlTemplate("send-auth-code.html")
                 .replace("{{authCode}}", authCode)
-                .replace("{{currentDate}}", new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
+                .replace("{{currentDate}}",
+                        new SimpleDateFormat("yyyy년 MM월 dd일 HH시 mm분").format(new Date()));
 
-        sendMail(email, "[SEMO] 이메일 인증코드 발송.", htmlContent);
+        sendMail(email, "[SEMO] 이메일 인증 코드 발송.", htmlContent);
     }
 
 }
