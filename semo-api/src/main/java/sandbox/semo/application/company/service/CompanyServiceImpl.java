@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.company.exception.CompanyBusinessException;
+import sandbox.semo.domain.common.dto.response.FormDecisionResponse;
 import sandbox.semo.domain.common.entity.FormStatus;
 import sandbox.semo.domain.company.dto.request.CompanyFormDecision;
 import sandbox.semo.domain.company.dto.request.CompanyFormRegister;
@@ -31,7 +32,7 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyFormRepository companyFormRepository;
     private final CompanyRepository companyRepository;
 
-    
+
     @Transactional
     @Override
     public Long companyRegister(Long formId) {
@@ -104,13 +105,16 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Transactional
     @Override
-    public String updateStatus(CompanyFormDecision request) {
+    public FormDecisionResponse updateStatus(CompanyFormDecision request) {
         CompanyForm companyForm = companyFormRepository.findById(request.getFormId())
                 .orElseThrow(() -> new CompanyBusinessException(FORM_DOES_NOT_EXIST));
 
         FormStatus newFormStatus = FormStatus.valueOf(request.getDecisionStatus().toUpperCase());
         companyForm.changeStatus(newFormStatus);
-        return companyFormRepository.save(companyForm).getFormStatus().toString();
+        return FormDecisionResponse.builder()
+                .formStatus(companyForm.getFormStatus())
+                .approvedAt(companyForm.getApprovedAt())
+                .build();
 
     }
 }

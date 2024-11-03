@@ -5,6 +5,7 @@ import static org.springframework.http.HttpStatus.OK;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
@@ -22,12 +23,14 @@ import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.member.service.MemberService;
 import sandbox.semo.application.security.authentication.MemberPrincipalDetails;
-import sandbox.semo.domain.company.repository.CompanyRepository;
+import sandbox.semo.domain.common.dto.response.FormDecisionResponse;
 import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
 import sandbox.semo.domain.member.dto.request.MemberRemove;
+import sandbox.semo.domain.member.dto.request.MemberSearchFilter;
 import sandbox.semo.domain.member.dto.response.MemberFormInfo;
+import sandbox.semo.domain.member.dto.response.MemberInfo;
 import sandbox.semo.domain.member.entity.Member;
 import sandbox.semo.domain.member.entity.Role;
 
@@ -39,7 +42,6 @@ import sandbox.semo.domain.member.entity.Role;
 public class MemberController {
 
     private final MemberService memberService;
-    private final CompanyRepository companyRepository;
 
 
     @PreAuthorize("hasAnyRole('SUPER','ADMIN')")
@@ -78,8 +80,10 @@ public class MemberController {
 
     @PreAuthorize("hasRole('SUPER')")
     @PatchMapping("/form")
-    public ApiResponse<String> formUpdate(@RequestBody @Valid MemberFormDecision formDecision) {
-        String data = memberService.updateForm(formDecision);
+    public ApiResponse<FormDecisionResponse> formUpdate(
+            @RequestBody @Valid MemberFormDecision formDecision) {
+        FormDecisionResponse data = memberService.updateForm(formDecision);
+
         return ApiResponse.successResponse(
                 OK,
                 "성공적으로 처리되었습니다.",
@@ -132,5 +136,22 @@ public class MemberController {
 
         memberService.deleteMember(request);
         return ApiResponse.successResponse(OK, "성공적으로 회원을 삭제하였습니다.");
+    }
+
+    @PreAuthorize("hasAnyRole('SUPER','ADMIN')")
+    @GetMapping
+    public ApiResponse<List<MemberInfo>> memberAllList(
+            @RequestBody @Valid MemberSearchFilter request,
+            @AuthenticationPrincipal MemberPrincipalDetails memberDetails) {
+
+        Role ownRole = memberDetails.getMember().getRole();
+        Long ownCompanyId = memberDetails.getMember().getCompany().getId();
+
+        List<MemberInfo> data = memberService.findAllMembers(ownCompanyId, ownRole, request);
+        return ApiResponse.successResponse(
+                OK,
+                "성공적으로 유저 목록을 조회하였습니다.",
+                data
+        );
     }
 }
