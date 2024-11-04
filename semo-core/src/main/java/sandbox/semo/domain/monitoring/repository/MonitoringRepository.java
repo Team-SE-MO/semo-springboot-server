@@ -1,7 +1,6 @@
 package sandbox.semo.domain.monitoring.repository;
 
 import static sandbox.semo.domain.common.util.ParameterSourceConverter.convertToSqlParameterSource;
-import static sandbox.semo.domain.common.util.ParameterSourceConverter.convertToSqlParameterSourceArray;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,12 +17,11 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 import sandbox.semo.domain.common.config.QueryLoader;
+import sandbox.semo.domain.device.entity.Device;
 import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
 import sandbox.semo.domain.monitoring.entity.SessionData;
-import sandbox.semo.domain.device.entity.Device;
 import sandbox.semo.domain.monitoring.repository.mapper.MetricDataRowMapper;
 import sandbox.semo.domain.monitoring.repository.mapper.SessionDataRowMapper;
 
@@ -42,15 +40,15 @@ public class MonitoringRepository {
         paramJdbcTemplate.update(query, params);
     }
 
-    public List<SessionData> fetchSessionData(DataSource dataSource, Device device, LocalDateTime collectedAt) {
+    public List<SessionData> fetchSessionData(DataSource dataSource, Device device,
+        LocalDateTime collectedAt) {
         List<SessionData> sessionDataList = new ArrayList<>();
         String query = queryLoader.getQuery("selectSessionData");
 
         log.info(">>> [ 🔍 SessionData 조회 시작: Device {} ]", device.getDeviceAlias());
         try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(query))
-        {
+            Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(query)) {
             ResultSet rs = stmt.executeQuery();
             SessionDataRowMapper rowMapper = new SessionDataRowMapper(device, collectedAt);
             while (rs.next()) {
@@ -58,11 +56,11 @@ public class MonitoringRepository {
                 sessionDataList.add(sessionData);
             }
             log.info(">>> [ 📊 SessionData 조회 완료: Device {}. 조회된 데이터 개수: {} ]",
-                    device.getDeviceAlias(), sessionDataList.size()
+                device.getDeviceAlias(), sessionDataList.size()
             );
         } catch (SQLException e) {
             log.error(">>> [ ❌ SessionData 조회 실패: Device {}. 에러: {} ]",
-                    device.getDeviceAlias(), e.getMessage());
+                device.getDeviceAlias(), e.getMessage());
         }
         return sessionDataList;
     }
@@ -85,38 +83,27 @@ public class MonitoringRepository {
                 }
             });
             Instant end = Instant.now();
-            log.info(">>> [ ✅ SessionData 저장 완료 - 소요 시간: {}ms ]", end.toEpochMilli() - start.toEpochMilli());
+            log.info(">>> [ ✅ SessionData 저장 완료 - 소요 시간: {}ms ]",
+                end.toEpochMilli() - start.toEpochMilli());
         } catch (Exception e) {
             log.error(">>> [ ❌ SessionData 저장 실패: 에러: {} ]", e.getMessage(), e);
         }
     }
-//    public void saveSessionData(List<SessionData> sessionDataList) {
-//        String query = queryLoader.getQuery("insertSessionData");
-//        Instant start = Instant.now();
-//        log.info(">>> [ 💾 SessionData 저장 시작. 데이터 개수: {} ]", sessionDataList.size());
-//
-//        try {
-//            SqlParameterSource[] batchParams = convertToSqlParameterSourceArray(sessionDataList);
-//            paramJdbcTemplate.batchUpdate(query, batchParams);
-//            Instant end = Instant.now();
-//            log.info(">>> [ ✅ SessionData 저장 완료 - 소요 시간: {}ms ]", end.toEpochMilli() - start.toEpochMilli());
-//        } catch (Exception e) {
-//            log.error(">>> [ ❌ SessionData 저장 실패: 에러: {} ]", e.getMessage(), e);
-//        }
-//    }
 
-    public MonitoringMetric fetchMetricData(DataSource dataSource, Device device, LocalDateTime collectedAt) {
+    public MonitoringMetric fetchMetricData(DataSource dataSource, Device device,
+        LocalDateTime collectedAt) {
         MonitoringMetric monitoringMetric = null;
         String query = queryLoader.getQuery("selectMetricData");
 
         log.info(">>> [ 🔍 MetricData 조회 시작: Device {} ]", device.getDeviceAlias());
         try {
             monitoringMetric = new JdbcTemplate(dataSource).queryForObject(
-                    query, new MetricDataRowMapper(device, collectedAt)
+                query, new MetricDataRowMapper(device, collectedAt)
             );
             log.info(">>> [ 📊 MetricData 조회 완료: Device {} ]", device.getDeviceAlias());
         } catch (Exception e) {
-            log.error(">>> [ ❌ MetricData 조회 실패: Device {}. 에러: {} ]", device.getDeviceAlias(), e.getMessage());
+            log.error(">>> [ ❌ MetricData 조회 실패: Device {}. 에러: {} ]", device.getDeviceAlias(),
+                e.getMessage());
         }
         return monitoringMetric;
     }
@@ -125,18 +112,22 @@ public class MonitoringRepository {
         String query = queryLoader.getQuery("insertMonitoringMetric");
         Instant start = Instant.now();
 
-        log.info(">>> [ 💾 MonitoringMetric 저장 시작: Device {} ]", monitoringMetric.getDevice().getDeviceAlias());
+        log.info(">>> [ 💾 MonitoringMetric 저장 시작: Device {} ]",
+            monitoringMetric.getDevice().getDeviceAlias());
         try {
             MapSqlParameterSource params = convertToSqlParameterSource(monitoringMetric);
             paramJdbcTemplate.update(query, params);
             Instant end = Instant.now();
-            log.info(">>> [ ✅ MonitoringMetric 저장 완료 - 소요 시간: {}ms ]", end.toEpochMilli() - start.toEpochMilli());
+            log.info(">>> [ ✅ MonitoringMetric 저장 완료 - 소요 시간: {}ms ]",
+                end.toEpochMilli() - start.toEpochMilli());
         } catch (Exception e) {
-            log.error(">>> [ ❌ MonitoringMetric 저장 실패: Device {}. 에러: {} ]", monitoringMetric.getDevice().getDeviceAlias(), e.getMessage());
+            log.error(">>> [ ❌ MonitoringMetric 저장 실패: Device {}. 에러: {} ]",
+                monitoringMetric.getDevice().getDeviceAlias(), e.getMessage());
         }
     }
 
-    private void setSessionDataValues(PreparedStatement ps, SessionData sessionData) throws SQLException {
+    private void setSessionDataValues(PreparedStatement ps, SessionData sessionData)
+        throws SQLException {
         ps.setObject(1, sessionData.getId().getCollectedAt());
         ps.setLong(2, sessionData.getId().getSid());
         ps.setLong(3, sessionData.getId().getDeviceId());
@@ -162,12 +153,15 @@ public class MonitoringRepository {
         ps.setObject(23, sessionData.getLogonTime());
         ps.setLong(24, sessionData.getLastCallEt() != null ? sessionData.getLastCallEt() : 0);
         ps.setString(25, sessionData.getFailedOver() != null ? sessionData.getFailedOver() : "-");
-        ps.setString(26, sessionData.getBlockingSessionStatus() != null ? sessionData.getBlockingSessionStatus() : "-");
+        ps.setString(26,
+            sessionData.getBlockingSessionStatus() != null ? sessionData.getBlockingSessionStatus()
+                : "-");
         ps.setString(27, sessionData.getEvent() != null ? sessionData.getEvent() : "-");
         ps.setString(28, sessionData.getWaitClass() != null ? sessionData.getWaitClass() : "-");
         ps.setString(29, sessionData.getState() != null ? sessionData.getState() : "-");
         ps.setLong(30, sessionData.getWaitTimeMicro() != null ? sessionData.getWaitTimeMicro() : 0);
-        ps.setLong(31, sessionData.getTimeRemainingMicro() != null ? sessionData.getTimeRemainingMicro() : 0);
+        ps.setLong(31,
+            sessionData.getTimeRemainingMicro() != null ? sessionData.getTimeRemainingMicro() : 0);
         ps.setString(32, sessionData.getServiceName() != null ? sessionData.getServiceName() : "-");
     }
 }
