@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DeviceConnectInfo {
 
+    private String deviceAlias;
     private String type;
     private String status;
     private String sid;

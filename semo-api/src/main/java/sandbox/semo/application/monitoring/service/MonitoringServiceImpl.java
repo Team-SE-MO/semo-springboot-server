@@ -51,7 +51,7 @@ public class MonitoringServiceImpl implements MonitoringService {
         List<MetricSummary> metricSummaryData = findMetricSummaryData(company.getId());
 
         TotalProcessInfo totalProcessInfo = buildTotalProcessInfo(metricSummaryData);
-        Map<String, DeviceConnectInfo> allDevices = buildAllDevicesByCompanyId(metricSummaryData);
+        List<DeviceConnectInfo> allDevices = buildAllDevicesByCompanyId(metricSummaryData);
 
         return SummaryPageData.builder()
                 .companyName(company.getCompanyName())
@@ -138,18 +138,18 @@ public class MonitoringServiceImpl implements MonitoringService {
         return "BLOCKED".equals(metricSummary.getStatus());
     }
 
-    private Map<String, DeviceConnectInfo> buildAllDevicesByCompanyId(List<MetricSummary> data) {
+    private List<DeviceConnectInfo> buildAllDevicesByCompanyId(List<MetricSummary> data) {
         return data.stream()
-                .collect(Collectors.toMap(MetricSummary::getDeviceAlias,
-                        m -> DeviceConnectInfo.builder()
-                                .type(m.getType())
-                                .status(m.getStatus())
-                                .sid(m.getSid())
-                                .ip(m.getIp())
-                                .port(m.getPort())
-                                .statusValue(m.getStatusValue())
-                                .build())
-                );
+                .map(m -> DeviceConnectInfo.builder()
+                        .deviceAlias(m.getDeviceAlias())
+                        .type(m.getType())
+                        .status(m.getStatus())
+                        .sid(m.getSid())
+                        .ip(m.getIp())
+                        .port(m.getPort())
+                        .statusValue(m.getStatusValue())
+                        .build())
+                .collect(Collectors.toList());
     }
 
     @Override

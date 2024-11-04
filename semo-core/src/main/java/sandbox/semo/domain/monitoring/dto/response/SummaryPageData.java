@@ -1,6 +1,6 @@
 package sandbox.semo.domain.monitoring.dto.response;
 
-import java.util.Map;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +16,7 @@ public class SummaryPageData {
 
     private TotalProcessInfo totalProcessInfo;
 
-    private Map<String, DeviceConnectInfo> allDevices;
+    private List<DeviceConnectInfo> allDevices;
 
 }
 
