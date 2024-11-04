@@ -9,6 +9,15 @@ import sandbox.semo.domain.device.entity.Device;
 
 public interface DeviceRepository extends JpaRepository<Device, Long> {
 
+    @Query("SELECT d.id " +
+            "FROM Device d " +
+            "WHERE d.deviceAlias = :deviceAlias " +
+            "AND d.company.id = :companyId")
+    Long findIdByAliasAndCompanyId(
+            @Param("deviceAlias") String deviceAlias,
+            @Param("companyId") Long companyId
+    );
+
     @Query("SELECT new sandbox.semo.domain.device.dto.response.DeviceInfo" +
             "(d.deviceAlias, d.type, d.ip, d.port, d.sid, d.status, d.updatedAt) " +
             "FROM Device d " +
