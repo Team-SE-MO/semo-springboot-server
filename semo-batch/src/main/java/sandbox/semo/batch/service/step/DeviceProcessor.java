@@ -9,21 +9,21 @@ import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.ItemProcessor;
-import sandbox.semo.batch.dto.DeviceInfo;
-import sandbox.semo.batch.repository.JdbcRepository;
-import sandbox.semo.batch.util.HikariDataSourceUtil;
-import sandbox.semo.domain.collection.entity.MonitoringMetric;
-import sandbox.semo.domain.collection.entity.SessionData;
 import sandbox.semo.domain.common.crypto.AES256;
+import sandbox.semo.domain.common.util.HikariDataSourceUtil;
 import sandbox.semo.domain.device.entity.Device;
+import sandbox.semo.domain.monitoring.dto.request.DeviceCollectionInfo;
+import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
+import sandbox.semo.domain.monitoring.entity.SessionData;
+import sandbox.semo.domain.monitoring.repository.MonitoringRepository;
 
 @Log4j2
 @RequiredArgsConstructor
-public class DeviceProcessor implements ItemProcessor<Device, DeviceInfo>,
+public class DeviceProcessor implements ItemProcessor<Device, DeviceCollectionInfo>,
     StepExecutionListener {
 
     private final AES256 aes256;
-    private final JdbcRepository jdbcRepository;
+    private final MonitoringRepository monitoringRepository;
     private final LocalDateTime collectedAt;
 
     @Override
@@ -32,7 +32,7 @@ public class DeviceProcessor implements ItemProcessor<Device, DeviceInfo>,
     }
 
     @Override
-    public DeviceInfo process(Device device) {
+    public DeviceCollectionInfo process(Device device) {
         HikariDataSource dataSource = null;
         boolean updatedStatus;
         List<SessionData> sessionDataList = null;
@@ -41,8 +41,10 @@ public class DeviceProcessor implements ItemProcessor<Device, DeviceInfo>,
         try {
             dataSource = HikariDataSourceUtil.createDataSource(device, aes256);
             updatedStatus = checkDeviceConnection(dataSource, device);
-            sessionDataList = jdbcRepository.fetchSessionData(dataSource, device, collectedAt);
-            monitoringMetric = jdbcRepository.fetchMetricData(dataSource, device, collectedAt);
+            sessionDataList = monitoringRepository.fetchSessionData(dataSource, device,
+                collectedAt);
+            monitoringMetric = monitoringRepository.fetchMetricData(dataSource, device,
+                collectedAt);
         } catch (Exception e) {
             updatedStatus = false;
             log.error(">>> [ ❌ Device {} 연결 실패. 상태: 오류. 에러: {} ]",
@@ -53,7 +55,7 @@ public class DeviceProcessor implements ItemProcessor<Device, DeviceInfo>,
         }
 
         boolean statusChanged = device.getStatus() != updatedStatus;
-        return DeviceInfo.builder()
+        return DeviceCollectionInfo.builder()
             .device(device)
             .statusChanged(statusChanged)
             .sessionDataList(sessionDataList)

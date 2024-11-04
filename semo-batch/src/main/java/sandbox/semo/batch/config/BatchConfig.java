@@ -23,20 +23,23 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
-import sandbox.semo.batch.dto.DeviceInfo;
-import sandbox.semo.batch.repository.JdbcRepository;
 import sandbox.semo.batch.service.step.DeviceProcessor;
 import sandbox.semo.batch.service.step.DeviceReaderListener;
 import sandbox.semo.batch.service.step.DeviceWriter;
 import sandbox.semo.domain.common.crypto.AES256;
 import sandbox.semo.domain.device.entity.Device;
+import sandbox.semo.domain.device.repository.DeviceRepository;
+import sandbox.semo.domain.monitoring.dto.request.DeviceCollectionInfo;
+import sandbox.semo.domain.monitoring.repository.MonitoringRepository;
 
 @Log4j2
 @Configuration
 @RequiredArgsConstructor
 public class BatchConfig {
 
-    private final JdbcRepository jdbcRepository;
+    private static final int CHUNK_AND_PAGE_SIZE = 5;
+
+    private final MonitoringRepository monitoringRepository;
     private final AES256 aes256;
     private final EntityManagerFactory entityManagerFactory;
     private final DeviceReaderListener deviceReaderListener;
@@ -60,7 +63,7 @@ public class BatchConfig {
         return new JpaPagingItemReaderBuilder<Device>()
             .name("deviceReader")
             .entityManagerFactory(entityManagerFactory)
-            .pageSize(5)
+            .pageSize(CHUNK_AND_PAGE_SIZE)
             .queryString("SELECT d FROM Device d ORDER BY d.id")
             .saveState(false)
             .build();
@@ -69,27 +72,27 @@ public class BatchConfig {
 
     @Bean
     @StepScope
-    public ItemProcessor<Device, DeviceInfo> deviceProcessor() {
+    public ItemProcessor<Device, DeviceCollectionInfo> deviceProcessor() {
         LocalDateTime collectedAt = LocalDateTime.now().withNano(0);
         log.info(">>> [ ⏰ Job 시작 시간 설정: {} ]", collectedAt);
-        return new DeviceProcessor(aes256, jdbcRepository, collectedAt);
+        return new DeviceProcessor(aes256, monitoringRepository, collectedAt);
     }
 
     @Bean
     @StepScope
-    public ItemWriter<DeviceInfo> deviceWriter() {
-        return new DeviceWriter(jdbcRepository);
+    public ItemWriter<DeviceCollectionInfo> deviceWriter() {
+        return new DeviceWriter(monitoringRepository);
     }
 
     @Bean
     protected Step deviceCollectionStep(
         JobRepository jobRepository, PlatformTransactionManager transactionManager,
         ItemReader<Device> reader,
-        ItemProcessor<Device, DeviceInfo> processor,
-        ItemWriter<DeviceInfo> writer
+        ItemProcessor<Device, DeviceCollectionInfo> processor,
+        ItemWriter<DeviceCollectionInfo> writer
     ) {
         return new StepBuilder("deviceStatusValidStep", jobRepository)
-            .<Device, DeviceInfo>chunk(5, transactionManager)
+            .<Device, DeviceCollectionInfo>chunk(CHUNK_AND_PAGE_SIZE, transactionManager)
             .reader(reader)
             .processor(processor)
             .writer(writer)
@@ -110,4 +113,3 @@ public class BatchConfig {
     }
 
 }
-

@@ -11,17 +11,17 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
-import sandbox.semo.batch.dto.DeviceInfo;
-import sandbox.semo.batch.repository.JdbcRepository;
-import sandbox.semo.domain.collection.entity.MonitoringMetric;
-import sandbox.semo.domain.collection.entity.SessionData;
 import sandbox.semo.domain.device.entity.Device;
+import sandbox.semo.domain.monitoring.dto.request.DeviceCollectionInfo;
+import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
+import sandbox.semo.domain.monitoring.entity.SessionData;
+import sandbox.semo.domain.monitoring.repository.MonitoringRepository;
 
 @Log4j2
 @RequiredArgsConstructor
-public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListener {
+public class DeviceWriter implements ItemWriter<DeviceCollectionInfo>, StepExecutionListener {
 
-    private final JdbcRepository jdbcRepository;
+    private final MonitoringRepository monitoringRepository;
 
     @Override
     public void beforeStep(StepExecution stepExecution) {
@@ -29,10 +29,10 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
     }
 
     @Override
-    public void write(Chunk<? extends DeviceInfo> chunk) {
+    public void write(Chunk<? extends DeviceCollectionInfo> chunk) {
         log.info(">>> [ ✍️ Writing chunk in thread: {} ]", Thread.currentThread().getName());
 
-        List<DeviceInfo> items = new ArrayList<>(chunk.getItems());
+        List<DeviceCollectionInfo> items = new ArrayList<>(chunk.getItems());
 
         // 디바이스 상태 업데이트
         items.forEach(item -> {
@@ -53,7 +53,7 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
 
         // 모니터링 메트릭 일괄 처리
         List<MonitoringMetric> metrics = items.stream()
-            .map(DeviceInfo::getMonitoringMetric)
+            .map(DeviceCollectionInfo::getMonitoringMetric)
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
         if (!metrics.isEmpty()) {
@@ -64,7 +64,7 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
     private void updateDeviceStatus(Device device) {
         try {
             boolean updateStatus = !device.getStatus();
-            jdbcRepository.deviceStatusUpdate(updateStatus, device.getId());
+            monitoringRepository.deviceStatusUpdate(updateStatus, device.getId());
             log.info(">>> [ 🔄 Device {} 상태 변경. 업데이트 상태: {} - Thread: {} ]",
                 device.getDeviceAlias(),
                 updateStatus,
@@ -82,7 +82,7 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
 
     private void saveSessionData(List<SessionData> sessionDataList) {
         try {
-            jdbcRepository.saveSessionData(sessionDataList);
+            monitoringRepository.saveSessionData(sessionDataList);
             log.info(">>> [ 💾 SessionData 저장 완료. 총 데이터 개수: {} - Thread: {} ]",
                 sessionDataList.size(),
                 Thread.currentThread().getName());
@@ -93,7 +93,7 @@ public class DeviceWriter implements ItemWriter<DeviceInfo>, StepExecutionListen
 
     private void saveMonitoringMetrics(List<MonitoringMetric> metrics) {
         try {
-            metrics.forEach(jdbcRepository::saveMonitoringMetric);
+            metrics.forEach(monitoringRepository::saveMonitoringMetric);
             log.info(">>> [ 💾 MonitoringMetric 저장 완료 - Thread: {} ]",
                 Thread.currentThread().getName());
         } catch (Exception e) {
