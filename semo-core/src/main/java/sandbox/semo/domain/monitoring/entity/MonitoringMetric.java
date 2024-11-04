@@ -1,4 +1,4 @@
-package sandbox.semo.domain.collection.entity;
+package sandbox.semo.domain.monitoring.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.company.service.CompanyService;
+import sandbox.semo.domain.common.dto.response.FormDecisionResponse;
 import sandbox.semo.domain.company.dto.request.CompanyFormDecision;
 import sandbox.semo.domain.company.dto.request.CompanyFormRegister;
 import sandbox.semo.domain.company.dto.response.CompanyFormInfo;
@@ -79,9 +80,9 @@ public class CompanyController {
 
     @PreAuthorize("hasRole('SUPER')")
     @PatchMapping("/form")
-    public ApiResponse<String> formUpdate(
+    public ApiResponse<FormDecisionResponse> formUpdate(
             @RequestBody @Valid CompanyFormDecision updateForm) {
-        String data = companyService.updateStatus(updateForm);
+        FormDecisionResponse data = companyService.updateStatus(updateForm);
 
         return ApiResponse.successResponse(
                 OK,

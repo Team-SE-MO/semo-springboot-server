@@ -18,26 +18,25 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class MemberAuthProvider implements AuthenticationProvider {
 
-    private final MemberPrincipalDetailService memberPrincipalDetailService;
+    private final LoginMemberDetailService loginMemberDetailService;
 
     @Override
     public Authentication authenticate(Authentication authentication)
-            throws AuthenticationException {
+        throws AuthenticationException {
         String loginId = authentication.getName();
         String password = authentication.getCredentials().toString();
 
         log.info(">>> [ 🚀 로그인 시도 - 아이디: {} ]", loginId);
-        MemberPrincipalDetails memberPrincipalDetails =
-                (MemberPrincipalDetails) memberPrincipalDetailService.loadUserByUsername(loginId);
-
+        LoginMemberDetails loginMemberDetails =
+            (LoginMemberDetails) loginMemberDetailService.loadUserByUsername(loginId);
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        if (!passwordEncoder.matches(password, memberPrincipalDetails.getPassword())) {
+        if (!passwordEncoder.matches(password, loginMemberDetails.getPassword())) {
             throw new BadCredentialsException(INVALID_CREDENTIALS.getMessage());
         }
 
         log.info(">>> [ ✅ 사용자 인증이 완료 되었습니다. ]");
         return new UsernamePasswordAuthenticationToken(
-                memberPrincipalDetails, null, memberPrincipalDetails.getAuthorities()
+            loginMemberDetails, null, loginMemberDetails.getAuthorities()
         );
     }
 
