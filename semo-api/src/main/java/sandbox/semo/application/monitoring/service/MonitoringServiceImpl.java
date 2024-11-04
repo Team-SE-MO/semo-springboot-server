@@ -107,7 +107,7 @@ public class MonitoringServiceImpl implements MonitoringService {
                         m -> m.getStatusValue().intValue(),
                         (oldValue, newValue) -> oldValue, LinkedHashMap::new));
 
-        Map<String, Integer> unUsedDevice = data.stream()
+        Map<String, Integer> unusedDevice = data.stream()
                 .filter(this::isInactive)
                 .filter(m -> m.getStatusValue() >= 4320L) // 3 days == 4320 min
                 .sorted((a, b) -> Long.compare(b.getStatusValue(), a.getStatusValue()))
@@ -122,7 +122,7 @@ public class MonitoringServiceImpl implements MonitoringService {
                 .blockedDeviceCnt(blockedDeviceCnt)
                 .topUsedDevices(topUsedDevices)
                 .warnDevice(warnDevice)
-                .unUsedDevice(unUsedDevice)
+                .unusedDevice(unusedDevice)
                 .build();
     }
 

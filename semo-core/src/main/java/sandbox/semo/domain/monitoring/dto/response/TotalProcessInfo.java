@@ -22,6 +22,6 @@ public class TotalProcessInfo {
 
     private Map<String, Integer> warnDevice;
 
-    private Map<String, Integer> unUsedDevice;
+    private Map<String, Integer> unusedDevice;
 
 }
