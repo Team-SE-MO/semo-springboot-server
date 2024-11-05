@@ -1,6 +1,5 @@
 package sandbox.semo.domain.monitoring.dto.response;
 
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,13 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SummaryPageData {
+public class TypeData {
 
-    private String companyName;
-
-    private TotalProcessInfo totalProcessInfo;
-
-    private List<DeviceConnectInfo> allDevices;
+    private String name;
+    private int value;
 
 }
-
