@@ -1,6 +1,9 @@
 package sandbox.semo.batch.service.step;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.batch.core.ExitStatus;
@@ -8,11 +11,11 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
+import sandbox.semo.domain.device.entity.Device;
 import sandbox.semo.domain.monitoring.dto.request.DeviceCollectionInfo;
-import sandbox.semo.domain.monitoring.repository.MonitoringRepository;
 import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
 import sandbox.semo.domain.monitoring.entity.SessionData;
-import sandbox.semo.domain.device.entity.Device;
+import sandbox.semo.domain.monitoring.repository.MonitoringRepository;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -27,43 +30,53 @@ public class DeviceWriter implements ItemWriter<DeviceCollectionInfo>, StepExecu
 
     @Override
     public void write(Chunk<? extends DeviceCollectionInfo> chunk) {
-        chunk.getItems().forEach(this::processDeviceCollection);
+        log.info(">>> [ ✍️ Writing chunk in thread: {} ]", Thread.currentThread().getName());
+
+        List<DeviceCollectionInfo> items = new ArrayList<>(chunk.getItems());
+
+        writeDeviceStatus(items);
+        writeSessionData(items);
+        writeMonitoringMetrics(items);
+
     }
 
-    private void processDeviceCollection(DeviceCollectionInfo item) {
-        Device device = item.getDevice();
-        if (item.isStatusChanged()) {
-            updateDeviceStatus(device);
-        } else {
-            logSkippedUpdate(device);
-        }
+    private void writeDeviceStatus(List<? extends DeviceCollectionInfo> items) {
+        items.parallelStream()
+            .filter(DeviceCollectionInfo::isStatusChanged)
+            .forEach(item -> updateDeviceStatus(item.getDevice()));
+    }
 
-        if (device.getStatus()) {
-            List<SessionData> sessionDataList = item.getSessionDataList();
-            if (sessionDataList != null && !sessionDataList.isEmpty()) {
-                saveSessionData(sessionDataList);
-            } else {
-                log.info(">>> [ ⏭️ SessionData가 없거나 비어 있어 저장을 생략합니다. ]");
-            }
+    private void writeSessionData(List<? extends DeviceCollectionInfo> items) {
+        List<SessionData> allSessionData = items.parallelStream()
+            .map(DeviceCollectionInfo::getSessionDataList)
+            .filter(Objects::nonNull)
+            .flatMap(List::stream)
+            .collect(Collectors.toList());
 
-            if (item.getMonitoringMetric() != null) {
-                saveMonitoringMetric(item.getMonitoringMetric());
-            }
-        }
+        saveSessionData(allSessionData);
+    }
+
+    private void writeMonitoringMetrics(List<? extends DeviceCollectionInfo> items) {
+        List<MonitoringMetric> metrics = items.parallelStream()
+            .map(DeviceCollectionInfo::getMonitoringMetric)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+
+        saveMonitoringMetrics(metrics);
     }
 
     private void updateDeviceStatus(Device device) {
         try {
             boolean updateStatus = !device.getStatus();
             monitoringRepository.deviceStatusUpdate(updateStatus, device.getId());
-            log.info(">>> [ 🔄 Device {} 상태 변경. 업데이트 상태: {} ]",
-                    device.getDeviceAlias(),
-                    updateStatus
-            );
+            log.info(">>> [ 🔄 Device {} 상태 변경. 업데이트 상태: {} - Thread: {} ]",
+                device.getDeviceAlias(),
+                updateStatus,
+                Thread.currentThread().getName());
         } catch (Exception e) {
             log.error(">>> [ ❌ Device {} 상태 변경 중 오류 발생: {} ]",
-                    device.getDeviceAlias(),
-                    e.getMessage());
+                device.getDeviceAlias(),
+                e.getMessage());
         }
     }
 
@@ -74,16 +87,19 @@ public class DeviceWriter implements ItemWriter<DeviceCollectionInfo>, StepExecu
     private void saveSessionData(List<SessionData> sessionDataList) {
         try {
             monitoringRepository.saveSessionData(sessionDataList);
-            log.info(">>> [ 💾 SessionData 저장 완료. 총 데이터 개수: {} ]", sessionDataList.size());
+            log.info(">>> [ 💾 SessionData 저장 완료. 총 데이터 개수: {} - Thread: {} ]",
+                sessionDataList.size(),
+                Thread.currentThread().getName());
         } catch (Exception e) {
             log.error(">>> [ ❌ SessionData 저장 중 오류 발생: {} ]", e.getMessage());
         }
     }
 
-    private void saveMonitoringMetric(MonitoringMetric monitoringMetric) {
+    private void saveMonitoringMetrics(List<MonitoringMetric> metrics) {
         try {
-            monitoringRepository.saveMonitoringMetric(monitoringMetric);
-            log.info(">>> [ 💾 MonitoringMetric 저장 완료 ]");
+            metrics.forEach(monitoringRepository::saveMonitoringMetric);
+            log.info(">>> [ 💾 MonitoringMetric 저장 완료 - Thread: {} ]",
+                Thread.currentThread().getName());
         } catch (Exception e) {
             log.error(">>> [ ❌ MonitoringMetric 저장 중 오류 발생: {} ]", e.getMessage());
         }
