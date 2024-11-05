@@ -28,7 +28,6 @@ import sandbox.semo.batch.service.step.DeviceReaderListener;
 import sandbox.semo.batch.service.step.DeviceWriter;
 import sandbox.semo.domain.common.crypto.AES256;
 import sandbox.semo.domain.device.entity.Device;
-import sandbox.semo.domain.device.repository.DeviceRepository;
 import sandbox.semo.domain.monitoring.dto.request.DeviceCollectionInfo;
 import sandbox.semo.domain.monitoring.repository.MonitoringRepository;
 
@@ -68,7 +67,6 @@ public class BatchConfig {
             .saveState(false)
             .build();
     }
-
 
     @Bean
     @StepScope
@@ -111,5 +109,4 @@ public class BatchConfig {
             ))
             .build();
     }
-
 }
