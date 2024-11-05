@@ -3,6 +3,7 @@ package sandbox.semo.domain.monitoring.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
@@ -26,7 +27,7 @@ public class SessionData {
     @EmbeddedId
     private SessionDataId id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("deviceId")
     @JoinColumn(name = "DEVICE_ID", nullable = false)
     private Device device;
