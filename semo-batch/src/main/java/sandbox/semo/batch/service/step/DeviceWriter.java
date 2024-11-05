@@ -34,31 +34,35 @@ public class DeviceWriter implements ItemWriter<DeviceCollectionInfo>, StepExecu
 
         List<DeviceCollectionInfo> items = new ArrayList<>(chunk.getItems());
 
-        // 디바이스 상태 업데이트
-        items.forEach(item -> {
-            if (item.isStatusChanged()) {
-                updateDeviceStatus(item.getDevice());
-            } else {
-                logSkippedUpdate(item.getDevice());
-            }
-        });
+        writeDeviceStatus(items);
+        writeSessionData(items);
+        writeMonitoringMetrics(items);
 
-        // 세션 데이터 일괄 처리
-        List<SessionData> allSessionData = items.stream()
-            .flatMap(item -> item.getSessionDataList().stream())
+    }
+
+    private void writeDeviceStatus(List<? extends DeviceCollectionInfo> items) {
+        items.parallelStream()
+            .filter(DeviceCollectionInfo::isStatusChanged)
+            .forEach(item -> updateDeviceStatus(item.getDevice()));
+    }
+
+    private void writeSessionData(List<? extends DeviceCollectionInfo> items) {
+        List<SessionData> allSessionData = items.parallelStream()
+            .map(DeviceCollectionInfo::getSessionDataList)
+            .filter(Objects::nonNull)
+            .flatMap(List::stream)
             .collect(Collectors.toList());
-        if (!allSessionData.isEmpty()) {
-            saveSessionData(allSessionData);
-        }
 
-        // 모니터링 메트릭 일괄 처리
-        List<MonitoringMetric> metrics = items.stream()
+        saveSessionData(allSessionData);
+    }
+
+    private void writeMonitoringMetrics(List<? extends DeviceCollectionInfo> items) {
+        List<MonitoringMetric> metrics = items.parallelStream()
             .map(DeviceCollectionInfo::getMonitoringMetric)
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
-        if (!metrics.isEmpty()) {
-            saveMonitoringMetrics(metrics);
-        }
+
+        saveMonitoringMetrics(metrics);
     }
 
     private void updateDeviceStatus(Device device) {
