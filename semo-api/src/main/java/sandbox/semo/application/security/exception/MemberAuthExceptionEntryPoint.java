@@ -1,5 +1,7 @@
 package sandbox.semo.application.security.exception;
 
+import static sandbox.semo.application.security.exception.AuthErrorCode.UNAUTHORIZED_USER;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,10 +18,9 @@ public class MemberAuthExceptionEntryPoint implements AuthenticationEntryPoint {
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
-            AuthenticationException authException) throws IOException, ServletException {
+        AuthenticationException authException) throws IOException, ServletException {
         log.error(">>> [ ❌ 인증 실패: {} ]", authException.getMessage());
-        AuthErrorCode authErrorCode = AuthErrorCode.UNAUTHORIZED_USER;
-        JsonResponseHelper.sendJsonErrorResponse(response, authErrorCode);
+        JsonResponseHelper.sendJsonErrorResponse(response, UNAUTHORIZED_USER);
     }
 
 }

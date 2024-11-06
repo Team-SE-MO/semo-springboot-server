@@ -1,6 +1,11 @@
 package sandbox.semo.application.security.authentication;
 
 import static sandbox.semo.application.security.constant.SecurityConstants.API_LOGIN_PATH;
+import static sandbox.semo.application.security.exception.AuthErrorCode.BLACKLISTED_TOKEN;
+import static sandbox.semo.application.security.exception.AuthErrorCode.INVALID_AUTH_REQUEST;
+import static sandbox.semo.application.security.exception.AuthErrorCode.INVALID_TOKEN;
+import static sandbox.semo.application.security.exception.AuthErrorCode.TOKEN_EXPIRED;
+import static sandbox.semo.application.security.exception.AuthErrorCode.UNAUTHORIZED_USER;
 import static sandbox.semo.application.security.util.TokenExtractor.extractToken;
 
 import io.jsonwebtoken.Claims;
@@ -44,25 +49,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             if (redisUtil.isBlacklisted(token)) {
                 log.error(">>> [ ❌ 로그아웃된 토큰입니다 ]");
-                handleAuthenticationException(response, AuthErrorCode.BLACKLISTED_TOKEN);
+                handleAuthenticationException(response, BLACKLISTED_TOKEN);
                 return;
             }
             processAuthentication(token);
             filterChain.doFilter(request, response);
         } catch (ExpiredJwtException e) {
             log.error(">>> [ ❌ 토큰이 만료되었습니다 ]");
-            handleAuthenticationException(response, AuthErrorCode.TOKEN_EXPIRED);
+            handleAuthenticationException(response, TOKEN_EXPIRED);
             return;
         } catch (BadCredentialsException e) {
             log.error(">>> [ ❌ 인증 실패: {} ]", e.getMessage());
-            handleAuthenticationException(response, AuthErrorCode.INVALID_AUTH_REQUEST);
+            handleAuthenticationException(response, INVALID_AUTH_REQUEST);
         } catch (JwtException e) {
             log.error(">>> [ ❌ 유효하지 않은 토큰입니다: {} ]", e.getMessage());
-            handleAuthenticationException(response, AuthErrorCode.INVALID_TOKEN);
+            handleAuthenticationException(response, INVALID_TOKEN);
             return;
         } catch (Exception e) {
             log.error(">>> [ ❌ 인증 처리 중 오류 발생: {} ]", e.getMessage());
-            handleAuthenticationException(response, AuthErrorCode.UNAUTHORIZED_USER);
+            handleAuthenticationException(response, UNAUTHORIZED_USER);
             return;
         }
     }
