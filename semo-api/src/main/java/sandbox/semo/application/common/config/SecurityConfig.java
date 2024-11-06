@@ -73,8 +73,8 @@ public class SecurityConfig {
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             ).logout(logout -> logout
-                .logoutUrl("/api/v1/logout")  // 로그아웃 URL 설정
-                .addLogoutHandler(jwtLogoutHandler)  // 커스텀 로그아웃 핸들러 추가
+                .logoutUrl("/api/v1/logout")
+                .addLogoutHandler(jwtLogoutHandler)
                 .logoutSuccessHandler(logoutSuccessHandler)
             );
         return http.build();
