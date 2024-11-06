@@ -3,7 +3,6 @@ package sandbox.semo.application.security.authentication;
 import static sandbox.semo.application.security.constant.SecurityConstants.ACCESS_CONTROL_EXPOSE_HEADERS;
 import static sandbox.semo.application.security.constant.SecurityConstants.API_LOGIN_PATH;
 import static sandbox.semo.application.security.constant.SecurityConstants.AUTHORIZATION_HEADER;
-import static sandbox.semo.application.security.constant.SecurityConstants.JWT_TOKEN_PREFIX;
 import static sandbox.semo.application.security.exception.AuthErrorCode.UNAUTHORIZED_USER;
 
 import jakarta.servlet.FilterChain;
@@ -67,7 +66,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         String token = jwtUtil.generateToken(memberId, username, role, companyId);
 
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, AUTHORIZATION_HEADER);
-        response.addHeader(AUTHORIZATION_HEADER, JWT_TOKEN_PREFIX + token);
+        response.addHeader(AUTHORIZATION_HEADER, token);
 
         Map<String, Object> responseBody = new LinkedHashMap<>();
         responseBody.put("code", 200);
