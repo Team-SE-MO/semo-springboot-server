@@ -62,8 +62,9 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
             .findFirst()
             .map(GrantedAuthority::getAuthority)
             .orElseThrow(() -> new BadCredentialsException(UNAUTHORIZED_USER.getMessage()));
+        String ownerName = loginMemberDetails.getOwnerName();
         Long companyId = loginMemberDetails.getCompanyId();
-        String token = jwtUtil.generateToken(memberId, username, role, companyId);
+        String token = jwtUtil.generateToken(memberId, username, ownerName,role, companyId);
 
         response.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, AUTHORIZATION_HEADER);
         response.addHeader(AUTHORIZATION_HEADER, token);
@@ -71,7 +72,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         Map<String, Object> responseBody = new LinkedHashMap<>();
         responseBody.put("code", 200);
         responseBody.put("message", "사용자 인증이 완료 되어 로그인 되었습니다.");
-        responseBody.put("data", Map.of("ROLE", role));
+        responseBody.put("flag", loginMemberDetails.isPasswordChanged());
 
         JsonResponseHelper.sendJsonSuccessResponse(response, responseBody);
     }
