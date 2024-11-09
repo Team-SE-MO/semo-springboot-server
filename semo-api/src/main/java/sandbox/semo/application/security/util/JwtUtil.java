@@ -38,7 +38,8 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(combinedSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(Long memberId, String username, String role, Long companyId) {
+    public String generateToken(Long memberId, String username, String ownerName, String role,
+        Long companyId) {
         String salt = generateSalt();
         return Jwts.builder()
             .subject(String.valueOf(memberId))
@@ -46,6 +47,7 @@ public class JwtUtil {
             .claim("loginId", username)
             .claim("companyId", companyId)
             .claim("salt", salt)
+            .claim("ownerName", ownerName)
             .issuedAt(Date.from(Instant.now()))
             .expiration(Date.from(Instant.now().plusMillis(expiration)))
             .signWith(getSigningKey(salt), Jwts.SIG.HS256)
@@ -89,7 +91,7 @@ public class JwtUtil {
             int startIndex = payload.indexOf("\"salt\":\"") + 8;
             int endIndex = payload.indexOf("\"", startIndex);
 
-            if (startIndex < 8 || endIndex == -1) {  // salt가 없는 경우
+            if (startIndex < 8 || endIndex == -1) {
                 log.error(">>> [ ❌ salt값이 존재하지않습니다 ]");
                 throw new JwtException("");
             }

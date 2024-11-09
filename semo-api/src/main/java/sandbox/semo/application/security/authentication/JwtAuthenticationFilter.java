@@ -1,6 +1,6 @@
 package sandbox.semo.application.security.authentication;
 
-import static sandbox.semo.application.security.constant.SecurityConstants.API_LOGIN_PATH;
+import static sandbox.semo.application.security.constant.SecurityConstants.PUBLIC_PATHS;
 import static sandbox.semo.application.security.exception.AuthErrorCode.BLACKLISTED_TOKEN;
 import static sandbox.semo.application.security.exception.AuthErrorCode.INVALID_AUTH_REQUEST;
 import static sandbox.semo.application.security.exception.AuthErrorCode.INVALID_TOKEN;
@@ -22,6 +22,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import sandbox.semo.application.security.exception.AuthErrorCode;
 import sandbox.semo.application.security.util.JsonResponseHelper;
@@ -34,12 +35,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final RedisUtil redisUtil;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
         FilterChain filterChain) throws ServletException, IOException {
 
-        if (request.getRequestURI().equals(API_LOGIN_PATH)) {
+        String requestUri = request.getRequestURI();
+
+        if (isPublicPath(requestUri)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -70,6 +74,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             handleAuthenticationException(response, UNAUTHORIZED_USER);
             return;
         }
+    }
+
+    private boolean isPublicPath(String requestUri) {
+        return PUBLIC_PATHS.stream()
+            .anyMatch(pattern -> pathMatcher.match(pattern, requestUri));
     }
 
     private void processAuthentication(String token) {
