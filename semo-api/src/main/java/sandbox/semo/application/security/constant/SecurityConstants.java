@@ -14,6 +14,7 @@ public final class SecurityConstants {
 
     // API
     public static final String API_MAIN_PATH = "/";
+    public static final String API_SUPER_REGISTER_PATH = "/api/v1/member/super";
     public static final String API_LOGIN_PATH = "/api/v1/login";
     public static final String API_LOGOUT_PATH = "/api/v1/logout";
     public static final String API_MAIL_PATH = "/api/v1/mail/**";
@@ -22,6 +23,7 @@ public final class SecurityConstants {
 
     public static final List<String> PUBLIC_PATHS = List.of(
         API_MAIN_PATH,
+        API_SUPER_REGISTER_PATH,
         API_LOGIN_PATH,
         API_MAIL_PATH,
         API_MEMBER_REGISTER_PATH,
