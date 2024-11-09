@@ -8,11 +8,14 @@ import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
 import sandbox.semo.domain.member.dto.request.MemberRemove;
 import sandbox.semo.domain.member.dto.request.MemberSearchFilter;
+import sandbox.semo.domain.member.dto.request.SuperRegister;
 import sandbox.semo.domain.member.dto.response.MemberFormInfo;
 import sandbox.semo.domain.member.dto.response.MemberInfo;
 import sandbox.semo.domain.member.entity.Role;
 
 public interface MemberService {
+
+    void superRegister(SuperRegister request);
 
     String register(MemberRegister request, Role role);
 

@@ -6,12 +6,16 @@ import static sandbox.semo.application.member.exception.MemberErrorCode.COMPANY_
 import static sandbox.semo.application.member.exception.MemberErrorCode.FORM_DOES_NOT_EXIST;
 import static sandbox.semo.application.member.exception.MemberErrorCode.INVALID_COMPANY_SELECTION;
 import static sandbox.semo.application.member.exception.MemberErrorCode.MEMBER_NOT_FOUND;
+import static sandbox.semo.application.member.exception.MemberErrorCode.UNAUTHORIZED_TO_MEMBER;
+import static sandbox.semo.domain.member.entity.Role.ROLE_SUPER;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +36,7 @@ import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
 import sandbox.semo.domain.member.dto.request.MemberRemove;
 import sandbox.semo.domain.member.dto.request.MemberSearchFilter;
+import sandbox.semo.domain.member.dto.request.SuperRegister;
 import sandbox.semo.domain.member.dto.response.MemberFormInfo;
 import sandbox.semo.domain.member.dto.response.MemberInfo;
 import sandbox.semo.domain.member.entity.Member;
@@ -54,6 +59,27 @@ public class MemberServiceImpl implements MemberService {
     private final LoginIdGenerator loginIdGenerator;
 
     private static final String DEFAULT_PASSWORD = "0000";
+    private static final String SUPER_KEY = "0000";
+
+    @Override
+    @Transactional
+    public void superRegister(SuperRegister request) {
+        if (!request.getKey().equals(SUPER_KEY)){
+            throw new MemberBusinessException(UNAUTHORIZED_TO_MEMBER);
+        }
+        checkEmailDuplicate(request.getEmail());
+        Company company = companyRepository.findById(request.getCompanyId())
+                .orElseThrow(() -> new MemberBusinessException(COMPANY_NOT_EXIST));
+        Member member = Member.builder()
+                .company(company)
+                .ownerName(request.getOwnerName())
+                .loginId(request.getLoginId())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(ROLE_SUPER)
+                .build();
+        memberRepository.save(member);
+    }
 
     @Override
     @Transactional
@@ -183,7 +209,7 @@ public class MemberServiceImpl implements MemberService {
         Role requestRole = request.getRole();
         boolean isCheckRole = isSuperRole(requestRole);
 
-        boolean isTargetSuper = targetRole.equals(Role.ROLE_SUPER);
+        boolean isTargetSuper = targetRole.equals(ROLE_SUPER);
         // 본인 권한보다 아래의 권한인지 , 아니라면 예외
         if (isCheckRole && isTargetSuper) {
             log.warn(">>> [ ❌ SUPER는 자기자신을 삭제할 수 없습니다. ]");
@@ -207,7 +233,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     private boolean isSuperRole(Role role) {
-        return role.equals(Role.ROLE_SUPER);
+        return role.equals(ROLE_SUPER);
     }
 
 

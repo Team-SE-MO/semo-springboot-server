@@ -29,6 +29,7 @@ import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
 import sandbox.semo.domain.member.dto.request.MemberRemove;
 import sandbox.semo.domain.member.dto.request.MemberSearchFilter;
+import sandbox.semo.domain.member.dto.request.SuperRegister;
 import sandbox.semo.domain.member.dto.response.MemberFormInfo;
 import sandbox.semo.domain.member.dto.response.MemberInfo;
 import sandbox.semo.domain.member.entity.Role;
@@ -41,6 +42,12 @@ import sandbox.semo.domain.member.entity.Role;
 public class MemberController {
 
     private final MemberService memberService;
+
+    @PostMapping("/super")
+    public ApiResponse<Void> superRegister(@RequestBody @Valid SuperRegister superRegister) {
+        memberService.superRegister(superRegister);
+        return ApiResponse.successResponse(OK, "성공적으로 SUPER 계정이 생성되었습니다.");
+    }
 
     @PreAuthorize("hasAnyRole('SUPER','ADMIN')")
     @PostMapping

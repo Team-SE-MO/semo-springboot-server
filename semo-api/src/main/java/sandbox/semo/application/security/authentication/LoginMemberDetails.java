@@ -39,4 +39,8 @@ public class LoginMemberDetails implements UserDetails {
         return member.getId();
     }
 
+    public String getOwnerName() {return member.getOwnerName();}
+
+    public boolean isPasswordChanged(){ return member.isPasswordChanged();}
+
 }
