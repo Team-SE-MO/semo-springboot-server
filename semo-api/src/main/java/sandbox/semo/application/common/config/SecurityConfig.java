@@ -1,5 +1,8 @@
 package sandbox.semo.application.common.config;
 
+import static sandbox.semo.application.security.constant.SecurityConstants.API_LOGOUT_PATH;
+import static sandbox.semo.application.security.constant.SecurityConstants.PUBLIC_PATHS;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,10 +57,7 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/",
-                    "/api/v1/**"
-                ).permitAll()
+                .requestMatchers(PUBLIC_PATHS.toArray(String[]::new)).permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(AbstractHttpConfigurer::disable)
@@ -73,7 +73,7 @@ public class SecurityConfig {
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             ).logout(logout -> logout
-                .logoutUrl("/api/v1/logout")
+                .logoutUrl(API_LOGOUT_PATH)
                 .addLogoutHandler(jwtLogoutHandler)
                 .logoutSuccessHandler(logoutSuccessHandler)
             );
