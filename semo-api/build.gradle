@@ -2,6 +2,7 @@ dependencies {
     implementation project(':semo-core')
 
     implementation 'org.springframework.boot:spring-boot-starter-web' // Spring WEB
+    implementation 'org.springframework.boot:spring-boot-starter-websocket' // Web Socket
     implementation 'org.springframework.boot:spring-boot-starter-security' // Spring Security
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6' // JWT
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
