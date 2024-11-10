@@ -5,6 +5,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -14,12 +15,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 public class SessionDataScheduler {
 
     private final JobLauncher jobLauncher;
-    private final Job job;
+    @Qualifier("sessionDataJob")
+    private final Job sessionDataJob;
 
     @Scheduled(cron = "0/5 * * * * *")
     public void runCollector() throws Exception {
         log.info(">>> [ 📑 Run Collect Session Data ... ]");
-        jobLauncher.run(job, new JobParametersBuilder()
+        jobLauncher.run(sessionDataJob, new JobParametersBuilder()
                 .addLong("runTime", System.currentTimeMillis())
                 .toJobParameters());
     }

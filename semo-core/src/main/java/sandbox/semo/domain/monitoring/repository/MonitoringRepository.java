@@ -90,6 +90,25 @@ public class MonitoringRepository {
         }
     }
 
+    public void deleteExpiredSessionDataList(List<SessionData> sessionDataList,
+        LocalDateTime retentionDate) {
+        String query = queryLoader.getQuery("deleteExpiredSessionDataList");
+        log.info(">>> [ 💾 SessionData 삭제 시작. 데이터 개수: {} ]", sessionDataList.size());
+
+        try {
+            // 단일 쿼리로 변경
+            int deletedCount = jdbcTemplate.update(query, retentionDate);
+
+            log.info(">>> [ 🗑️ CollectedAt: {} 기준 {} 개 행 삭제됨 ]",
+                retentionDate,
+                deletedCount);
+
+        } catch (Exception e) {
+            log.error(">>> [ ❌ SessionData 삭제 실패: 에러: {} ]", e.getMessage(), e);
+            throw e;
+        }
+    }
+
     public MonitoringMetric fetchMetricData(DataSource dataSource, Device device,
         LocalDateTime collectedAt) {
         MonitoringMetric monitoringMetric = null;

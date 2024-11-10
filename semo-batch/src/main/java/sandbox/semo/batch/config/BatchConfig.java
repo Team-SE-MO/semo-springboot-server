@@ -2,6 +2,8 @@ package sandbox.semo.batch.config;
 
 import jakarta.persistence.EntityManagerFactory;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -18,6 +20,7 @@ import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JpaPagingItemReader;
 import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
@@ -26,9 +29,12 @@ import org.springframework.transaction.PlatformTransactionManager;
 import sandbox.semo.batch.service.step.DeviceProcessor;
 import sandbox.semo.batch.service.step.DeviceReaderListener;
 import sandbox.semo.batch.service.step.DeviceWriter;
+import sandbox.semo.batch.service.step.RetentionProcessor;
+import sandbox.semo.batch.service.step.RetentionWriter;
 import sandbox.semo.domain.common.crypto.AES256;
 import sandbox.semo.domain.device.entity.Device;
 import sandbox.semo.domain.monitoring.dto.request.DeviceCollectionInfo;
+import sandbox.semo.domain.monitoring.entity.SessionData;
 import sandbox.semo.domain.monitoring.repository.MonitoringRepository;
 
 @Log4j2
@@ -36,13 +42,18 @@ import sandbox.semo.domain.monitoring.repository.MonitoringRepository;
 @RequiredArgsConstructor
 public class BatchConfig {
 
+    @Value("${backup.path}")
+    private String backupBasePath;
+
     private static final int CHUNK_AND_PAGE_SIZE = 5;
+    private static final int CHUNK_SIZE = 1000;
 
     private final MonitoringRepository monitoringRepository;
     private final AES256 aes256;
     private final EntityManagerFactory entityManagerFactory;
     private final DeviceReaderListener deviceReaderListener;
 
+    // ===== Device Collection Job =====
     @Bean
     public TaskExecutor deviceTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -87,8 +98,7 @@ public class BatchConfig {
         JobRepository jobRepository, PlatformTransactionManager transactionManager,
         ItemReader<Device> reader,
         ItemProcessor<Device, DeviceCollectionInfo> processor,
-        ItemWriter<DeviceCollectionInfo> writer
-    ) {
+        ItemWriter<DeviceCollectionInfo> writer) {
         return new StepBuilder("deviceStatusValidStep", jobRepository)
             .<Device, DeviceCollectionInfo>chunk(CHUNK_AND_PAGE_SIZE, transactionManager)
             .reader(reader)
@@ -100,13 +110,89 @@ public class BatchConfig {
             .build();
     }
 
-    @Bean
-    public Job job(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+    @Bean(name = "sessionDataJob")
+    public Job sessionDataJob(JobRepository jobRepository,
+        PlatformTransactionManager transactionManager) {
         return new JobBuilder("chunksJob", jobRepository)
             .start(deviceCollectionStep(
                 jobRepository, transactionManager,
-                deviceReader(), deviceProcessor(), deviceWriter()
-            ))
+                deviceReader(), deviceProcessor(), deviceWriter()))
+            .build();
+    }
+
+    // ===== Retention Job =====
+
+    @Bean
+    @StepScope
+    public TaskExecutor retentionTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(25);
+        executor.setThreadNamePrefix("retention-task-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.initialize();
+        return executor;
+    }
+
+    @Bean
+    @StepScope
+    public JpaPagingItemReader<SessionData> retentionReader(
+        @Value("#{jobParameters['retentionDate']}") String retentionDateStr) {
+        LocalDateTime retentionDate = LocalDateTime.parse(retentionDateStr);
+        log.info(">>> [ 🔍 삭제 대상 데이터 조회 시작 - 기준일: {} ]", retentionDate);
+
+        return new JpaPagingItemReaderBuilder<SessionData>()
+            .name("retentionReader")
+            .entityManagerFactory(entityManagerFactory)
+            .pageSize(CHUNK_SIZE)
+            .queryString("SELECT s FROM SessionData s " +
+                "WHERE s.id.collectedAt < :retentionDate ")
+            .parameterValues(Map.of("retentionDate", retentionDate))
+            .saveState(false)
+            .build();
+    }
+
+    @Bean
+    @StepScope
+    public ItemWriter<SessionData> retentionWriter() {
+        return new RetentionWriter(monitoringRepository);
+    }
+
+    @Bean
+    @StepScope
+    public RetentionProcessor retentionProcessor() {
+        String backupPath = createBackupPath();
+        return new RetentionProcessor(backupPath);
+    }
+
+    private String createBackupPath() {
+        LocalDateTime now = LocalDateTime.now();
+        return String.format("%s/%d/%02d/session_data_%s.csv",
+            backupBasePath,
+            now.getYear(),
+            now.getMonthValue(),
+            now.format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")));
+    }
+
+    @Bean
+    public Step retentionStep(
+        JobRepository jobRepository,
+        PlatformTransactionManager transactionManager) {
+        return new StepBuilder("retentionStep", jobRepository)
+            .<SessionData, SessionData>chunk(CHUNK_SIZE, transactionManager)
+            .reader(retentionReader(null)) // Job 파라미터는 실행 시점에 주입
+            .processor(retentionProcessor())
+            .writer(retentionWriter())
+            .build();
+    }
+
+    @Bean(name = "retentionJob")
+    public Job retentionJob(JobRepository jobRepository,
+        PlatformTransactionManager transactionManager) {
+        return new JobBuilder("retentionJob", jobRepository)
+            .start(retentionStep(jobRepository, transactionManager))
             .build();
     }
 }
