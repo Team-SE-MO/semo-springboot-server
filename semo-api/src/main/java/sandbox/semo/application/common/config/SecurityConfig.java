@@ -1,5 +1,6 @@
 package sandbox.semo.application.common.config;
 
+import static org.springframework.http.HttpMethod.*;
 import static sandbox.semo.application.security.constant.SecurityConstants.API_LOGOUT_PATH;
 import static sandbox.semo.application.security.constant.SecurityConstants.PUBLIC_PATHS;
 
@@ -58,6 +59,20 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(PUBLIC_PATHS.toArray(String[]::new)).permitAll()
+                .requestMatchers(GET, "/api/v1/company").permitAll()
+                .requestMatchers(POST, "/api/v1/company/form").permitAll()
+                .requestMatchers(POST, "/api/v1/company/{id}").hasRole("SUPER")
+                .requestMatchers(GET, "/api/v1/company/form").hasRole("SUPER")
+                .requestMatchers(PATCH, "/api/v1/company/form").hasRole("SUPER")
+                .requestMatchers(POST, "/api/v1/member/super").permitAll()
+                .requestMatchers(POST, "/api/v1/member/form").permitAll()
+                .requestMatchers(GET, "/api/v1/member/email-check").permitAll()
+                .requestMatchers(GET, "/api/v1/member/form").hasRole("SUPER")
+                .requestMatchers(PATCH, "/api/v1/member/form").hasRole("SUPER")
+                .requestMatchers(POST, "/api/v1/member").hasAnyRole("SUPER", "ADMIN")
+                .requestMatchers(DELETE, "/api/v1/member").hasAnyRole("SUPER", "ADMIN")
+                .requestMatchers(GET, "/api/v1/member").hasAnyRole("SUPER", "ADMIN")
+                .requestMatchers(PATCH, "/api/v1/member").hasAnyRole("ADMIN", "USER")
                 .anyRequest().authenticated()
             )
             .formLogin(AbstractHttpConfigurer::disable)

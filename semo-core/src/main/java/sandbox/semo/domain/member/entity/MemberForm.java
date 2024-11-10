@@ -30,7 +30,7 @@ public class MemberForm extends BaseForm {
     @Column(name = "FORM_ID", nullable = false)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "COMPANY_ID", nullable = false)
     private Company company;
 
