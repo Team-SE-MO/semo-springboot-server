@@ -20,25 +20,35 @@ public final class SecurityConstants {
     public static final String API_MAIL_VALID_PATH = "/api/v1/mail/valid";
     public static final String API_EMAIL_CHECK = "/api/v1/member/email-check/**";
     public static final String API_MEMBER_FORM = "/api/v1/member/form";
+    public static final String API_COMPANY_LIST_PATH = "/api/v1/company/keyword";
+    public static final String API_COMPANY_FORM_PATH = "/api/v1/company/form";
 
-     public static final List<String> PUBLIC_PATHS = List.of(
-         API_MAIN_PATH,
-         API_LOGIN_PATH,
-         API_MAIL_AUTH_PATH,
-         API_MAIL_VALID_PATH,
-         API_EMAIL_CHECK,
-         API_MEMBER_FORM
-     );
 
-     public record JwtPathPattern(String method, String path) {}
+    public static final List<String> PUBLIC_PATHS = List.of(
+            API_MAIN_PATH,
+            API_LOGIN_PATH,
+            API_MAIL_AUTH_PATH,
+            API_MAIL_VALID_PATH,
+            API_EMAIL_CHECK,
+            API_MEMBER_FORM,
+            API_COMPANY_LIST_PATH,
+            API_COMPANY_FORM_PATH
+    );
+
+    public record JwtPathPattern(String method, String path) {
+
+    }
 
     public static final List<JwtPathPattern> JWT_PATHS = List.of(
-        new JwtPathPattern("*", API_MAIN_PATH),
-        new JwtPathPattern("*", API_LOGIN_PATH),
-        new JwtPathPattern("POST", API_MAIL_AUTH_PATH),
-        new JwtPathPattern("POST", API_MAIL_VALID_PATH),
-        new JwtPathPattern("GET", API_EMAIL_CHECK),
-        new JwtPathPattern("POST", API_MEMBER_FORM)
+            new JwtPathPattern("*", API_MAIN_PATH),
+            new JwtPathPattern("*", API_LOGIN_PATH),
+            new JwtPathPattern("POST", API_MAIL_AUTH_PATH),
+            new JwtPathPattern("POST", API_MAIL_VALID_PATH),
+            new JwtPathPattern("GET", API_EMAIL_CHECK),
+            new JwtPathPattern("POST", API_MEMBER_FORM),
+            new JwtPathPattern("GET", API_COMPANY_LIST_PATH),
+            new JwtPathPattern("POST", API_COMPANY_FORM_PATH)
+
     );
 
 }
