@@ -20,12 +20,12 @@ public class RetentionScheduler {
     private final Job retentionJob;
 
     //    @Scheduled(cron = "0 0 0 * * *")
-    @Scheduled(cron = "0 28 0 * * *")
+    @Scheduled(cron = "0 59 14 * * *")
     public void runRetention() throws Exception {
         LocalDateTime retentionDate = LocalDateTime.now()
             .minusDays(1)
-            .withHour(01)
-            .withMinute(12)
+            .withHour(19)
+            .withMinute(45)
             .withSecond(0)
             .withNano(0);
         System.out.println(retentionDate);

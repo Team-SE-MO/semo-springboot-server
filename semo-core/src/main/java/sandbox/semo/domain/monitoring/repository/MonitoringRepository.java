@@ -109,6 +109,24 @@ public class MonitoringRepository {
         }
     }
 
+    public void deleteJobExecutionParamsDataList(
+        LocalDateTime retentionDate) {
+        String query = queryLoader.getQuery("deleteJobExecutionParamsDataList");
+        log.info(">>> [ 💾 MetaData 삭제 시작.]");
+
+        try {
+            int deletedCount = jdbcTemplate.update(query, retentionDate);
+
+            log.info(">>> [ 🗑️ CollectedAt: {} 기준 {} 개 행 삭제됨 ]",
+                retentionDate,
+                deletedCount);
+
+        } catch (Exception e) {
+            log.error(">>> [ ❌ deleteJobExecutionParamData 삭제 실패: 에러: {} ]", e.getMessage(), e);
+            throw e;
+        }
+    }
+
     public MonitoringMetric fetchMetricData(DataSource dataSource, Device device,
         LocalDateTime collectedAt) {
         MonitoringMetric monitoringMetric = null;

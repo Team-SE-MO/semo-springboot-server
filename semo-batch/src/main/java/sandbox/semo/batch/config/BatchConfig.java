@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 import sandbox.semo.batch.service.step.DeviceProcessor;
@@ -31,6 +32,7 @@ import sandbox.semo.batch.service.step.DeviceReaderListener;
 import sandbox.semo.batch.service.step.DeviceWriter;
 import sandbox.semo.batch.service.step.RetentionFileWriter;
 import sandbox.semo.batch.service.step.RetentionWriter;
+import sandbox.semo.batch.service.tasklet.DeleteMetaDataTasklet;
 import sandbox.semo.batch.service.tasklet.DeleteTasklet;
 import sandbox.semo.domain.common.crypto.AES256;
 import sandbox.semo.domain.device.entity.Device;
@@ -53,6 +55,7 @@ public class BatchConfig {
     private final AES256 aes256;
     private final EntityManagerFactory entityManagerFactory;
     private final DeviceReaderListener deviceReaderListener;
+    private final JdbcTemplate jdbcTemplate;
 
     // ===== Device Collection Job =====
     @Bean
@@ -189,6 +192,11 @@ public class BatchConfig {
             .build();
     }
 
+    @Bean
+    @StepScope
+    public DeleteTasklet deleteTasklet() {
+        return new DeleteTasklet(monitoringRepository);
+    }
     // Step 2: 삭제 Step
     @Bean
     public Step deleteStep(
@@ -199,13 +207,23 @@ public class BatchConfig {
             .build();
     }
 
-    // Step 3: 삭제 Step
+    // Step 3: 삭제 Step - backupBasePath를 localdate로 변환해서 해당 일자 전의 배치 메타테이블 데이터 삭제
 
     @Bean
-    @StepScope
-    public DeleteTasklet deleteTasklet() {
-        return new DeleteTasklet(monitoringRepository);
+@StepScope
+public DeleteMetaDataTasklet metaDataDeleteTasklet() {
+    return new DeleteMetaDataTasklet(jdbcTemplate,monitoringRepository);
+}
+
+    @Bean
+    public Step metaDataDeleteStep(
+    JobRepository jobRepository,
+    PlatformTransactionManager transactionManager) {
+    return new StepBuilder("deleteMetaDataStep", jobRepository)
+        .tasklet(metaDataDeleteTasklet(), transactionManager)
+            .build();
     }
+
 
     // Job 설정 수정
     @Bean(name = "retentionJob")
@@ -214,6 +232,7 @@ public class BatchConfig {
         return new JobBuilder("retentionJob", jobRepository)
             .start(backupStep(jobRepository, transactionManager))
             .next(deleteStep(jobRepository, transactionManager))
+            .next(metaDataDeleteStep(jobRepository, transactionManager))
             .build();
     }
 }
