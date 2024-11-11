@@ -28,40 +28,12 @@ public class DeleteMetaDataTasklet implements Tasklet {
         LocalDateTime retentionDate = LocalDateTime.parse(retentionDateStr);
         log.info(">>> [ 🗑 배치 메타데이터 삭제 시작 - 기준일: {} ]", retentionDate);
 
+        monitoringRepository.deleteStepExecutionContext(retentionDate);
+        monitoringRepository.deleteStepExecution(retentionDate);
+        monitoringRepository.deleteJobExecutionContextDataList(retentionDate);
         monitoringRepository.deleteJobExecutionParamsDataList(retentionDate);
-
-        // BATCH_JOB_EXECUTION_CONTEXT 삭제
-        jdbcTemplate.update(
-            "DELETE FROM BATCH_JOB_EXECUTION_CONTEXT WHERE JOB_EXECUTION_ID IN " +
-                "(SELECT JOB_EXECUTION_ID FROM BATCH_JOB_EXECUTION WHERE CREATE_TIME < ?)",
-            retentionDate
-        );
-
-        // BATCH_STEP_EXECUTION_CONTEXT 삭제
-        jdbcTemplate.update(
-            "DELETE FROM BATCH_STEP_EXECUTION_CONTEXT WHERE STEP_EXECUTION_ID IN " +
-                "(SELECT STEP_EXECUTION_ID FROM BATCH_STEP_EXECUTION WHERE START_TIME < ?)",
-            retentionDate
-        );
-
-        // BATCH_STEP_EXECUTION 삭제
-        jdbcTemplate.update(
-            "DELETE FROM BATCH_STEP_EXECUTION WHERE JOB_EXECUTION_ID IN " +
-                "(SELECT JOB_EXECUTION_ID FROM BATCH_JOB_EXECUTION WHERE CREATE_TIME < ?)",
-            retentionDate
-        );
-
-        // BATCH_JOB_EXECUTION 삭제
-        jdbcTemplate.update(
-            "DELETE FROM BATCH_JOB_EXECUTION WHERE CREATE_TIME < ?",
-            retentionDate
-        );
-
-        // BATCH_JOB_INSTANCE 삭제
-        jdbcTemplate.update(
-            "DELETE FROM BATCH_JOB_INSTANCE WHERE JOB_INSTANCE_ID NOT IN " +
-                "(SELECT JOB_INSTANCE_ID FROM BATCH_JOB_EXECUTION)"
-        );
+        monitoringRepository.deleteJobExecution(retentionDate);
+        monitoringRepository.deleteJobInstance(retentionDate);
 
         log.info(">>> [ ✅ 배치 메타데이터 삭제 완료 ]");
         return RepeatStatus.FINISHED;

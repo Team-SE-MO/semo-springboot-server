@@ -197,6 +197,7 @@ public class BatchConfig {
     public DeleteTasklet deleteTasklet() {
         return new DeleteTasklet(monitoringRepository);
     }
+
     // Step 2: 삭제 Step
     @Bean
     public Step deleteStep(
@@ -210,17 +211,17 @@ public class BatchConfig {
     // Step 3: 삭제 Step - backupBasePath를 localdate로 변환해서 해당 일자 전의 배치 메타테이블 데이터 삭제
 
     @Bean
-@StepScope
-public DeleteMetaDataTasklet metaDataDeleteTasklet() {
-    return new DeleteMetaDataTasklet(jdbcTemplate,monitoringRepository);
-}
+    @StepScope
+    public DeleteMetaDataTasklet metaDataDeleteTasklet() {
+        return new DeleteMetaDataTasklet(jdbcTemplate, monitoringRepository);
+    }
 
     @Bean
     public Step metaDataDeleteStep(
-    JobRepository jobRepository,
-    PlatformTransactionManager transactionManager) {
-    return new StepBuilder("deleteMetaDataStep", jobRepository)
-        .tasklet(metaDataDeleteTasklet(), transactionManager)
+        JobRepository jobRepository,
+        PlatformTransactionManager transactionManager) {
+        return new StepBuilder("deleteMetaDataStep", jobRepository)
+            .tasklet(metaDataDeleteTasklet(), transactionManager)
             .build();
     }
 
