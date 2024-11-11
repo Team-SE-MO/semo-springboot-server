@@ -27,11 +27,11 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
+import sandbox.semo.batch.service.step.CompanyPartitionedFileWriter;
 import sandbox.semo.batch.service.step.DeviceProcessor;
 import sandbox.semo.batch.service.step.DeviceReaderListener;
 import sandbox.semo.batch.service.step.DeviceWriter;
 import sandbox.semo.batch.service.step.RetentionFileWriter;
-import sandbox.semo.batch.service.step.RetentionWriter;
 import sandbox.semo.batch.service.tasklet.DeleteMetaDataTasklet;
 import sandbox.semo.batch.service.tasklet.DeleteTasklet;
 import sandbox.semo.domain.common.crypto.AES256;
@@ -124,8 +124,7 @@ public class BatchConfig {
             .build();
     }
 
-    // ===== Retention Job =====
-
+    // ===== Store CSV File Job =====
     @Bean
     @StepScope
     public TaskExecutor retentionTaskExecutor() {
@@ -143,32 +142,23 @@ public class BatchConfig {
     @Bean
     @StepScope
     public JpaPagingItemReader<SessionData> retentionFileReader(
-        @Value("#{jobParameters['retentionDate']}") String retentionDateStr) {
-        LocalDateTime retentionDate = LocalDateTime.parse(retentionDateStr);
-        log.info(">>> [ 🔍 삭제 대상 데이터 조회 시작 - 기준일: {} ]", retentionDate);
+        @Value("#{jobParameters['saveDate']}") String saveDateStr) {
+        LocalDateTime saveDate = LocalDateTime.parse(saveDateStr);
+        log.info(">>> [ 🔍 보관 대상 데이터 조회 시작 - 기준일: {} ]", saveDate);
 
         return new JpaPagingItemReaderBuilder<SessionData>()
             .name("retentionReader")
             .entityManagerFactory(entityManagerFactory)
             .pageSize(CHUNK_SIZE)
+//            .queryString("SELECT s FROM SessionData s " +
+//                "WHERE s.id.collectedAt < :saveDate ")
             .queryString("SELECT s FROM SessionData s " +
-                "WHERE s.id.collectedAt < :retentionDate ")
-            .parameterValues(Map.of("retentionDate", retentionDate))
+                "JOIN FETCH s.device d " +    // FETCH JOIN 추가
+                "JOIN FETCH d.company " +     // FETCH JOIN 추가
+                "WHERE s.id.collectedAt < :saveDate")
+            .parameterValues(Map.of("saveDate", saveDate))
             .saveState(false)
             .build();
-    }
-
-    @Bean
-    @StepScope
-    public ItemWriter<SessionData> retentionWriter() {
-        return new RetentionWriter(monitoringRepository);
-    }
-
-    @Bean
-    @StepScope
-    public RetentionFileWriter retentionFileWriter() {
-        String backupPath = createBackupPath();
-        return new RetentionFileWriter(backupPath);
     }
 
     private String createBackupPath() {
@@ -180,7 +170,19 @@ public class BatchConfig {
             now.format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")));
     }
 
-    // Step 1: 백업 Step
+    @Bean
+    @StepScope
+    public RetentionFileWriter retentionFileWriter() {
+        String backupPath = createBackupPath();
+        return new RetentionFileWriter(backupPath);
+    }
+
+    @Bean
+    @StepScope
+    public CompanyPartitionedFileWriter companyPartitionedFileWriter() {
+        return new CompanyPartitionedFileWriter(backupBasePath);
+    }
+
     @Bean
     public Step backupStep(
         JobRepository jobRepository,
@@ -188,9 +190,21 @@ public class BatchConfig {
         return new StepBuilder("backupStep", jobRepository)
             .<SessionData, SessionData>chunk(CHUNK_SIZE, transactionManager)
             .reader(retentionFileReader(null))
-            .writer(retentionFileWriter())
+                // .writer(retentionFileWriter())
+            .writer(companyPartitionedFileWriter())
+            .taskExecutor(retentionTaskExecutor())
             .build();
     }
+
+    @Bean(name = "storeCsvFileJob")
+    public Job backupOnlyJob(JobRepository jobRepository,
+        PlatformTransactionManager transactionManager) {
+        return new JobBuilder("storeCsvFileJob", jobRepository)
+            .start(backupStep(jobRepository, transactionManager))
+            .build();
+    }
+
+    // ===== Retention Job =====
 
     @Bean
     @StepScope
@@ -198,7 +212,6 @@ public class BatchConfig {
         return new DeleteTasklet(monitoringRepository);
     }
 
-    // Step 2: 삭제 Step
     @Bean
     public Step deleteStep(
         JobRepository jobRepository,
@@ -207,8 +220,6 @@ public class BatchConfig {
             .tasklet(deleteTasklet(), transactionManager)
             .build();
     }
-
-    // Step 3: 삭제 Step - backupBasePath를 localdate로 변환해서 해당 일자 전의 배치 메타테이블 데이터 삭제
 
     @Bean
     @StepScope
@@ -225,14 +236,12 @@ public class BatchConfig {
             .build();
     }
 
-
     // Job 설정 수정
     @Bean(name = "retentionJob")
     public Job retentionJob(JobRepository jobRepository,
         PlatformTransactionManager transactionManager) {
         return new JobBuilder("retentionJob", jobRepository)
-            .start(backupStep(jobRepository, transactionManager))
-            .next(deleteStep(jobRepository, transactionManager))
+            .start(deleteStep(jobRepository, transactionManager))
             .next(metaDataDeleteStep(jobRepository, transactionManager))
             .build();
     }
