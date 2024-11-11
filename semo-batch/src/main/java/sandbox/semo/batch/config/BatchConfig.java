@@ -29,8 +29,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 import sandbox.semo.batch.service.step.DeviceProcessor;
 import sandbox.semo.batch.service.step.DeviceReaderListener;
 import sandbox.semo.batch.service.step.DeviceWriter;
-import sandbox.semo.batch.service.step.RetentionProcessor;
+import sandbox.semo.batch.service.step.RetentionFileWriter;
 import sandbox.semo.batch.service.step.RetentionWriter;
+import sandbox.semo.batch.service.tasklet.DeleteTasklet;
 import sandbox.semo.domain.common.crypto.AES256;
 import sandbox.semo.domain.device.entity.Device;
 import sandbox.semo.domain.monitoring.dto.request.DeviceCollectionInfo;
@@ -138,7 +139,7 @@ public class BatchConfig {
 
     @Bean
     @StepScope
-    public JpaPagingItemReader<SessionData> retentionReader(
+    public JpaPagingItemReader<SessionData> retentionFileReader(
         @Value("#{jobParameters['retentionDate']}") String retentionDateStr) {
         LocalDateTime retentionDate = LocalDateTime.parse(retentionDateStr);
         log.info(">>> [ 🔍 삭제 대상 데이터 조회 시작 - 기준일: {} ]", retentionDate);
@@ -162,9 +163,9 @@ public class BatchConfig {
 
     @Bean
     @StepScope
-    public RetentionProcessor retentionProcessor() {
+    public RetentionFileWriter retentionFileWriter() {
         String backupPath = createBackupPath();
-        return new RetentionProcessor(backupPath);
+        return new RetentionFileWriter(backupPath);
     }
 
     private String createBackupPath() {
@@ -176,23 +177,43 @@ public class BatchConfig {
             now.format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")));
     }
 
+    // Step 1: 백업 Step
     @Bean
-    public Step retentionStep(
+    public Step backupStep(
         JobRepository jobRepository,
         PlatformTransactionManager transactionManager) {
-        return new StepBuilder("retentionStep", jobRepository)
+        return new StepBuilder("backupStep", jobRepository)
             .<SessionData, SessionData>chunk(CHUNK_SIZE, transactionManager)
-            .reader(retentionReader(null)) // Job 파라미터는 실행 시점에 주입
-            .processor(retentionProcessor())
-            .writer(retentionWriter())
+            .reader(retentionFileReader(null))
+            .writer(retentionFileWriter())
             .build();
     }
 
+    // Step 2: 삭제 Step
+    @Bean
+    public Step deleteStep(
+        JobRepository jobRepository,
+        PlatformTransactionManager transactionManager) {
+        return new StepBuilder("deleteStep", jobRepository)
+            .tasklet(deleteTasklet(), transactionManager)
+            .build();
+    }
+
+    // Step 3: 삭제 Step
+
+    @Bean
+    @StepScope
+    public DeleteTasklet deleteTasklet() {
+        return new DeleteTasklet(monitoringRepository);
+    }
+
+    // Job 설정 수정
     @Bean(name = "retentionJob")
     public Job retentionJob(JobRepository jobRepository,
         PlatformTransactionManager transactionManager) {
         return new JobBuilder("retentionJob", jobRepository)
-            .start(retentionStep(jobRepository, transactionManager))
+            .start(backupStep(jobRepository, transactionManager))
+            .next(deleteStep(jobRepository, transactionManager))
             .build();
     }
 }

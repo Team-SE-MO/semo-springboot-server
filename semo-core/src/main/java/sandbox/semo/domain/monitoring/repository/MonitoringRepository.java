@@ -90,10 +90,10 @@ public class MonitoringRepository {
         }
     }
 
-    public void deleteExpiredSessionDataList(List<SessionData> sessionDataList,
+    public void deleteExpiredSessionDataList(
         LocalDateTime retentionDate) {
         String query = queryLoader.getQuery("deleteExpiredSessionDataList");
-        log.info(">>> [ 💾 SessionData 삭제 시작. 데이터 개수: {} ]", sessionDataList.size());
+        log.info(">>> [ 💾 SessionData 삭제 시작.]");
 
         try {
             // 단일 쿼리로 변경

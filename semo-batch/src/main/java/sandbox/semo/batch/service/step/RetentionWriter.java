@@ -42,9 +42,9 @@ public class RetentionWriter implements ItemWriter<SessionData>, StepExecutionLi
     }
 
         try {
-            monitoringRepository.deleteExpiredSessionDataList(items,retentionDate);
-            log.info(">>> [ 🗑️ {} 개의 만료된 세션 데이터 삭제 완료 - 기준일: {}, Thread: {} ]",
-                items.size(), retentionDate, Thread.currentThread().getName());
+            monitoringRepository.deleteExpiredSessionDataList(retentionDate);
+            log.info(">>> [ 🗑️ 만료된 세션 데이터 삭제 완료 - 기준일: {}, Thread: {} ]",
+                retentionDate, Thread.currentThread().getName());
         } catch (Exception e) {
             log.error(">>> [ ❌ 세션 데이터 삭제 중 오류 발생: {} ]", e.getMessage());
             throw e;
