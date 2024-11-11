@@ -56,6 +56,11 @@ public class EmailServiceImpl implements EmailService {
     private String password;
 
     @Override
+    public void sendEmailAuthCode(String email) {
+        sendAuthCode(email);
+    }
+
+    @Override
     public String processEmailRequest(EmailSendRequest request) {
         String apiType = request.getApiType();
         String value = request.getValue();
@@ -69,10 +74,6 @@ public class EmailServiceImpl implements EmailService {
             case "REGISTER_COMPANY" -> {
                 sendCompanyConfirm(Long.parseLong(value));
                 successMessage = "회사 등록 완료 이메일 전송 성공";
-            }
-            case "AUTH_CODE" -> {
-                sendAuthCode(value);
-                successMessage = "인증 코드 이메일 전송 성공";
             }
             case "FAIL_MEMBER" -> {
                 sendMemberFail(value);

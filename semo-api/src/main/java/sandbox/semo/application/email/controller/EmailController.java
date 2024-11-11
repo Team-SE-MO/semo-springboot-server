@@ -8,6 +8,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.email.service.EmailService;
@@ -28,10 +29,16 @@ public class EmailController {
         return ApiResponse.successResponse(OK, successMessage);
     }
 
-    @PostMapping("/auth")
+    @PostMapping("/valid")
     public ApiResponse<String> verifyEmailAuthCode(@Valid @RequestBody EmailAuthVerify request) {
         emailService.verifyEmailAuthCode(request);
         return ApiResponse.successResponse(OK, "인증코드 검증 성공");
+    }
+
+    @PostMapping("/auth")
+    public ApiResponse<Void> sendAuthCode(@RequestParam String email) {
+        emailService.sendEmailAuthCode(email);
+        return ApiResponse.successResponse(OK, "인증 코드 이메일 전송 성공");
     }
 
 }
