@@ -5,6 +5,7 @@ import static org.springframework.http.HttpStatus.OK;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,6 +24,7 @@ public class EmailController {
 
     private final EmailService emailService;
 
+    @PreAuthorize("hasRole('SUPER')")
     @PostMapping
     public ApiResponse<String> processEmailRequest(@Valid @RequestBody EmailSendRequest request) {
         String successMessage = emailService.processEmailRequest(request);
