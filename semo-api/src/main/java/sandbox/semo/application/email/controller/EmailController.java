@@ -24,23 +24,23 @@ public class EmailController {
 
     private final EmailService emailService;
 
-    @PreAuthorize("hasRole('SUPER')")
-    @PostMapping
-    public ApiResponse<String> processEmailRequest(@Valid @RequestBody EmailSendRequest request) {
-        String successMessage = emailService.processEmailRequest(request);
-        return ApiResponse.successResponse(OK, successMessage);
+    @PostMapping("/auth")
+    public ApiResponse<Void> sendAuthCode(@RequestParam String email) {
+        emailService.sendEmailAuthCode(email);
+        return ApiResponse.successResponse(OK, "성공적으로 인증 코드를 전송 하였습니다.");
     }
 
     @PostMapping("/valid")
     public ApiResponse<String> verifyEmailAuthCode(@Valid @RequestBody EmailAuthVerify request) {
         emailService.verifyEmailAuthCode(request);
-        return ApiResponse.successResponse(OK, "인증코드 검증 성공");
+        return ApiResponse.successResponse(OK, "성공적으로 인증 코드 검증이 완료 되었습니다.");
     }
 
-    @PostMapping("/auth")
-    public ApiResponse<Void> sendAuthCode(@RequestParam String email) {
-        emailService.sendEmailAuthCode(email);
-        return ApiResponse.successResponse(OK, "인증 코드 이메일 전송 성공");
+    @PreAuthorize("hasRole('SUPER')")
+    @PostMapping
+    public ApiResponse<String> processEmailRequest(@Valid @RequestBody EmailSendRequest request) {
+        String successMessage = emailService.processEmailRequest(request);
+        return ApiResponse.successResponse(OK, successMessage);
     }
 
 }
