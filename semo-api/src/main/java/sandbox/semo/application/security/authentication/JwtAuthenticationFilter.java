@@ -50,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String authorization = request.getHeader("Authorization");
-        String token = extractToken(authorization);
+        String token = extractToken(authorization, request);
         try {
             if (redisUtil.isBlacklisted(token)) {
                 log.error(">>> [ ❌ 로그아웃된 토큰입니다 ]");
