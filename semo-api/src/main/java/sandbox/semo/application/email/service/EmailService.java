@@ -7,5 +7,7 @@ public interface EmailService {
 
     String processEmailRequest(EmailSendRequest request);
 
+    void sendEmailAuthCode(String request);
+
     void verifyEmailAuthCode(EmailAuthVerify request);
 }

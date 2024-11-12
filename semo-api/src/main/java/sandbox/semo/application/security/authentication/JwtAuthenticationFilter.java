@@ -1,6 +1,6 @@
 package sandbox.semo.application.security.authentication;
 
-import static sandbox.semo.application.security.constant.SecurityConstants.PUBLIC_PATHS;
+import static sandbox.semo.application.security.constant.SecurityConstants.JWT_PATHS;
 import static sandbox.semo.application.security.exception.AuthErrorCode.BLACKLISTED_TOKEN;
 import static sandbox.semo.application.security.exception.AuthErrorCode.INVALID_AUTH_REQUEST;
 import static sandbox.semo.application.security.exception.AuthErrorCode.INVALID_TOKEN;
@@ -42,8 +42,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         FilterChain filterChain) throws ServletException, IOException {
 
         String requestUri = request.getRequestURI();
+        String method = request.getMethod();
 
-        if (isPublicPath(requestUri)) {
+        if (isPublicPath(requestUri, method)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -76,9 +77,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
     }
 
-    private boolean isPublicPath(String requestUri) {
-        return PUBLIC_PATHS.stream()
-            .anyMatch(pattern -> pathMatcher.match(pattern, requestUri));
+    private boolean isPublicPath(String requestUri, String method) {
+        return JWT_PATHS.stream()
+            .anyMatch(pattern ->
+                (pattern.method().equals("*") || pattern.method().equals(method))
+                    && pathMatcher.match(pattern.path(), requestUri)
+            );
     }
 
     private void processAuthentication(String token) {
