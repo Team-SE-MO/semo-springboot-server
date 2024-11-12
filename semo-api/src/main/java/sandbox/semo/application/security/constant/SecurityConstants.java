@@ -14,6 +14,7 @@ public final class SecurityConstants {
 
     // API
     public static final String API_MAIN_PATH = "/";
+    public static final String API_DB_TIME_PATH = "/api/v1/common/time";
     public static final String API_LOGIN_PATH = "/api/v1/login";
     public static final String API_LOGOUT_PATH = "/api/v1/logout";
     public static final String API_MAIL_AUTH_PATH = "/api/v1/mail/auth";
@@ -26,6 +27,7 @@ public final class SecurityConstants {
 
     public static final List<String> PUBLIC_PATHS = List.of(
             API_MAIN_PATH,
+            API_DB_TIME_PATH,
             API_LOGIN_PATH,
             API_MAIL_AUTH_PATH,
             API_MAIL_VALID_PATH,
@@ -41,6 +43,7 @@ public final class SecurityConstants {
 
     public static final List<JwtPathPattern> JWT_PATHS = List.of(
             new JwtPathPattern("*", API_MAIN_PATH),
+            new JwtPathPattern("*", API_DB_TIME_PATH),
             new JwtPathPattern("*", API_LOGIN_PATH),
             new JwtPathPattern("POST", API_MAIL_AUTH_PATH),
             new JwtPathPattern("POST", API_MAIL_VALID_PATH),
