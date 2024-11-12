@@ -25,6 +25,7 @@ import static sandbox.semo.application.email.exception.EmailErrorCode.INVALID_AU
 import static sandbox.semo.application.email.exception.EmailErrorCode.INVALID_REQUEST;
 import static sandbox.semo.application.member.exception.MemberErrorCode.MEMBER_NOT_FOUND;
 
+import io.lettuce.core.RedisConnectionException;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Multipart;
@@ -40,10 +41,13 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import sandbox.semo.application.common.config.EmailConfig;
 import sandbox.semo.application.email.exception.EmailBusinessException;
@@ -66,13 +70,18 @@ public class EmailServiceImpl implements EmailService {
     private final CompanyFormRepository companyFormRepository;
     private final EmailConfig config;
     private final Session mailSession;
+    private final EmergencyCache emergencyCache = new EmergencyCache();
 
     @Override
     public void sendEmailAuthCode(String email) {
         String authCode = String.format("%06d", new Random().nextInt(999999));
-        sendMailWithTemplate(email, AUTH_CODE_SUBJECT, AUTH_CODE_TEMPLATE,
-                Map.of("authCode", authCode));
-        redisTemplate.opsForValue().set(REDIS_KEY_PREFIX + email, authCode, 5, MINUTES);
+        try {
+            redisTemplate.opsForValue().set(REDIS_KEY_PREFIX + email, authCode, 5, MINUTES);
+        } catch (RedisConnectionException e) {
+            log.warn(">>> [ ⚠️ Redis 연결 실패 - 로컬 캐시에 인증 코드 저장 ]");
+            emergencyCache.put(REDIS_KEY_PREFIX + email, authCode, 5, MINUTES);
+        }
+        sendMailWithTemplate(email, AUTH_CODE_SUBJECT, AUTH_CODE_TEMPLATE, Map.of("authCode", authCode));
     }
 
     /**
@@ -150,9 +159,14 @@ public class EmailServiceImpl implements EmailService {
      */
     @Override
     public void verifyEmailAuthCode(EmailAuthVerify request) {
-        String redisKey = REDIS_KEY_PREFIX + request.getEmail();
-        validAuthCodeInRedis(request.getAuthCode(), redisKey);
-        redisTemplate.delete(redisKey);
+        String key = REDIS_KEY_PREFIX + request.getEmail();
+        try {
+            validAuthCodeInRedis(request.getAuthCode(), key);
+            redisTemplate.delete(key);
+        } catch (RedisConnectionException e) {
+            validAuthCodeInLocalCache(request.getAuthCode(), key);
+            emergencyCache.remove(key);
+        }
     }
 
     /**
@@ -170,7 +184,22 @@ public class EmailServiceImpl implements EmailService {
             );
             throw new EmailBusinessException(INVALID_AUTH_CODE);
         }
-        log.info(">>> [ ✅ 인증 코드 일치 ]");
+        log.info(">>> [ ✅ 인증 코드 일치 - Redis ]");
+    }
+
+    /**
+     * localCache에 저장된 인증 코드와 입력된 인증 코드를 검증
+     *
+     * @param target   사용자로부터 입력받은 인증 코드
+     * @param localCacheKey localCache에 저장된 인증 코드의 키
+     */
+    private void validAuthCodeInLocalCache(String target, String localCacheKey) {
+        log.warn(">>> [ ⚠️ Redis 연결 실패 - 로컬 캐시에서 인증 코드 확인 시도 ]");
+        if (emergencyCache.containsKey(localCacheKey) || !emergencyCache.get(localCacheKey).equals(target)) {
+            log.error(">>> [ ❌ 인증 코드 불일치 - 로컬 캐시 인증 코드 없음 또는 불일치 ]");
+            throw new EmailBusinessException(INVALID_AUTH_CODE);
+        }
+        log.info(">>> [ ✅ 인증 코드 일치 - LocalCache ]");
     }
 
     /**
@@ -223,6 +252,36 @@ public class EmailServiceImpl implements EmailService {
     private String sendCompanyFail(String email) {
         sendMailWithTemplate(email, COMPANY_REJECT_SUBJECT, COMPANY_REJECT_TEMPLATE, Map.of());
         return COMPANY_REJECT_SUCCESS;
+    }
+
+    /**
+     * Redis 복구 전략: 로컬 캐시에 있는 데이터를 Redis로 복원
+     */
+    @Scheduled(fixedDelayString = "${redis.restore.interval}")
+    public void restoreCacheToRedis() {
+        if (!emergencyCache.getAllEntries().isEmpty()) {
+            try {
+                emergencyCache.getAllEntries().forEach((key, value) -> {
+                    redisTemplate.opsForValue().set(key, value, 5, TimeUnit.MINUTES);
+                    emergencyCache.remove(key);
+                });
+                resetSchedulerInterval(60000);
+            } catch (RedisConnectionFailureException e) {
+                log.warn(">>> [ ⚠️ Redis 연결 실패 - 복원 시도 중단 및 지연 간격 증가 ]");
+                increaseSchedulerInterval();
+            }
+        }
+    }
+
+    private void resetSchedulerInterval(long interval) {
+        System.setProperty("redis.restore.interval", String.valueOf(interval));
+    }
+
+    private void increaseSchedulerInterval() {
+        long currentInterval = Long.parseLong(System.getProperty("redis.restore.interval", "60000"));
+        long newInterval = Math.min(currentInterval * 2, 600000); // 최대 10분
+        System.setProperty("redis.restore.interval", String.valueOf(newInterval));
+        log.info(">>> [ ⏳ 지연 간격 증가: {} ms ]", newInterval);
     }
 
 }
