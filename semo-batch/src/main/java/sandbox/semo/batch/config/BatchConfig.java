@@ -2,8 +2,12 @@ package sandbox.semo.batch.config;
 
 import com.zaxxer.hikari.HikariDataSource;
 import jakarta.persistence.EntityManagerFactory;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 import lombok.RequiredArgsConstructor;
@@ -14,13 +18,19 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.partition.support.Partitioner;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.database.JdbcPagingItemReader;
 import org.springframework.batch.item.database.JpaPagingItemReader;
+import org.springframework.batch.item.database.Order;
+import org.springframework.batch.item.database.builder.JdbcPagingItemReaderBuilder;
 import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
+import org.springframework.batch.item.database.support.OraclePagingQueryProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,8 +47,8 @@ import sandbox.semo.batch.service.tasklet.DeleteMetaDataTasklet;
 import sandbox.semo.batch.service.tasklet.DeleteTasklet;
 import sandbox.semo.domain.common.crypto.AES256;
 import sandbox.semo.domain.device.entity.Device;
+import sandbox.semo.domain.monitoring.dto.request.CsvFileData;
 import sandbox.semo.domain.monitoring.dto.request.DeviceCollectionInfo;
-import sandbox.semo.domain.monitoring.entity.SessionData;
 import sandbox.semo.domain.monitoring.repository.MonitoringRepository;
 
 @Log4j2
@@ -141,210 +151,30 @@ public class BatchConfig {
         return executor;
     }
 
-     @Bean
-     @StepScope
-     public JpaPagingItemReader<SessionData> retentionFileReader(
-         @Value("#{jobParameters['saveDate']}") String saveDateStr) {
-         LocalDateTime saveDate = LocalDateTime.parse(saveDateStr);
-         log.info(">>> [ 🔍 보관 대상 데이터 조회 시작 - 기준일: {} ]", saveDate);
-          long totalCount = entityManagerFactory.createEntityManager()
-             .createQuery("SELECT COUNT(s) FROM SessionData s WHERE s.id.collectedAt < :saveDate", Long.class)
-             .setParameter("saveDate", saveDate)
-             .getSingleResult();
+//     @Bean
+//     @StepScope
+//     public JpaPagingItemReader<SessionData> retentionFileReader(
+//         @Value("#{jobParameters['saveDate']}") String saveDateStr) {
+//         LocalDateTime saveDate = LocalDateTime.parse(saveDateStr);
+//         log.info(">>> [ 🔍 보관 대상 데이터 조회 시작 - 기준일: {} ]", saveDate);
+//          long totalCount = entityManagerFactory.createEntityManager()
+//             .createQuery("SELECT COUNT(s) FROM SessionData s WHERE s.id.collectedAt < :saveDate", Long.class)
+//             .setParameter("saveDate", saveDate)
+//             .getSingleResult();
+//
+//         log.info(">>> [ 📊 전체 대상 데이터 건수: {} ]", totalCount);
+//
+//         return new JpaPagingItemReaderBuilder<SessionData>()
+//             .name("retentionReader")
+//             .entityManagerFactory(entityManagerFactory)
+//             .pageSize(CHUNK_SIZE)
+//            .queryString("SELECT s FROM SessionData s " +
+//                "WHERE s.id.collectedAt < :saveDate ")
+//             .parameterValues(Map.of("saveDate", saveDate))
+//             .saveState(false)
+//             .build();
+//     }
 
-         log.info(">>> [ 📊 전체 대상 데이터 건수: {} ]", totalCount);
-
-         return new JpaPagingItemReaderBuilder<SessionData>()
-             .name("retentionReader")
-             .entityManagerFactory(entityManagerFactory)
-             .pageSize(CHUNK_SIZE)
-            .queryString("SELECT s FROM SessionData s " +
-                "WHERE s.id.collectedAt < :saveDate ")
-             .parameterValues(Map.of("saveDate", saveDate))
-             .saveState(false)
-             .build();
-     }
-// @Bean
-// @StepScope
-// public JdbcPagingItemReader<CsvFileData> retentionFileReader(
-//     @Value("#{jobParameters['saveDate']}") String saveDateStr) {
-//     LocalDateTime saveDate = LocalDateTime.parse(saveDateStr);
-//     log.info(">>> [ 🔍 보관 대상 데이터 조회 시작 - 기준일: {} ]", saveDate);
-
-//     OraclePagingQueryProvider queryProvider = new OraclePagingQueryProvider();
-//     queryProvider.setSelectClause("""
-//         /*+ INDEX(s IDX_SESSION_COLLECTED_AT) */
-//         s.device_id, s.sid, s.collected_at, s.serial,
-//         s.username, s.command, s.command_name, s.status,
-//         s.schemaname as schema_name, s.osuser as os_user,
-//         s.process, s.machine, s.port, s.terminal,
-//         s.program, s.type, s.sql_id, s.sql_exec_start,
-//         s.sql_exec_id, s.sql_text, s.module, s.action,
-//         s.logon_time, s.last_call_et, s.failed_over,
-//         s.blocking_session_status, s.event, s.wait_class,
-//         s.state, s.wait_time_micro, s.time_remaining_micro,
-//         s.service_name, d.company_id
-//         """);
-//     queryProvider.setFromClause("SESSION_DATA s INNER JOIN DEVICES d ON s.device_id = d.device_id");
-//     queryProvider.setWhereClause("s.collected_at < :saveDate");
-
-//     Map<String, Order> sortKeys = new LinkedHashMap<>();
-//     sortKeys.put("company_id", Order.ASCENDING);
-//     sortKeys.put("device_id", Order.ASCENDING);
-//     queryProvider.setSortKeys(sortKeys);
-
-//     return new JdbcPagingItemReaderBuilder<CsvFileData>()
-//         .name("retentionReader")
-//         .dataSource(dataSource)
-//         .queryProvider(queryProvider)
-//         .parameterValues(Map.of("saveDate", saveDate))
-//         .pageSize(CHUNK_SIZE)
-//         .rowMapper((rs, rowNum) -> {
-//             CsvFileData data = new CsvFileData();
-//             data.setDeviceId(rs.getLong("device_id"));
-//             data.setSid(Long.valueOf(rs.getString("sid")));
-//             data.setCollectedAt(rs.getTimestamp("collected_at").toLocalDateTime());
-//             data.setSerial(rs.getLong("serial"));
-//             data.setUsername(rs.getString("username"));
-//             data.setCommand(rs.getLong("command"));
-//             data.setCommandName(rs.getString("command_name"));
-//             data.setStatus(rs.getString("status"));
-//             data.setSchemaName(rs.getString("schema_name"));
-//             data.setOsUser(rs.getString("os_user"));
-//             data.setProcess(rs.getString("process"));
-//             data.setMachine(rs.getString("machine"));
-//             data.setPort(rs.getInt("port"));
-//             data.setTerminal(rs.getString("terminal"));
-//             data.setProgram(rs.getString("program"));
-//             data.setType(rs.getString("type"));
-//             data.setSqlId(rs.getString("sql_id"));
-
-//             Timestamp sqlExecStart = rs.getTimestamp("sql_exec_start");
-//             data.setSqlExecStart(sqlExecStart != null ? sqlExecStart.toLocalDateTime() : null);
-
-//             data.setSqlExecId(rs.getLong("sql_exec_id"));
-//             data.setSqlText(rs.getString("sql_text"));
-//             data.setModule(rs.getString("module"));
-//             data.setAction(rs.getString("action"));
-
-//             Timestamp logonTime = rs.getTimestamp("logon_time");
-//             data.setLogonTime(logonTime != null ? logonTime.toLocalDateTime() : null);
-
-//             data.setLastCallEt(rs.getLong("last_call_et"));
-//             data.setFailedOver(rs.getString("failed_over"));
-//             data.setBlockingSessionStatus(rs.getString("blocking_session_status"));
-//             data.setEvent(rs.getString("event"));
-//             data.setWaitClass(rs.getString("wait_class"));
-//             data.setState(rs.getString("state"));
-//             data.setWaitTimeMicro(rs.getLong("wait_time_micro"));
-//             data.setTimeRemainingMicro(rs.getLong("time_remaining_micro"));
-//             data.setServiceName(rs.getString("service_name"));
-//             data.setCompanyId(rs.getLong("company_id"));
-//             return data;
-//         })
-//         .build();
-// }
-//@Bean
-//@StepScope
-//public JdbcPagingItemReader<CsvFileData> retentionFileReader(
-//    @Value("#{jobParameters['saveDate']}") String saveDateStr) {
-//    LocalDateTime saveDate = LocalDateTime.parse(saveDateStr);
-//    log.info(">>> [ 🔍 보관 대상 데이터 조회 시작 - 기준일: {} ]", saveDate);
-//
-//    // DEVICES 테이블 전체를 메모리에 로드
-//    String deviceQuery = "SELECT device_id, company_id FROM DEVICES";
-//    Map<Long, Long> deviceCompanyMap = jdbcTemplate.query(
-//        deviceQuery,
-//        (rs, rowNum) -> Map.entry(
-//            rs.getLong("device_id"),
-//            rs.getLong("company_id")
-//        )
-//    ).stream().collect(Collectors.toMap(
-//        Map.Entry::getKey,
-//        Map.Entry::getValue,
-//        (existing, replacement) -> existing,  // 중복 키가 있을 경우 처리
-//        ConcurrentHashMap::new  // 스레드 안전성 보장
-//    ));
-//
-//    log.info(">>> [ 📊 디바이스-회사 매핑 로드 완료 - 총 {}개 ]", deviceCompanyMap.size());
-//
-//    OraclePagingQueryProvider queryProvider = new OraclePagingQueryProvider();
-//    queryProvider.setSelectClause("""
-//        /*+ INDEX(s IDX_SESSION_COLLECTED_AT) */
-//        s.device_id, s.sid, s.collected_at, s.serial,
-//        s.username, s.command, s.command_name, s.status,
-//        s.schemaname as schema_name, s.osuser as os_user,
-//        s.process, s.machine, s.port, s.terminal,
-//        s.program, s.type, s.sql_id, s.sql_exec_start,
-//        s.sql_exec_id, s.sql_text, s.module, s.action,
-//        s.logon_time, s.last_call_et, s.failed_over,
-//        s.blocking_session_status, s.event, s.wait_class,
-//        s.state, s.wait_time_micro, s.time_remaining_micro,
-//        s.service_name
-//        """);
-//
-//    queryProvider.setFromClause("SESSION_DATA s");
-//    queryProvider.setWhereClause("s.collected_at < :saveDate");
-//
-//    // 인덱스 활용을 위한 정렬 순서 설정
-//    Map<String, Order> sortKeys = new LinkedHashMap<>();
-//    sortKeys.put("collected_at", Order.ASCENDING);
-//    sortKeys.put("device_id", Order.ASCENDING);
-//    queryProvider.setSortKeys(sortKeys);
-//
-//    return new JdbcPagingItemReaderBuilder<CsvFileData>()
-//        .name("retentionReader")
-//        .dataSource(dataSource)
-//        .queryProvider(queryProvider)
-//        .parameterValues(Map.of("saveDate", saveDate))
-//        .pageSize(CHUNK_SIZE)
-//        .rowMapper((rs, rowNum) -> {
-//            CsvFileData data = new CsvFileData();
-//            Long deviceId = rs.getLong("device_id");
-//            data.setDeviceId(deviceId);
-//            data.setCompanyId(deviceCompanyMap.get(deviceId));
-//            data.setSid(Long.valueOf(rs.getString("sid")));
-//            data.setCollectedAt(rs.getTimestamp("collected_at").toLocalDateTime());
-//            data.setSerial(rs.getLong("serial"));
-//            data.setUsername(rs.getString("username"));
-//            data.setCommand(rs.getLong("command"));
-//            data.setCommandName(rs.getString("command_name"));
-//            data.setStatus(rs.getString("status"));
-//            data.setSchemaName(rs.getString("schema_name"));
-//            data.setOsUser(rs.getString("os_user"));
-//            data.setProcess(rs.getString("process"));
-//            data.setMachine(rs.getString("machine"));
-//            data.setPort(rs.getInt("port"));
-//            data.setTerminal(rs.getString("terminal"));
-//            data.setProgram(rs.getString("program"));
-//            data.setType(rs.getString("type"));
-//            data.setSqlId(rs.getString("sql_id"));
-//
-//            Timestamp sqlExecStart = rs.getTimestamp("sql_exec_start");
-//            data.setSqlExecStart(sqlExecStart != null ? sqlExecStart.toLocalDateTime() : null);
-//
-//            data.setSqlExecId(rs.getLong("sql_exec_id"));
-//            data.setSqlText(rs.getString("sql_text"));
-//            data.setModule(rs.getString("module"));
-//            data.setAction(rs.getString("action"));
-//
-//            Timestamp logonTime = rs.getTimestamp("logon_time");
-//            data.setLogonTime(logonTime != null ? logonTime.toLocalDateTime() : null);
-//
-//            data.setLastCallEt(rs.getLong("last_call_et"));
-//            data.setFailedOver(rs.getString("failed_over"));
-//            data.setBlockingSessionStatus(rs.getString("blocking_session_status"));
-//            data.setEvent(rs.getString("event"));
-//            data.setWaitClass(rs.getString("wait_class"));
-//            data.setState(rs.getString("state"));
-//            data.setWaitTimeMicro(rs.getLong("wait_time_micro"));
-//            data.setTimeRemainingMicro(rs.getLong("time_remaining_micro"));
-//            data.setServiceName(rs.getString("service_name"));
-//
-//            return data;
-//        })
-//        .build();
-//}
     private String createBackupPath() {
         LocalDateTime now = LocalDateTime.now();
         return String.format("%s/%d/%02d/session_data_%s.csv",
@@ -368,16 +198,174 @@ public class BatchConfig {
     }
 
     @Bean
-    public Step backupStep(
-        JobRepository jobRepository,
+    public Step backupStep(JobRepository jobRepository,
         PlatformTransactionManager transactionManager) {
-        return new StepBuilder("backupStep", jobRepository)
-//            .<CsvFileData, CsvFileData>chunk(CHUNK_SIZE, transactionManager)
-            .<SessionData, SessionData>chunk(CHUNK_SIZE, transactionManager)
-            .reader(retentionFileReader(null))
-                // .writer(retentionFileWriter())
+        return new StepBuilder("backupMasterStep", jobRepository)
+            .partitioner("backupSlaveStep", dailyTimeRangePartitioner(null))
+            .step(backupSlaveStep(jobRepository, transactionManager))
+            .gridSize(6)
+            .taskExecutor(retentionTaskExecutor())
+            .build();
+    }
+
+    @Bean
+    @StepScope
+    public Partitioner dailyTimeRangePartitioner(
+        @Value("#{jobParameters['saveDate']}") String saveDateStr) {
+        return gridSize -> {
+            Map<String, ExecutionContext> result = new HashMap<>();
+            LocalDateTime saveDate = LocalDateTime.parse(saveDateStr);
+
+            // 전일 00:00 ~ 24:00 계산
+            LocalDateTime startOfDay = saveDate.minusDays(1).truncatedTo(ChronoUnit.DAYS);
+            LocalDateTime endOfDay = startOfDay.plusDays(1);
+
+            // 4시간 단위로 분할
+            int hoursPerPartition = 4;
+
+            for (int i = 0; i < gridSize; i++) {
+                ExecutionContext context = new ExecutionContext();
+
+                LocalDateTime partitionStart = startOfDay.plusHours(i * hoursPerPartition);
+                LocalDateTime partitionEnd = i == gridSize - 1
+                    ? endOfDay
+                    : startOfDay.plusHours((i + 1) * hoursPerPartition);
+
+                context.putString("startTime", partitionStart.toString());
+                context.putString("endTime", partitionEnd.toString());
+
+                result.put("partition" + i, context);
+                log.info(">>> [ 🕒 파티션 생성 - partition{}: {} ~ {} ]",
+                    i, partitionStart.format(DateTimeFormatter.ISO_LOCAL_TIME),
+                    partitionEnd.format(DateTimeFormatter.ISO_LOCAL_TIME));
+            }
+
+            return result;
+        };
+    }
+
+    @Bean
+    public Step backupSlaveStep(JobRepository jobRepository,
+        PlatformTransactionManager transactionManager) {
+        return new StepBuilder("backupSlaveStep", jobRepository)
+            .<CsvFileData, CsvFileData>chunk(CHUNK_SIZE, transactionManager)
+            .reader(retentionFileReader(null, null))
             .writer(companyPartitionedFileWriter())
-//            .taskExecutor(retentionTaskExecutor())
+            .build();
+    }
+
+    @Bean
+    @StepScope
+    public JdbcPagingItemReader<CsvFileData> retentionFileReader(
+        @Value("#{stepExecutionContext['startTime']}") String startTime,
+        @Value("#{stepExecutionContext['endTime']}") String endTime) {
+
+        log.info(">>> [ 🔍 파티션 조회 시작 - {} ~ {} ]", startTime, endTime);
+
+        OraclePagingQueryProvider queryProvider = new OraclePagingQueryProvider();
+        queryProvider.setSelectClause("""
+                /*+ PARALLEL(s 4) INDEX(s IDX_SESSION_DATA_COLLECTED) */
+                s.COLLECTED_AT as COLLECTED_AT,
+                s.SID as SID,
+                s.DEVICE_ID as DEVICE_ID,
+                s.SERIAL as SERIAL,
+                s.USERNAME as USERNAME,
+                s.COMMAND as COMMAND,
+                s.COMMAND_NAME as COMMAND_NAME,
+                s.STATUS as STATUS,
+                s.SCHEMANAME as SCHEMA_NAME,
+                s.OSUSER as OS_USER,
+                s.PROCESS as PROCESS,
+                s.MACHINE as MACHINE,
+                s.PORT as PORT,
+                s.TERMINAL as TERMINAL,
+                s.PROGRAM as PROGRAM,
+                s.TYPE as TYPE,
+                s.SQL_ID as SQL_ID,
+                s.SQL_EXEC_START as SQL_EXEC_START,
+                s.SQL_EXEC_ID as SQL_EXEC_ID,
+                s.SQL_TEXT as SQL_TEXT,
+                s.MODULE as MODULE,
+                s.ACTION as ACTION,
+                s.LOGON_TIME as LOGON_TIME,
+                s.LAST_CALL_ET as LAST_CALL_ET,
+                s.FAILED_OVER as FAILED_OVER,
+                s.BLOCKING_SESSION_STATUS as BLOCKING_SESSION_STATUS,
+                s.EVENT as EVENT,
+                s.WAIT_CLASS as WAIT_CLASS,
+                s.STATE as STATE,
+                s.WAIT_TIME_MICRO as WAIT_TIME_MICRO,
+                s.TIME_REMAINING_MICRO as TIME_REMAINING_MICRO,
+                s.SERVICE_NAME as SERVICE_NAME,
+                d.COMPANY_ID as COMPANY_ID
+            """);
+
+        queryProvider.setFromClause(
+            "SESSION_DATA s INNER JOIN DEVICES d ON d.DEVICE_ID = s.DEVICE_ID");
+        queryProvider.setWhereClause(
+            "s.COLLECTED_AT >= :startTime AND s.COLLECTED_AT < :endTime");
+
+        Map<String, Order> sortKeys = new LinkedHashMap<>();
+        sortKeys.put("COLLECTED_AT", Order.ASCENDING);
+        sortKeys.put("DEVICE_ID", Order.ASCENDING);
+        queryProvider.setSortKeys(sortKeys);
+
+        return new JdbcPagingItemReaderBuilder<CsvFileData>()
+            .name("retentionReader_" + startTime)
+            .dataSource(dataSource)
+            .queryProvider(queryProvider)
+            .parameterValues(Map.of(
+                "startTime", LocalDateTime.parse(startTime),
+                "endTime", LocalDateTime.parse(endTime)
+            ))
+            .pageSize(CHUNK_SIZE)
+            .rowMapper((rs, rowNum) -> {
+                CsvFileData data = new CsvFileData();
+                data.setCollectedAt(rs.getTimestamp("COLLECTED_AT").toLocalDateTime());
+                data.setSid(rs.getLong("SID"));
+                data.setDeviceId(rs.getLong("DEVICE_ID"));
+                data.setSerial(rs.getLong("SERIAL"));
+                data.setUsername(rs.getString("USERNAME"));
+                data.setCommand(rs.getLong("COMMAND"));
+                data.setCommandName(rs.getString("COMMAND_NAME"));
+                data.setStatus(rs.getString("STATUS"));
+                data.setSchemaName(rs.getString("SCHEMA_NAME"));
+                data.setOsUser(rs.getString("OS_USER"));
+                data.setProcess(rs.getString("PROCESS"));
+                data.setMachine(rs.getString("MACHINE"));
+                data.setPort(rs.getInt("PORT"));
+                data.setTerminal(rs.getString("TERMINAL"));
+                data.setProgram(rs.getString("PROGRAM"));
+                data.setType(rs.getString("TYPE"));
+                data.setSqlId(rs.getString("SQL_ID"));
+
+                Timestamp sqlExecStart = rs.getTimestamp("SQL_EXEC_START");
+                if (sqlExecStart != null) {
+                    data.setSqlExecStart(sqlExecStart.toLocalDateTime());
+                }
+
+                data.setSqlExecId(rs.getLong("SQL_EXEC_ID"));
+                data.setSqlText(rs.getString("SQL_TEXT"));
+                data.setModule(rs.getString("MODULE"));
+                data.setAction(rs.getString("ACTION"));
+
+                Timestamp logonTime = rs.getTimestamp("LOGON_TIME");
+                if (logonTime != null) {
+                    data.setLogonTime(logonTime.toLocalDateTime());
+                }
+
+                data.setLastCallEt(rs.getLong("LAST_CALL_ET"));
+                data.setFailedOver(rs.getString("FAILED_OVER"));
+                data.setBlockingSessionStatus(rs.getString("BLOCKING_SESSION_STATUS"));
+                data.setEvent(rs.getString("EVENT"));
+                data.setWaitClass(rs.getString("WAIT_CLASS"));
+                data.setState(rs.getString("STATE"));
+                data.setWaitTimeMicro(rs.getLong("WAIT_TIME_MICRO"));
+                data.setTimeRemainingMicro(rs.getLong("TIME_REMAINING_MICRO"));
+                data.setServiceName(rs.getString("SERVICE_NAME"));
+                data.setCompanyId(rs.getLong("COMPANY_ID"));
+                return data;
+            })
             .build();
     }
 
