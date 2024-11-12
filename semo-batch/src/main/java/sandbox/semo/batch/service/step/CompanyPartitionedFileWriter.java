@@ -20,10 +20,13 @@ import sandbox.semo.domain.monitoring.entity.SessionData;
 public class CompanyPartitionedFileWriter implements ItemWriter<SessionData> {
 
     private final String baseBackupPath;
+    private static final int BUFFER_SIZE = 8192 * 4;
     private final Map<Long, BufferedWriter> companyWriters = new ConcurrentHashMap<>();
+    private final Map<Long, StringBuilder> stringBuilders = new ConcurrentHashMap<>();
 
     @Override
     public void write(Chunk<? extends SessionData> chunk) throws Exception {
+        int chunkSize = chunk.size();
         for (SessionData data : chunk) {
             Long companyId = data.getDevice().getCompany().getId();
             BufferedWriter writer = companyWriters.computeIfAbsent(companyId, this::createWriter);
@@ -33,6 +36,7 @@ public class CompanyPartitionedFileWriter implements ItemWriter<SessionData> {
         for (BufferedWriter writer : companyWriters.values()) {
             writer.flush();
         }
+        log.info("write complete.{}개 ", chunk.size());
     }
 
     private BufferedWriter createWriter(Long companyId) {

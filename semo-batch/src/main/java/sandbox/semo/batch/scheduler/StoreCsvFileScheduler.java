@@ -19,12 +19,12 @@ public class StoreCsvFileScheduler {
     @Qualifier("storeCsvFileJob")
     private final Job storeCsvFileJob;
 
-    @Scheduled(cron = "0 07 02 * * *")  // 예: 매일 23시 30분에 실행
+    @Scheduled(cron = "0 14 18 * * *")
     public void runBackup() throws Exception {
         LocalDateTime saveDate = LocalDateTime.now()
-            .minusDays(1)
-            .withHour(22)
-            .withMinute(45)
+            .minusDays(0)
+            .withHour(18)
+            .withMinute(12)
             .withSecond(0)
             .withNano(0);
 
