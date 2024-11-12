@@ -21,7 +21,7 @@ public final class SecurityConstants {
     public static final String API_MAIL_VALID_PATH = "/api/v1/mail/valid";
     public static final String API_EMAIL_CHECK = "/api/v1/member/email-check/**";
     public static final String API_MEMBER_FORM = "/api/v1/member/form";
-    public static final String API_COMPANY_LIST_PATH = "/api/v1/company/keyword";
+    public static final String API_COMPANY_LIST_PATH = "/api/v1/company";
     public static final String API_COMPANY_FORM_PATH = "/api/v1/company/form";
 
 
