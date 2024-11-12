@@ -77,7 +77,7 @@ public class EmailServiceImpl implements EmailService {
         String authCode = String.format("%06d", new Random().nextInt(999999));
         try {
             redisTemplate.opsForValue().set(REDIS_KEY_PREFIX + email, authCode, 5, MINUTES);
-        } catch (RedisConnectionException e) {
+        } catch (RedisConnectionFailureException e) {
             log.warn(">>> [ ⚠️ Redis 연결 실패 - 로컬 캐시에 인증 코드 저장 ]");
             emergencyCache.put(REDIS_KEY_PREFIX + email, authCode, 5, MINUTES);
         }
@@ -163,7 +163,7 @@ public class EmailServiceImpl implements EmailService {
         try {
             validAuthCodeInRedis(request.getAuthCode(), key);
             redisTemplate.delete(key);
-        } catch (RedisConnectionException e) {
+        } catch (RedisConnectionFailureException e) {
             validAuthCodeInLocalCache(request.getAuthCode(), key);
             emergencyCache.remove(key);
         }
@@ -195,7 +195,8 @@ public class EmailServiceImpl implements EmailService {
      */
     private void validAuthCodeInLocalCache(String target, String localCacheKey) {
         log.warn(">>> [ ⚠️ Redis 연결 실패 - 로컬 캐시에서 인증 코드 확인 시도 ]");
-        if (emergencyCache.containsKey(localCacheKey) || !emergencyCache.get(localCacheKey).equals(target)) {
+        String storedAuthCode = emergencyCache.get(localCacheKey);
+        if (storedAuthCode == null || !storedAuthCode.equals(target)) {
             log.error(">>> [ ❌ 인증 코드 불일치 - 로컬 캐시 인증 코드 없음 또는 불일치 ]");
             throw new EmailBusinessException(INVALID_AUTH_CODE);
         }
