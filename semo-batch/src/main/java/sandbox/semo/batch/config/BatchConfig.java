@@ -1,5 +1,6 @@
 package sandbox.semo.batch.config;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.zaxxer.hikari.HikariDataSource;
 import jakarta.persistence.EntityManagerFactory;
 import java.time.LocalDateTime;
@@ -41,9 +42,9 @@ import sandbox.semo.batch.service.step.CompanyPartitionedFileWriter;
 import sandbox.semo.batch.service.step.DeviceProcessor;
 import sandbox.semo.batch.service.step.DeviceReaderListener;
 import sandbox.semo.batch.service.step.DeviceWriter;
-import sandbox.semo.batch.service.step.RetentionFileWriter;
 import sandbox.semo.batch.service.tasklet.DeleteMetaDataTasklet;
 import sandbox.semo.batch.service.tasklet.DeleteTasklet;
+import sandbox.semo.batch.service.tasklet.S3UploadTasklet;
 import sandbox.semo.domain.common.config.QueryLoader;
 import sandbox.semo.domain.common.crypto.AES256;
 import sandbox.semo.domain.device.entity.Device;
@@ -70,6 +71,7 @@ public class BatchConfig {
     private final JdbcTemplate jdbcTemplate;
     private final HikariDataSource dataSource;
     private final QueryLoader queryLoader;
+    private final AmazonS3 amazonS3;
 
     // ===== Device Collection Job =====
     @Bean
@@ -164,26 +166,8 @@ public class BatchConfig {
 
     @Bean
     @StepScope
-    public RetentionFileWriter retentionFileWriter() {
-        String backupPath = createBackupPath();
-        return new RetentionFileWriter(backupPath);
-    }
-
-    @Bean
-    @StepScope
     public CompanyPartitionedFileWriter companyPartitionedFileWriter() {
         return new CompanyPartitionedFileWriter(backupBasePath);
-    }
-
-    @Bean
-    public Step backupStep(JobRepository jobRepository,
-        PlatformTransactionManager transactionManager) {
-        return new StepBuilder("backupMasterStep", jobRepository)
-            .partitioner("backupSlaveStep", dailyTimeRangePartitioner(null))
-            .step(backupSlaveStep(jobRepository, transactionManager))
-            .gridSize(6)
-            .taskExecutor(storeCsvFileTaskExecutor())
-            .build();
     }
 
     @Bean
@@ -223,18 +207,18 @@ public class BatchConfig {
     }
 
     @Bean
-    public Step backupSlaveStep(JobRepository jobRepository,
+    public Step storeCsvFileSlaveStep(JobRepository jobRepository,
         PlatformTransactionManager transactionManager) {
         return new StepBuilder("backupSlaveStep", jobRepository)
             .<CsvFileData, CsvFileData>chunk(CHUNK_SIZE, transactionManager)
-            .reader(retentionFileReader(null, null))
+            .reader(storeCsvFileReader(null, null))
             .writer(companyPartitionedFileWriter())
             .build();
     }
 
     @Bean
     @StepScope
-    public JdbcPagingItemReader<CsvFileData> retentionFileReader(
+    public JdbcPagingItemReader<CsvFileData> storeCsvFileReader(
         @Value("#{stepExecutionContext['startTime']}") String startTime,
         @Value("#{stepExecutionContext['endTime']}") String endTime) {
 
@@ -266,11 +250,38 @@ public class BatchConfig {
             .build();
     }
 
+    @Bean
+    public Step storeCsvFileStep(JobRepository jobRepository,
+        PlatformTransactionManager transactionManager) {
+        return new StepBuilder("backupMasterStep", jobRepository)
+            .partitioner("backupSlaveStep", dailyTimeRangePartitioner(null))
+            .step(storeCsvFileSlaveStep(jobRepository, transactionManager))
+            .gridSize(6)
+            .taskExecutor(storeCsvFileTaskExecutor())
+            .build();
+    }
+
+    @Bean
+    @StepScope
+    public S3UploadTasklet s3UploadTasklet() {
+        return new S3UploadTasklet(amazonS3);
+    }
+
+    @Bean
+    public Step s3UploadStep(
+        JobRepository jobRepository,
+        PlatformTransactionManager transactionManager) {
+        return new StepBuilder("s3UploadStep", jobRepository)
+            .tasklet(s3UploadTasklet(), transactionManager)
+            .build();
+    }
+
     @Bean(name = "storeCsvFileJob")
-    public Job backupOnlyJob(JobRepository jobRepository,
+    public Job storeCsvFileJob(JobRepository jobRepository,
         PlatformTransactionManager transactionManager) {
         return new JobBuilder("storeCsvFileJob", jobRepository)
-            .start(backupStep(jobRepository, transactionManager))
+            .start(storeCsvFileStep(jobRepository, transactionManager))
+            .next(s3UploadStep(jobRepository,transactionManager))
             .build();
     }
 
