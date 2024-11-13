@@ -25,7 +25,6 @@ import static sandbox.semo.application.email.exception.EmailErrorCode.INVALID_AU
 import static sandbox.semo.application.email.exception.EmailErrorCode.INVALID_REQUEST;
 import static sandbox.semo.application.member.exception.MemberErrorCode.MEMBER_NOT_FOUND;
 
-import io.lettuce.core.RedisConnectionException;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Multipart;
