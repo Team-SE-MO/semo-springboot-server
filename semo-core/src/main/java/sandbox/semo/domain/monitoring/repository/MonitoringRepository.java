@@ -164,4 +164,26 @@ public class MonitoringRepository {
             sessionData.getTimeRemainingMicro() != null ? sessionData.getTimeRemainingMicro() : 0);
         ps.setString(32, sessionData.getServiceName() != null ? sessionData.getServiceName() : "-");
     }
+
+    public MetaExecutionData findRealTimeJobExecutionTimes() {
+        String query = queryLoader.getQuery("selectRealTimeJobMetric");
+
+        MetaExecutionData response = MetaExecutionData.builder()
+                .executionTimes(new LinkedHashMap<>())
+                .build();
+
+        DateTimeFormatter responseFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+        paramJdbcTemplate.query(
+                query,
+                (ResultSet rs) -> {
+                    LocalDateTime startTime = rs.getTimestamp("START_TIME").toLocalDateTime();
+                    Double duration = rs.getBigDecimal("DURATION_TIME_IN_HOURS").doubleValue();
+                    response.getExecutionTimes().put(startTime.format(responseFormatter), duration);
+                });
+
+        return response;
+    }
+
+
 }
