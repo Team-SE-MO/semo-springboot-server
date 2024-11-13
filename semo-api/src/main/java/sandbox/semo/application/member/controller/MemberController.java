@@ -29,6 +29,8 @@ import sandbox.semo.domain.member.dto.request.MemberFormRegister;
 import sandbox.semo.domain.member.dto.request.MemberRegister;
 import sandbox.semo.domain.member.dto.request.MemberRemove;
 import sandbox.semo.domain.member.dto.request.MemberSearchFilter;
+import sandbox.semo.domain.member.dto.request.SuperRegister;
+import sandbox.semo.domain.member.dto.request.UpdatePassword;
 import sandbox.semo.domain.member.dto.response.MemberFormInfo;
 import sandbox.semo.domain.member.dto.response.MemberInfo;
 import sandbox.semo.domain.member.entity.Role;
@@ -41,6 +43,12 @@ import sandbox.semo.domain.member.entity.Role;
 public class MemberController {
 
     private final MemberService memberService;
+
+    @PostMapping("/super")
+    public ApiResponse<Void> superRegister(@RequestBody @Valid SuperRegister superRegister) {
+        memberService.superRegister(superRegister);
+        return ApiResponse.successResponse(OK, "성공적으로 SUPER 계정이 생성되었습니다.");
+    }
 
     @PreAuthorize("hasAnyRole('SUPER','ADMIN')")
     @PostMapping
@@ -84,14 +92,9 @@ public class MemberController {
         return ApiResponse.successResponse(OK, "회원가입이 가능한 이메일입니다.", data);
     }
 
-
-    @PreAuthorize("hasAnyRole('ADMIN','USER')")
     @PatchMapping
-    public ApiResponse<String> updatePassword(
-            @RequestParam @Valid String newPassword,
-            @AuthenticationPrincipal JwtMemberDetails memberDetails) {
-        Long memberId = memberDetails.getId();
-        memberService.updatePassword(memberId, newPassword);
+    public ApiResponse<String> updatePassword(@RequestBody @Valid UpdatePassword request) {
+        memberService.updatePassword(request);
         return ApiResponse.successResponse(OK, "성공적으로 비밀번호 수정이 완료되었습니다.");
     }
 
@@ -120,4 +123,5 @@ public class MemberController {
         List<MemberInfo> data = memberService.findAllMembers(ownCompanyId, ownRole, request);
         return ApiResponse.successResponse(OK, "성공적으로 유저 목록을 조회하였습니다.", data);
     }
+
 }

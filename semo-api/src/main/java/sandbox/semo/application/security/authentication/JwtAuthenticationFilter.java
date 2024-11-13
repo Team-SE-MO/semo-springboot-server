@@ -1,7 +1,12 @@
 package sandbox.semo.application.security.authentication;
 
-import static sandbox.semo.application.security.constant.SecurityConstants.API_LOGIN_PATH;
-import static sandbox.semo.application.security.constant.SecurityConstants.JWT_TOKEN_PREFIX;
+import static sandbox.semo.application.security.constant.SecurityConstants.JWT_PATHS;
+import static sandbox.semo.application.security.exception.AuthErrorCode.BLACKLISTED_TOKEN;
+import static sandbox.semo.application.security.exception.AuthErrorCode.INVALID_AUTH_REQUEST;
+import static sandbox.semo.application.security.exception.AuthErrorCode.INVALID_TOKEN;
+import static sandbox.semo.application.security.exception.AuthErrorCode.TOKEN_EXPIRED;
+import static sandbox.semo.application.security.exception.AuthErrorCode.UNAUTHORIZED_USER;
+import static sandbox.semo.application.security.util.TokenExtractor.extractToken;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -13,52 +18,74 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import sandbox.semo.application.security.exception.AuthErrorCode;
 import sandbox.semo.application.security.util.JsonResponseHelper;
 import sandbox.semo.application.security.util.JwtUtil;
+import sandbox.semo.application.security.util.RedisUtil;
 
 @Log4j2
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final RedisUtil redisUtil;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String authorization = request.getHeader("Authorization");
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+        FilterChain filterChain) throws ServletException, IOException {
 
-        if (request.getRequestURI().equals(API_LOGIN_PATH)) {
+        String requestUri = request.getRequestURI();
+        String method = request.getMethod();
+
+        if (isPublicPath(requestUri, method)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            try {
-                processAuthentication(authorization);
-            } catch (ExpiredJwtException e) {
-                log.error(">>> [ ❌ 토큰이 만료되었습니다 ]");
-                handleAuthenticationException(response, AuthErrorCode.TOKEN_EXPIRED);
-                return;
-            } catch (JwtException e) {
-                log.error(">>> [ ❌ 유효하지 않은 토큰입니다: {} ]", e.getMessage());
-                handleAuthenticationException(response, AuthErrorCode.INVALID_TOKEN);
-                return;
-            } catch (Exception e) {
-                log.error(">>> [ ❌ 인증 처리 중 오류 발생: {} ]", e.getMessage());
-                handleAuthenticationException(response, AuthErrorCode.UNAUTHORIZED_USER);
+        String authorization = request.getHeader("Authorization");
+        String token = extractToken(authorization);
+        try {
+            if (redisUtil.isBlacklisted(token)) {
+                log.error(">>> [ ❌ 로그아웃된 토큰입니다 ]");
+                handleAuthenticationException(response, BLACKLISTED_TOKEN);
                 return;
             }
+            processAuthentication(token);
+            filterChain.doFilter(request, response);
+        } catch (ExpiredJwtException e) {
+            log.error(">>> [ ❌ 토큰이 만료되었습니다 ]");
+            handleAuthenticationException(response, TOKEN_EXPIRED);
+            return;
+        } catch (BadCredentialsException e) {
+            log.error(">>> [ ❌ 인증 실패: {} ]", e.getMessage());
+            handleAuthenticationException(response, INVALID_AUTH_REQUEST);
+        } catch (JwtException e) {
+            log.error(">>> [ ❌ 유효하지 않은 토큰입니다: {} ]", e.getMessage());
+            handleAuthenticationException(response, INVALID_TOKEN);
+            return;
+        } catch (Exception e) {
+            log.error(">>> [ ❌ 인증 처리 중 오류 발생: {} ]", e.getMessage());
+            handleAuthenticationException(response, UNAUTHORIZED_USER);
+            return;
         }
-
-        filterChain.doFilter(request, response);
     }
 
-    private void processAuthentication(String authorization) {
-        String token = authorization.substring(JWT_TOKEN_PREFIX.length());
+    private boolean isPublicPath(String requestUri, String method) {
+        return JWT_PATHS.stream()
+            .anyMatch(pattern ->
+                (pattern.method().equals("*") || pattern.method().equals(method))
+                    && pathMatcher.match(pattern.path(), requestUri)
+            );
+    }
+
+    private void processAuthentication(String token) {
         Claims claims = jwtUtil.validateAndGetClaimsFromToken(token);
 
         JwtMemberDetails principalDetails = new JwtMemberDetails(

@@ -52,8 +52,12 @@ public class Member extends BaseTime {
     @Column(name = "ROLE", nullable = false, length = 20)
     private Role role;
 
+    @Column(name = "PASSWORD_CHANGED", nullable = false)
+    private boolean passwordChanged = false;
+
     public void changePassword(String updatePassword) {
         this.password = updatePassword;
+        this.passwordChanged = true;
     }
 
     @Builder
@@ -65,6 +69,7 @@ public class Member extends BaseTime {
         this.email = email;
         this.password = password;
         this.role = role;
+        this.passwordChanged = false;
     }
 
 }
