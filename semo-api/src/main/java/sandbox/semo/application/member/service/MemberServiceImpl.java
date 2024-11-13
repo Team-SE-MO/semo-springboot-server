@@ -247,7 +247,7 @@ public class MemberServiceImpl implements MemberService {
                 .filter(list -> !list.isEmpty())
                 .orElse(List.of(Role.ROLE_USER, Role.ROLE_ADMIN));
 
-        return memberRepository.findAllMemberContainsRole(request.getCompanyId(),
+        return memberRepository.findAllActiveMemberContainsRole(request.getCompanyId(),
                 request.getKeyword(),
                 filterRoles);
     }

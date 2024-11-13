@@ -51,7 +51,7 @@ public class MemberController {
     }
 
     @PreAuthorize("hasAnyRole('SUPER','ADMIN')")
-    @PostMapping
+    @PostMapping("/register")
     public ApiResponse<String> register(
             @RequestBody @Valid MemberRegister memberRegister,
             @AuthenticationPrincipal JwtMemberDetails memberDetails) {
@@ -114,7 +114,7 @@ public class MemberController {
     }
 
     @PreAuthorize("hasAnyRole('SUPER','ADMIN')")
-    @GetMapping
+    @PostMapping
     public ApiResponse<List<MemberInfo>> memberAllList(
             @RequestBody @Valid MemberSearchFilter request,
             @AuthenticationPrincipal JwtMemberDetails memberDetails) {
