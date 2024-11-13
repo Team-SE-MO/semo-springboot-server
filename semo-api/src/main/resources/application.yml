@@ -38,3 +38,7 @@ mail:
           enable: true
           required: true
       debug: true
+
+redis:
+  restore:
+    interval: 60000 # 1분
