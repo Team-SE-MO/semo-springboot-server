@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -26,6 +27,7 @@ import sandbox.semo.domain.member.repository.MemberRepository;
 import sandbox.semo.domain.monitoring.dto.request.DeviceMonitoring;
 import sandbox.semo.domain.monitoring.dto.response.DetailPageData;
 import sandbox.semo.domain.monitoring.dto.response.DeviceConnectInfo;
+import sandbox.semo.domain.monitoring.dto.response.MetaExecutionData;
 import sandbox.semo.domain.monitoring.dto.response.MetricSummary;
 import sandbox.semo.domain.monitoring.dto.response.SummaryPageData;
 import sandbox.semo.domain.monitoring.dto.response.TotalProcessInfo;
@@ -42,6 +44,7 @@ public class MonitoringServiceImpl implements MonitoringService {
     private final MemberRepository memberRepository;
     private final DeviceRepository deviceRepository;
     private final MetricRepository metricRepository;
+    private final MonitoringRepository monitoringRepository;
 
     @Override
     public SummaryPageData fetchSummaryData(Long memberId) {
@@ -263,6 +266,11 @@ public class MonitoringServiceImpl implements MonitoringService {
                         .value(Integer.parseInt(parts[1].trim()))
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public MetaExecutionData getRealTimeJobExecutionTimes() {
+        return monitoringRepository.findRealTimeJobExecutionTimes();
     }
 
 }
