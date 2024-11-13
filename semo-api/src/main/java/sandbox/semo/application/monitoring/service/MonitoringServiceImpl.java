@@ -7,7 +7,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -20,7 +19,6 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.member.exception.MemberBusinessException;
@@ -37,8 +35,6 @@ import sandbox.semo.domain.monitoring.dto.response.SummaryPageData;
 import sandbox.semo.domain.monitoring.dto.response.TotalProcessInfo;
 import sandbox.semo.domain.monitoring.dto.response.TypeData;
 import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
-import sandbox.semo.domain.monitoring.entity.SessionData;
-import sandbox.semo.domain.monitoring.entity.SessionDataId;
 import sandbox.semo.domain.monitoring.repository.MetricRepository;
 import sandbox.semo.domain.monitoring.repository.SessionDataRepository;
 
@@ -229,7 +225,12 @@ public class MonitoringServiceImpl implements MonitoringService {
 
     @Override
     public Page<SessionDataGrid> getPaginated(Pageable pageable) {
-        return sessionDataRepository.findAllSessionData(pageable);
+        int pageSize = 20;
+        Pageable adjustedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageSize,
+                pageable.getSort());
+        return sessionDataRepository.findAllSessionData(adjustedPageable);
     }
 
     private Duration getDurationFromString(String interval) {

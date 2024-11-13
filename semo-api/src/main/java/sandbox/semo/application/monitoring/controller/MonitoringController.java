@@ -55,7 +55,6 @@ public class MonitoringController {
             @AuthenticationPrincipal JwtMemberDetails memberDetails,
             @RequestParam int page,
             @RequestParam int size) {
-        log.debug("User roles: {}", memberDetails.getAuthorities());
         Pageable pageable = PageRequest.of(page, size);
         Page<SessionDataGrid> data = monitoringService.getPaginated(pageable);
         return ApiResponse.successResponse(OK, "성공적으로 세션 데이터 그리드를 조회하였습니다.", data);

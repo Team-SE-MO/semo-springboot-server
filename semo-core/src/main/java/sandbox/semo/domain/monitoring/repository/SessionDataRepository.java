@@ -18,7 +18,7 @@ public interface SessionDataRepository extends JpaRepository<SessionData, Sessio
             "sd.sqlId, sd.sqlText, sd.state, sd.status, sd.terminal, sd.timeRemainingMicro, " +
             "sd.type, sd.username, sd.waitClass, sd.waitTimeMicro, sd.device.id) " +
             "FROM SessionData sd " +
-            "ORDER BY sd.id.collectedAt DESC, sd.id.sid DESC, sd.device.id DESC")
+            "ORDER BY sd.id.collectedAt DESC")
 
     Page<SessionDataGrid> findAllSessionData(Pageable pageable);
 
