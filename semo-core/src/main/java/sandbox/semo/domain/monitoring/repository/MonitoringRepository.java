@@ -8,7 +8,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import sandbox.semo.domain.common.config.QueryLoader;
 import sandbox.semo.domain.device.entity.Device;
+import sandbox.semo.domain.monitoring.dto.response.DailyJobData;
+import sandbox.semo.domain.monitoring.dto.response.MetaExecutionData;
 import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
 import sandbox.semo.domain.monitoring.entity.SessionData;
 import sandbox.semo.domain.monitoring.repository.mapper.MetricDataRowMapper;
@@ -183,6 +187,18 @@ public class MonitoringRepository {
                 });
 
         return response;
+    }
+
+    public List<DailyJobData> findDailyJobExecutionTimes() {
+        String query = queryLoader.getQuery("selectDailyJobExecutionTimes");
+
+        return paramJdbcTemplate.query(
+                query,
+                (rs, rowNum) -> DailyJobData.builder()
+                        .executionDate(rs.getDate("EXEC_DATE").toLocalDate())
+                        .storeJobDuration(rs.getDouble("STORE_JOB_DURATION"))
+                        .retentionJobDuration(rs.getDouble("RETENTION_JOB_DURATION"))
+                        .build());
     }
 
 
