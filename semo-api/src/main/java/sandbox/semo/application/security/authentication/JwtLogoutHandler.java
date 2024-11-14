@@ -23,7 +23,7 @@ public class JwtLogoutHandler implements LogoutHandler {
         Authentication authentication) {
 
         String authorization = request.getHeader("Authorization");
-        String token = extractToken(authorization);
+        String token = extractToken(authorization, request);
 
         try {
             redisUtil.addToBlacklist(token);

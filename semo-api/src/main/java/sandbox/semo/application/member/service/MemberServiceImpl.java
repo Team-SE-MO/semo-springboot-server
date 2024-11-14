@@ -11,11 +11,9 @@ import static sandbox.semo.domain.member.entity.Role.ROLE_SUPER;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -37,6 +35,7 @@ import sandbox.semo.domain.member.dto.request.MemberRegister;
 import sandbox.semo.domain.member.dto.request.MemberRemove;
 import sandbox.semo.domain.member.dto.request.MemberSearchFilter;
 import sandbox.semo.domain.member.dto.request.SuperRegister;
+import sandbox.semo.domain.member.dto.request.UpdatePassword;
 import sandbox.semo.domain.member.dto.response.MemberFormInfo;
 import sandbox.semo.domain.member.dto.response.MemberInfo;
 import sandbox.semo.domain.member.entity.Member;
@@ -113,7 +112,6 @@ public class MemberServiceImpl implements MemberService {
         return isSuperRole ? Role.ROLE_ADMIN : Role.ROLE_USER;
     }
 
-
     @Transactional
     @Override
     public void formRegister(MemberFormRegister request) {
@@ -157,7 +155,6 @@ public class MemberServiceImpl implements MemberService {
                 .build());
     }
 
-
     @Override
     @Transactional
     public FormDecisionResponse updateForm(MemberFormDecision request) {
@@ -180,14 +177,13 @@ public class MemberServiceImpl implements MemberService {
         return true;
     }
 
-
     @Transactional
     @Override
-    public void updatePassword(Long memberId, String newPassword) {
-        //     TODO: 비밀번호 조건 검증 필요 (+ 리팩토링 정규식 추가 예정)
-        Member member = memberRepository.findById(memberId)
+    public void updatePassword(UpdatePassword request) {
+        String email = request.getEmail();
+        String newPassword = request.getNewPassword();
+        Member member = memberRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new MemberBusinessException(MEMBER_NOT_FOUND));
-
         member.changePassword(passwordEncoder.encode(newPassword));
         log.info(">>> [ ✅ 비밀번호 수정이 완료되었습니다. ]");
     }
@@ -236,7 +232,6 @@ public class MemberServiceImpl implements MemberService {
         return role.equals(ROLE_SUPER);
     }
 
-
     @Override
     public List<MemberInfo> findAllMembers(Long ownCompanyId, Role ownRole,
             MemberSearchFilter request) {
@@ -252,10 +247,9 @@ public class MemberServiceImpl implements MemberService {
                 .filter(list -> !list.isEmpty())
                 .orElse(List.of(Role.ROLE_USER, Role.ROLE_ADMIN));
 
-        return memberRepository.findAllMemberContainsRole(request.getCompanyId(),
+        return memberRepository.findAllActiveMemberContainsRole(request.getCompanyId(),
                 request.getKeyword(),
                 filterRoles);
     }
-
 
 }

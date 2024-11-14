@@ -2,6 +2,7 @@ package sandbox.semo.application.security.util;
 
 import static sandbox.semo.application.security.constant.SecurityConstants.JWT_TOKEN_PREFIX;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -10,10 +11,10 @@ import org.springframework.security.authentication.BadCredentialsException;
 @Log4j2
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class TokenExtractor {
-    public static String extractToken(String authorization) {
+
+    public static String extractToken(String authorization, HttpServletRequest request) {
         if (authorization == null) {
-            log.error(">>> [ ❌ Authorization 헤더가 없습니다 ]");
-            throw new BadCredentialsException("잘못된 요청입니다");
+            return extractTokenFromQuery(request);
         }
 
         if (!authorization.startsWith(JWT_TOKEN_PREFIX)) {
@@ -29,4 +30,14 @@ public final class TokenExtractor {
 
         return token;
     }
+
+    private static String extractTokenFromQuery(HttpServletRequest request) {
+        String tokenParam = request.getParameter("token");
+        if (tokenParam == null || tokenParam.isBlank()) {
+            log.error(">>> [ ❌ Authorization 헤더 또는 쿼리 파라미터에 토큰이 없습니다 ]");
+            throw new BadCredentialsException("잘못된 요청입니다");
+        }
+        return tokenParam;
+    }
+
 }
