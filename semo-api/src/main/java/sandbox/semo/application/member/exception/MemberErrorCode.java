@@ -20,7 +20,8 @@ public enum MemberErrorCode implements ErrorCode {
     COMPANY_NOT_EXIST(NOT_FOUND, "존재하지 않는 회사입니다."),
     FORM_DOES_NOT_EXIST(NOT_FOUND, "해당 ID의 폼을 찾을 수 없습니다."),
     INVALID_COMPANY_SELECTION(BAD_REQUEST, "선택할 수 없는 회사입니다."),
-    ALREADY_EXISTS_EMAIL(CONFLICT, "이미 존재하는 이메일 입니다");
+    ALREADY_EXISTS_EMAIL(CONFLICT, "이미 존재하는 이메일 입니다"),
+    DELETED_MEMBER_EMAIL(BAD_REQUEST, "삭제 대기중인 회원의 이메일입니다. 고객센터로 문의해주세요.");
 
     private final HttpStatus httpStatus;
 

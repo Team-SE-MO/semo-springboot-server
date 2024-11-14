@@ -1,6 +1,7 @@
 package sandbox.semo.application.member.service;
 
 import static sandbox.semo.application.common.exception.CommonErrorCode.FORBIDDEN_ACCESS;
+import static sandbox.semo.application.member.exception.MemberErrorCode.*;
 import static sandbox.semo.application.member.exception.MemberErrorCode.ALREADY_EXISTS_EMAIL;
 import static sandbox.semo.application.member.exception.MemberErrorCode.COMPANY_NOT_EXIST;
 import static sandbox.semo.application.member.exception.MemberErrorCode.FORM_DOES_NOT_EXIST;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.common.exception.CommonBusinessException;
 import sandbox.semo.application.member.exception.MemberBusinessException;
+import sandbox.semo.application.member.exception.MemberErrorCode;
 import sandbox.semo.application.member.service.helper.LoginIdGenerator;
 import sandbox.semo.domain.common.dto.response.FormDecisionResponse;
 import sandbox.semo.domain.common.entity.FormStatus;
@@ -171,8 +173,11 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     public Boolean checkEmailDuplicate(String email) {
-        if (memberRepository.existsByEmail(email)) {
+        if (memberRepository.findByEmailAndDeletedAtIsNull(email).isPresent()) {
             throw new MemberBusinessException(ALREADY_EXISTS_EMAIL);
+        }
+        if (memberRepository.findByEmail(email).isPresent()) {
+            throw new MemberBusinessException(MemberErrorCode.DELETED_MEMBER_EMAIL);
         }
         return true;
     }

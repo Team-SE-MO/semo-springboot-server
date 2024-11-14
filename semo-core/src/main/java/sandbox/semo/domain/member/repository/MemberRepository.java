@@ -19,7 +19,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     Optional<Member> findByEmailAndDeletedAtIsNull(String email);
 
-    Boolean existsByEmail(String email);
+    Optional<Member> findByEmail(String email);
 
     @Query("SELECT new sandbox.semo.domain.member.dto.response.MemberInfo" +
             "(m.loginId, m.role, m.email, m.ownerName, m.deletedAt, m.company) " +
