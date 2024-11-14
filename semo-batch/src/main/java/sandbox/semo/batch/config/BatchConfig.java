@@ -4,9 +4,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.zaxxer.hikari.HikariDataSource;
 import jakarta.persistence.EntityManagerFactory;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -21,7 +18,6 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.partition.support.Partitioner;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
@@ -39,6 +35,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 import sandbox.semo.batch.service.step.CompanyPartitionedFileWriter;
+import sandbox.semo.batch.service.step.DailyTimeRangePartitioner;
 import sandbox.semo.batch.service.step.DeviceProcessor;
 import sandbox.semo.batch.service.step.DeviceReaderListener;
 import sandbox.semo.batch.service.step.DeviceWriter;
@@ -63,6 +60,7 @@ public class BatchConfig {
 
     private static final int CHUNK_AND_PAGE_SIZE = 5;
     private static final int CHUNK_SIZE = 10000;
+    private static final int GRID_SIZE = 6;
 
     private final MonitoringRepository monitoringRepository;
     private final AES256 aes256;
@@ -130,10 +128,10 @@ public class BatchConfig {
             .build();
     }
 
-    @Bean(name = "sessionDataJob")
-    public Job sessionDataJob(JobRepository jobRepository,
+    @Bean(name = "collectSessionDataJob")
+    public Job collectSessionDataJob(JobRepository jobRepository,
         PlatformTransactionManager transactionManager) {
-        return new JobBuilder("chunksJob", jobRepository)
+        return new JobBuilder("collectSessionDataJob", jobRepository)
             .start(deviceCollectionStep(
                 jobRepository, transactionManager,
                 deviceReader(), deviceProcessor(), deviceWriter()))
@@ -155,56 +153,20 @@ public class BatchConfig {
         return executor;
     }
 
-    private String createBackupPath() {
-        LocalDateTime now = LocalDateTime.now();
-        return String.format("%s/%d/%02d/session_data_%s.csv",
-            backupBasePath,
-            now.getYear(),
-            now.getMonthValue(),
-            now.format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")));
-    }
-
     @Bean
     @StepScope
-    public CompanyPartitionedFileWriter companyPartitionedFileWriter() {
-        return new CompanyPartitionedFileWriter(backupBasePath);
+    public CompanyPartitionedFileWriter companyPartitionedFileWriter(
+        @Value("#{jobParameters['saveDate']}") String saveDateStr) {
+        return new CompanyPartitionedFileWriter(backupBasePath, saveDateStr);
     }
 
     @Bean
     @StepScope
     public Partitioner dailyTimeRangePartitioner(
         @Value("#{jobParameters['saveDate']}") String saveDateStr) {
-        return gridSize -> {
-            Map<String, ExecutionContext> result = new HashMap<>();
-            LocalDateTime saveDate = LocalDateTime.parse(saveDateStr);
-
-            // 전일 00:00:00 정확히 지정
-            LocalDateTime startOfDay = saveDate
-                .truncatedTo(ChronoUnit.DAYS)
-                .minusDays(1);
-
-            // 4시간 단위로 정확히 분할
-            for (int i = 0; i < gridSize; i++) {
-                ExecutionContext context = new ExecutionContext();
-
-                LocalDateTime partitionStart = startOfDay.plusHours(i * 4);
-                LocalDateTime partitionEnd = i == gridSize - 1
-                    ? startOfDay.plusDays(1).minusNanos(1)  // 23:59:59.999999999
-                    : startOfDay.plusHours((i + 1) * 4);    // 정확한 4시간 단위
-
-                context.putString("startTime", partitionStart.toString());
-                context.putString("endTime", partitionEnd.toString());
-
-                result.put("partition" + i, context);
-                log.info(">>> [ 🕒 파티션 생성 - partition{}: {} ~ {} ]",
-                    i,
-                    partitionStart.format(DateTimeFormatter.ISO_LOCAL_TIME),
-                    partitionEnd.format(DateTimeFormatter.ISO_LOCAL_TIME));
-            }
-
-            return result;
-        };
+        return new DailyTimeRangePartitioner(saveDateStr);
     }
+
 
     @Bean
     public Step storeCsvFileSlaveStep(JobRepository jobRepository,
@@ -212,7 +174,7 @@ public class BatchConfig {
         return new StepBuilder("backupSlaveStep", jobRepository)
             .<CsvFileData, CsvFileData>chunk(CHUNK_SIZE, transactionManager)
             .reader(storeCsvFileReader(null, null))
-            .writer(companyPartitionedFileWriter())
+            .writer(companyPartitionedFileWriter(null))
             .build();
     }
 
@@ -256,7 +218,7 @@ public class BatchConfig {
         return new StepBuilder("backupMasterStep", jobRepository)
             .partitioner("backupSlaveStep", dailyTimeRangePartitioner(null))
             .step(storeCsvFileSlaveStep(jobRepository, transactionManager))
-            .gridSize(6)
+            .gridSize(GRID_SIZE)
             .taskExecutor(storeCsvFileTaskExecutor())
             .build();
     }
@@ -281,7 +243,7 @@ public class BatchConfig {
         PlatformTransactionManager transactionManager) {
         return new JobBuilder("storeCsvFileJob", jobRepository)
             .start(storeCsvFileStep(jobRepository, transactionManager))
-            .next(s3UploadStep(jobRepository,transactionManager))
+            .next(s3UploadStep(jobRepository, transactionManager))
             .build();
     }
 

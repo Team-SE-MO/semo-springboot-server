@@ -24,7 +24,7 @@ import sandbox.semo.domain.monitoring.dto.request.CsvFileData;
 public class CompanyPartitionedFileWriter implements ItemWriter<CsvFileData> {
 
     private final String baseBackupPath;
-    private static final int BUFFER_SIZE = 8192 * 64;
+    private final String saveDateStr;
     private final Map<Long, BufferedWriter> companyWriters = new ConcurrentHashMap<>();
     private int totalWriteCount = 0;
 
@@ -98,10 +98,13 @@ public class CompanyPartitionedFileWriter implements ItemWriter<CsvFileData> {
 
     private BufferedWriter createWriter(Long companyId) {
         try {
-            String fileName = String.format("%s/company_%d_%s.csv",
+            LocalDateTime saveDate = LocalDateTime.parse(saveDateStr);
+            String fileName = String.format("%s/company/%d/%d-%d-%d.csv",
                 baseBackupPath,
                 companyId,
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+            saveDate.getYear(),
+            saveDate.getMonthValue(),
+            saveDate.getDayOfMonth());
 
             File backupFile = new File(fileName);
             File backupDir = backupFile.getParentFile();
