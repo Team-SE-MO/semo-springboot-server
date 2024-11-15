@@ -226,9 +226,7 @@ public class FileServiceImpl implements FileService {
             } else {
                 log.info(">>> [ ✅ DEVICE_ID {} 데이터 {} 건 필터링 완료 ]", deviceId, filteredCount);
             }
-
             return new ByteArrayResource(outputStream.toByteArray());
         }
     }
-
 }
