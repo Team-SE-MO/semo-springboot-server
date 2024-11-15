@@ -1,24 +1,25 @@
 package sandbox.semo.domain.file.dto;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 public class CsvFileInfo {
+
     private String key;
     private String fileName;
     private Long companyId;
-    private LocalDate fileDate;
+    private LocalDateTime lastModified;
     private long fileSize;
 
     @Builder
-    public CsvFileInfo(String key, String fileName, Long companyId, LocalDate fileDate,
+    public CsvFileInfo(String key, String fileName, Long companyId, LocalDateTime lastModified,
         long fileSize) {
         this.key = key;
         this.fileName = fileName;
         this.companyId = companyId;
-        this.fileDate = fileDate;
+        this.lastModified = lastModified;
         this.fileSize = fileSize;
     }
 }

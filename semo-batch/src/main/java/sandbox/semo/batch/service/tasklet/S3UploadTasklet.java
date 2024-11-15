@@ -75,9 +75,9 @@ public class S3UploadTasklet implements Tasklet {
 
                     log.info(">>> [ 📤 S3 업로드 완료 - {}/{} ]", bucket, s3Key);
 
-//                if (file.delete()) {
-//                    log.info(">>> [ 🗑 로컬 파일 삭제 완료 - {} ]", file.getAbsolutePath());
-//                }
+                if (file.delete()) {
+                    log.info(">>> [ 🗑 로컬 파일 삭제 완료 - {} ]", file.getAbsolutePath());
+                }
 
                     // Step 실행 정보에 업로드 결과 추가
                     contribution.incrementWriteCount(1);

@@ -16,6 +16,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +34,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.file.exception.FileBusinessException;
 import sandbox.semo.application.file.exception.FileErrorCode;
 import sandbox.semo.domain.file.dto.CsvFileInfo;
@@ -40,7 +41,6 @@ import sandbox.semo.domain.file.dto.CsvFileInfo;
 
 @Service
 @Log4j2
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class FileServiceImpl implements FileService {
 
@@ -80,7 +80,7 @@ public class FileServiceImpl implements FileService {
             request.setContinuationToken(listing.getNextContinuationToken());
         } while (listing.isTruncated());
 
-        files.sort((a, b) -> b.getFileDate().compareTo(a.getFileDate()));
+        files.sort((a, b) -> b.getLastModified().compareTo(a.getLastModified()));
 
         log.info(">>> [ 📊 검색 결과 - 총 {}개 파일 ]", files.size());
 
@@ -100,19 +100,18 @@ public class FileServiceImpl implements FileService {
             // 회사 ID는 세 번째 부분 (company 다음)
             Long companyId = Long.parseLong(parts[2]);
 
-            // 날짜 정보는 회사 ID 다음 세 부분
-            LocalDate fileDate = LocalDate.of(
-                Integer.parseInt(parts[3]),  // year
-                Integer.parseInt(parts[4]),  // month
-                Integer.parseInt(parts[5])   // day
+            // S3 객체의 마지막 수정일자를 LocalDateTime으로 변환
+            LocalDateTime lastModified = LocalDateTime.ofInstant(
+                summary.getLastModified().toInstant(),
+                ZoneId.systemDefault()
             );
 
             return CsvFileInfo.builder()
-                .key(key)                    // S3 객체 키 (전체 경로)
-                .fileName(fileName)          // 파일명만
-                .companyId(companyId)        // 회사 ID
-                .fileDate(fileDate)          // 파일 날짜
-                .fileSize(summary.getSize()) // 파일 크기 (bytes)
+                .key(key)
+                .fileName(fileName)
+                .companyId(companyId)
+                .lastModified(lastModified)
+                .fileSize(summary.getSize())
                 .build();
 
         } catch (Exception e) {
@@ -121,6 +120,9 @@ public class FileServiceImpl implements FileService {
             return CsvFileInfo.builder()
                 .key(summary.getKey())
                 .fileName(summary.getKey().substring(summary.getKey().lastIndexOf('/') + 1))
+                .lastModified(LocalDateTime.ofInstant(
+                    summary.getLastModified().toInstant(),
+                    ZoneId.systemDefault()))
                 .fileSize(summary.getSize())
                 .build();
         }

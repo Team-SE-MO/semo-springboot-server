@@ -15,13 +15,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 public class SessionDataScheduler {
 
     private final JobLauncher jobLauncher;
-    @Qualifier("sessionDataJob")
-    private final Job sessionDataJob;
+    @Qualifier("collectSessionDataJob")
+    private final Job collectSessionDataJob;
 
     @Scheduled(cron = "0/5 * * * * *")
     public void runCollector() throws Exception {
         log.info(">>> [ 📑 Run Collect Session Data ... ]");
-        jobLauncher.run(sessionDataJob, new JobParametersBuilder()
+        jobLauncher.run(collectSessionDataJob, new JobParametersBuilder()
                 .addLong("runTime", System.currentTimeMillis())
                 .toJobParameters());
     }
