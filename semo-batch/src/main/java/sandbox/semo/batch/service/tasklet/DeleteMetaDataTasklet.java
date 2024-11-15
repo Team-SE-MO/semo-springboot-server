@@ -25,7 +25,7 @@ public class DeleteMetaDataTasklet implements Tasklet {
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext)
         throws Exception {
-        LocalDateTime retentionDate = LocalDateTime.parse(retentionDateStr);
+        LocalDateTime retentionDate = LocalDateTime.parse(retentionDateStr).minusDays(5);
         log.info(">>> [ 🗑 배치 메타데이터 삭제 시작 - 기준일: {} ]", retentionDate);
 
         monitoringRepository.deleteStepExecutionContext(retentionDate);

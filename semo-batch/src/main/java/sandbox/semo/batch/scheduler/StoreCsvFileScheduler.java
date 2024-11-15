@@ -19,14 +19,9 @@ public class StoreCsvFileScheduler {
     @Qualifier("storeCsvFileJob")
     private final Job storeCsvFileJob;
 
-    @Scheduled(cron = "0 14 18 * * *")
+    @Scheduled(cron = "0 0 0 * * *")
     public void runBackup() throws Exception {
-        LocalDateTime saveDate = LocalDateTime.now()
-            .minusDays(0)
-            .withHour(18)
-            .withMinute(12)
-            .withSecond(0)
-            .withNano(0);
+        LocalDateTime saveDate = LocalDateTime.now();
 
         log.info(">>> [ 💾 데이터 저장 작업 시작 - 기준일: {} ]", saveDate);
         jobLauncher.run(
