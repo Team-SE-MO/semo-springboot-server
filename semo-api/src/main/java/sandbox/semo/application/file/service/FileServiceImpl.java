@@ -1,6 +1,8 @@
 package sandbox.semo.application.file.service;
 
+import static sandbox.semo.application.file.exception.FileErrorCode.CSV_PROCESSING_ERROR;
 import static sandbox.semo.application.file.exception.FileErrorCode.DEVICE_ID_COLUMN_NOT_FOUND;
+import static sandbox.semo.application.file.exception.FileErrorCode.FILE_DOWNLOAD_FAILURE;
 import static sandbox.semo.application.file.exception.FileErrorCode.FILE_NOT_FOUND;
 
 import com.amazonaws.services.s3.AmazonS3;
@@ -67,6 +69,7 @@ public class FileServiceImpl implements FileService {
             .withBucketName(bucket)
             .withPrefix(prefix);
 
+        // listObjectsV2 메서드는 한 번의 요청으로 최대 1,000개의 객체만 반환할 수 있는데 더 많은 객체가 있을 경우를 처리하기 위해 페이징 처리가 필요한데, 이를 위해 do-while 루프를 사용
         ListObjectsV2Result listing;
         do {
             listing = amazonS3.listObjectsV2(request);
@@ -170,14 +173,13 @@ public class FileServiceImpl implements FileService {
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                     "attachment; filename=\"" + fileName + "\"")
                 .body(filteredResource);
-
         } catch (AmazonS3Exception e) {
             log.error(">>> [ ❌ S3 파일 다운로드 실패 - key: {}, error: {} ]",
                 key, e.getMessage());
-            throw new RuntimeException("파일 다운로드 실패", e);
+            throw new FileBusinessException(FILE_DOWNLOAD_FAILURE);
         } catch (IOException e) {
             log.error(">>> [ ❌ CSV 파일 처리 실패 - error: {} ]", e.getMessage());
-            throw new RuntimeException("CSV 파일 처리 실패", e);
+            throw new FileBusinessException(CSV_PROCESSING_ERROR);
         }
     }
 

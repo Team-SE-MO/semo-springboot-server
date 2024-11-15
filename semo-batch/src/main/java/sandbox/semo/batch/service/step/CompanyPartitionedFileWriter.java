@@ -8,7 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,13 +34,14 @@ public class CompanyPartitionedFileWriter implements ItemWriter<CsvFileData> {
 
         long groupingStart = System.currentTimeMillis();
         Map<Long, List<CsvFileData>> companyGroups = chunk.getItems().stream()
-            .collect(Collectors.groupingBy(CsvFileData::getCompanyId));  
+            .collect(Collectors.groupingBy(CsvFileData::getCompanyId));
         long groupingEnd = System.currentTimeMillis();
 
         log.info(">>> 그룹화 소요시간: {}ms, 회사 수: {}",
             groupingEnd - groupingStart, companyGroups.size());
 
         // 파일 쓰기
+
         for (Map.Entry<Long, List<CsvFileData>> entry : companyGroups.entrySet()) {
             Long companyId = entry.getKey();
             List<CsvFileData> items = entry.getValue();
@@ -51,7 +51,11 @@ public class CompanyPartitionedFileWriter implements ItemWriter<CsvFileData> {
                 appendCsvLine(builder, data);
             }
 
-            BufferedWriter writer = companyWriters.computeIfAbsent(companyId, this::createWriter);
+            BufferedWriter writer = companyWriters.get(companyId);
+            if (writer == null) {
+                writer = createWriter(companyId);
+                companyWriters.put(companyId, writer);
+            }
             writer.write(builder.toString());
         }
 
@@ -96,38 +100,35 @@ public class CompanyPartitionedFileWriter implements ItemWriter<CsvFileData> {
             .append(escape(data.getServiceName())).append('\n');
     }
 
-    private BufferedWriter createWriter(Long companyId) {
-        try {
-            LocalDateTime saveDate = LocalDateTime.parse(saveDateStr);
-            String fileName = String.format("%s/company/%d/%d-%d-%d.csv",
-                baseBackupPath,
-                companyId,
+    private BufferedWriter createWriter(Long companyId) throws IOException {
+        LocalDateTime saveDate = LocalDateTime.parse(saveDateStr);
+        String fileName = String.format("%s/company/%d/%d-%d-%d.csv",
+            baseBackupPath,
+            companyId,
             saveDate.getYear(),
             saveDate.getMonthValue(),
             saveDate.getDayOfMonth());
 
-            File backupFile = new File(fileName);
-            File backupDir = backupFile.getParentFile();
+        File backupFile = new File(fileName);
+        File backupDir = backupFile.getParentFile();
 
-            if (!backupDir.exists() && !backupDir.mkdirs()) {
-                throw new RuntimeException("백업 디렉토리 생성 실패: " + backupDir);
-            }
-
-            log.info(">>> [ 📁 회사별 백업 파일 생성 시작: {} ]", fileName);
-
-            BufferedWriter writer = Files.newBufferedWriter(
-                backupFile.toPath(),
-                StandardCharsets.UTF_8,
-                StandardOpenOption.CREATE,
-                StandardOpenOption.WRITE,
-                StandardOpenOption.APPEND
-            );
-
-            writeHeader(writer);
-            return writer;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create writer for company: " + companyId, e);
+        if (!backupDir.exists() && !backupDir.mkdirs()) {
+            throw new IOException("백업 디렉토리 생성 실패: " + backupDir);
         }
+
+        log.info(">>> [ 📁 회사별 백업 파일 생성 시작: {} ]", fileName);
+
+        BufferedWriter writer = Files.newBufferedWriter(
+            backupFile.toPath(),
+            StandardCharsets.UTF_8,
+            StandardOpenOption.CREATE,
+            StandardOpenOption.WRITE,
+            StandardOpenOption.APPEND
+        );
+
+        writeHeader(writer);
+        return writer;
+
     }
 
     private void writeHeader(BufferedWriter writer) throws IOException {
