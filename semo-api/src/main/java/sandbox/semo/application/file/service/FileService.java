@@ -10,5 +10,5 @@ public interface FileService {
 
     List<CsvFileInfo> getCsvFileListByCompany(Long companyId, LocalDate date);
 
-    ResponseEntity<Resource> downloadCsvFile(String key, Long companyId);
+    ResponseEntity<Resource> downloadCsvFile(String key, Long companyId,Long deviceId);
 }

@@ -43,8 +43,9 @@ public class FileController {
     @GetMapping("/download")
     public ResponseEntity<Resource> downloadCsvFile(
         @RequestParam String key,
+        @RequestParam(required = false) Long deviceId,
         @AuthenticationPrincipal JwtMemberDetails memberDetails
     ) {
-        return fileService.downloadCsvFile(key, memberDetails.getCompanyId());
+        return fileService.downloadCsvFile(key, memberDetails.getCompanyId(),deviceId);
     }
 }
