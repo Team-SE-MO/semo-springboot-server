@@ -14,20 +14,45 @@ public final class SecurityConstants {
 
     // API
     public static final String API_MAIN_PATH = "/";
-    public static final String API_SUPER_REGISTER_PATH = "/api/v1/member/super";
+    public static final String API_DB_TIME_PATH = "/api/v1/common/time";
     public static final String API_LOGIN_PATH = "/api/v1/login";
     public static final String API_LOGOUT_PATH = "/api/v1/logout";
-    public static final String API_MAIL_PATH = "/api/v1/mail/**";
-    public static final String API_MEMBER_REGISTER_PATH = "/api/v1/member/form";
-    public static final String API_COMPANY_REGISTER_PATH = "/api/v1/company/**";
+    public static final String API_MAIL_AUTH_PATH = "/api/v1/mail/auth";
+    public static final String API_MAIL_VALID_PATH = "/api/v1/mail/valid";
+    public static final String API_CHANGE_PASSWORD_PATH = "/api/v1/member";
+    public static final String API_EMAIL_CHECK = "/api/v1/member/email-check/**";
+    public static final String API_MEMBER_FORM = "/api/v1/member/form";
+    public static final String API_COMPANY_LIST_PATH = "/api/v1/company";
+    public static final String API_COMPANY_FORM_PATH = "/api/v1/company/form";
+
 
     public static final List<String> PUBLIC_PATHS = List.of(
-        API_MAIN_PATH,
-        API_SUPER_REGISTER_PATH,
-        API_LOGIN_PATH,
-        API_MAIL_PATH,
-        API_MEMBER_REGISTER_PATH,
-        API_COMPANY_REGISTER_PATH
+            API_MAIN_PATH,
+            API_DB_TIME_PATH,
+            API_LOGIN_PATH,
+            API_MAIL_AUTH_PATH,
+            API_MAIL_VALID_PATH,
+            API_CHANGE_PASSWORD_PATH,
+            API_EMAIL_CHECK,
+            API_MEMBER_FORM,
+            API_COMPANY_LIST_PATH,
+            API_COMPANY_FORM_PATH
+    );
+
+    public record JwtPathPattern(String method, String path) {
+    }
+
+    public static final List<JwtPathPattern> JWT_PATHS = List.of(
+            new JwtPathPattern("*", API_MAIN_PATH),
+            new JwtPathPattern("*", API_DB_TIME_PATH),
+            new JwtPathPattern("*", API_LOGIN_PATH),
+            new JwtPathPattern("POST", API_MAIL_AUTH_PATH),
+            new JwtPathPattern("POST", API_MAIL_VALID_PATH),
+            new JwtPathPattern("GET", API_EMAIL_CHECK),
+            new JwtPathPattern("POST", API_MEMBER_FORM),
+            new JwtPathPattern("GET", API_COMPANY_LIST_PATH),
+            new JwtPathPattern("POST", API_COMPANY_FORM_PATH),
+            new JwtPathPattern("PATCH", API_CHANGE_PASSWORD_PATH)
     );
 
 }

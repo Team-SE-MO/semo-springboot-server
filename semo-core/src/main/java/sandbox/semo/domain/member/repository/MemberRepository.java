@@ -17,19 +17,22 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     Optional<Member> findByLoginIdAndDeletedAtIsNull(String loginId);
 
-    Boolean existsByEmail(String email);
+    Optional<Member> findByEmailAndDeletedAtIsNull(String email);
+
+    Optional<Member> findByEmail(String email);
 
     @Query("SELECT new sandbox.semo.domain.member.dto.response.MemberInfo" +
             "(m.loginId, m.role, m.email, m.ownerName, m.deletedAt, m.company) " +
             "FROM Member m JOIN m.company c " +
             "WHERE c.id != 1 " +
+            "AND m.deletedAt IS NULL " +
             "AND (:companyId IS NULL OR c.id = :companyId) " +
             "AND ( m.role IN :roles) " +
             "AND (:keyword IS NULL OR :keyword = '' " +
             "     OR m.loginId LIKE CONCAT('%', :keyword, '%') " +
             "     OR m.ownerName LIKE CONCAT('%', :keyword, '%') " +
             "     OR m.email LIKE CONCAT('%', :keyword, '%'))")
-    List<MemberInfo> findAllMemberContainsRole(@Param("companyId") Long companyId,
+    List<MemberInfo> findAllActiveMemberContainsRole(@Param("companyId") Long companyId,
             @Param("keyword") String keyword,
             @Param("roles") List<Role> roleList);
 }
