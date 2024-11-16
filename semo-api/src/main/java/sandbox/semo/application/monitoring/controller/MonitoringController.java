@@ -58,3 +58,12 @@ public class MonitoringController {
         return ApiResponse.successResponse(HttpStatus.OK, "성공적으로 현재 세션 Job의 실행시간을 조회했습니다.", data);
     }
 
+    @GetMapping("/batch-chart/daily")
+    public ApiResponse<DailyJobExecutionInfo> getDailyJobExecutionTimes() {
+        DailyJobExecutionInfo data = monitoringService.getDailyJobExecutionTimes();
+        return ApiResponse.successResponse(HttpStatus.OK, "성공적으로 일별 Job의 실행시간을 조회했습니다.", data);
+    }
+
+
+}
+
