@@ -69,8 +69,8 @@ public class MemberController {
     @PreAuthorize("hasRole('SUPER')")
     @GetMapping("/form")
     public ApiResponse<CursorPage<MemberFormInfo>> getFormList(
-            @RequestParam(required = false) Long cursor) {
-        CursorPage<MemberFormInfo> data = memberService.findForms(cursor, 10);
+            @RequestParam(required = false) Long page) {
+        CursorPage<MemberFormInfo> data = memberService.findForms(page, 10);
         return ApiResponse.successResponse(OK, "성공적으로 목록을 조회하였습니다.", data);
     }
 

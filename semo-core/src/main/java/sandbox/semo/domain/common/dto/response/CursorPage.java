@@ -8,7 +8,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class CursorPage<T> {
 
-    private long totalCount;    // 총 데이터 개수
+    private long pageButton;
     private List<T> content;    // 현재 페이지 데이터
     private boolean hasNext;    // 다음 페이지 여부
     private Long nextCursor;    // 다음 페이지 커서

@@ -142,9 +142,10 @@ public class MemberServiceImpl implements MemberService {
                 null :
                 content.get(content.size() - 1).getFormId();
         long totalCount = memberFormRepository.count();
+        long pageButton = (totalCount % size) + 1;
         boolean hasNext = nextCursor != null;
 
-        return new CursorPage<>(totalCount, content, hasNext, nextCursor);
+        return new CursorPage<>(pageButton, content, hasNext, nextCursor);
     }
 
     private MemberFormInfo mapToMemberFormInfo(MemberForm memberForm) {
