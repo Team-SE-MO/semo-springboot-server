@@ -246,8 +246,8 @@ public class MemberServiceImpl implements MemberService {
             throw new CommonBusinessException(BAD_REQUEST);
         }
         int offset = (page - 1) * size;
-        List<Role> roleList = request.getRoleList();
-        List<Role> rolesToSearch = (roleList != null && roleList.isEmpty()) ? roleList : null;
+        List<Role> rolesToSearch = (request.getRoleList() != null && !request.getRoleList().isEmpty())
+                ? request.getRoleList() : null;
 
         List<MemberInfo> members = memberRepository.findAllActiveMemberContainsRoleWithPagination(
                 ownRole.name(),
