@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.member.service.MemberService;
 import sandbox.semo.application.security.authentication.JwtMemberDetails;
-import sandbox.semo.domain.common.dto.response.CursorPage;
+import sandbox.semo.domain.common.dto.response.OffsetPage;
 import sandbox.semo.domain.common.dto.response.FormDecisionResponse;
 import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
@@ -68,9 +68,9 @@ public class MemberController {
 
     @PreAuthorize("hasRole('SUPER')")
     @GetMapping("/form")
-    public ApiResponse<CursorPage<MemberFormInfo>> getFormList(
-            @RequestParam(required = false) Long page) {
-        CursorPage<MemberFormInfo> data = memberService.findForms(page, 10);
+    public ApiResponse<OffsetPage<MemberFormInfo>> getFormList(
+            @RequestParam(defaultValue = "1") int page) {
+        OffsetPage<MemberFormInfo> data = memberService.findForms(page, 10);
         return ApiResponse.successResponse(OK, "성공적으로 목록을 조회하였습니다.", data);
     }
 

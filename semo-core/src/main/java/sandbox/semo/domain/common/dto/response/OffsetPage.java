@@ -6,10 +6,10 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class CursorPage<T> {
+public class OffsetPage<T> {
 
-    private long pageButton;
+    private long pageCount;
     private List<T> content;    // 현재 페이지 데이터
     private boolean hasNext;    // 다음 페이지 여부
-    private Long nextCursor;    // 다음 페이지 커서
+
 }

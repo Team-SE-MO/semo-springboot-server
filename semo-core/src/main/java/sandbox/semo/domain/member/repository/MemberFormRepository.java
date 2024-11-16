@@ -9,18 +9,10 @@ import sandbox.semo.domain.member.entity.MemberForm;
 public interface MemberFormRepository extends JpaRepository<MemberForm, Long> {
 
     @Query(value = """
-            SELECT * FROM MEMBER_FORM 
-            ORDER BY FORM_ID DESC 
-            FETCH FIRST :size ROWS ONLY
+            SELECT * FROM MEMBER_FORM
+            ORDER BY REQUEST_DATE DESC
+            OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY
             """, nativeQuery = true)
-    List<MemberForm> findFirstPage(@Param("size") int size);
-
-    @Query(value = """
-            SELECT * FROM MEMBER_FORM 
-            WHERE FORM_ID < :cursor 
-            ORDER BY FORM_ID DESC 
-            FETCH FIRST :size ROWS ONLY
-            """, nativeQuery = true)
-    List<MemberForm> findNextPage(@Param("cursor") Long cursor, @Param("size") int size);
+    List<MemberForm> findPageWithOffset(@Param("offset") int offset, @Param("size") int size);
 
 }

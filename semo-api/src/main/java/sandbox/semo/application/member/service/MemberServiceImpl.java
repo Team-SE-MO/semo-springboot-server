@@ -1,5 +1,6 @@
 package sandbox.semo.application.member.service;
 
+import static sandbox.semo.application.common.exception.CommonErrorCode.BAD_REQUEST;
 import static sandbox.semo.application.common.exception.CommonErrorCode.FORBIDDEN_ACCESS;
 import static sandbox.semo.application.member.exception.MemberErrorCode.ALREADY_EXISTS_EMAIL;
 import static sandbox.semo.application.member.exception.MemberErrorCode.COMPANY_NOT_EXIST;
@@ -20,7 +21,7 @@ import sandbox.semo.application.common.exception.CommonBusinessException;
 import sandbox.semo.application.member.exception.MemberBusinessException;
 import sandbox.semo.application.member.exception.MemberErrorCode;
 import sandbox.semo.application.member.service.helper.LoginIdGenerator;
-import sandbox.semo.domain.common.dto.response.CursorPage;
+import sandbox.semo.domain.common.dto.response.OffsetPage;
 import sandbox.semo.domain.common.dto.response.FormDecisionResponse;
 import sandbox.semo.domain.common.entity.FormStatus;
 import sandbox.semo.domain.company.entity.Company;
@@ -129,23 +130,20 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
-    public CursorPage<MemberFormInfo> findForms(Long cursor, int size) {
-        List<MemberForm> memberForms = cursor == null ?
-                memberFormRepository.findFirstPage(size) :
-                memberFormRepository.findNextPage(cursor, size);
+    public OffsetPage<MemberFormInfo> findForms(int page, int size) {
+        if (page < 1) {
+            throw new CommonBusinessException(BAD_REQUEST);
+        }
 
+        int offset = (page - 1) * size;
+        List<MemberForm> memberForms = memberFormRepository.findPageWithOffset(offset, size);
+        long totalCount = memberFormRepository.count();
         List<MemberFormInfo> content = memberForms.stream()
                 .map(this::mapToMemberFormInfo)
                 .toList();
-
-        Long nextCursor = (content.size() < size) ?
-                null :
-                content.get(content.size() - 1).getFormId();
-        long totalCount = memberFormRepository.count();
-        long pageButton = (totalCount % size) + 1;
-        boolean hasNext = nextCursor != null;
-
-        return new CursorPage<>(pageButton, content, hasNext, nextCursor);
+        int pageCount = (int) Math.ceil((double) totalCount / size);
+        boolean hasNext = page < pageCount;
+        return new OffsetPage<>(pageCount, content, hasNext);
     }
 
     private MemberFormInfo mapToMemberFormInfo(MemberForm memberForm) {
