@@ -5,13 +5,8 @@ import static sandbox.semo.application.company.exception.CompanyErrorCode.COMPAN
 import static sandbox.semo.application.company.exception.CompanyErrorCode.FORM_DOES_NOT_EXIST;
 import static sandbox.semo.application.company.exception.CompanyErrorCode.STATUS_NOT_APPROVED;
 
-import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.common.exception.CommonBusinessException;
@@ -26,8 +21,6 @@ import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.company.entity.CompanyForm;
 import sandbox.semo.domain.company.repository.CompanyFormRepository;
 import sandbox.semo.domain.company.repository.CompanyRepository;
-import sandbox.semo.domain.member.dto.response.MemberFormInfo;
-import sandbox.semo.domain.member.entity.MemberForm;
 
 @Service
 @Transactional(readOnly = true)

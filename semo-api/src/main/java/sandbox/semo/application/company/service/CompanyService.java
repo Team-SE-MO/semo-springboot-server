@@ -1,7 +1,6 @@
 package sandbox.semo.application.company.service;
 
 import java.util.List;
-import org.springframework.data.domain.Page;
 import sandbox.semo.domain.common.dto.response.FormDecisionResponse;
 import sandbox.semo.domain.common.dto.response.OffsetPage;
 import sandbox.semo.domain.company.dto.request.CompanyFormDecision;
