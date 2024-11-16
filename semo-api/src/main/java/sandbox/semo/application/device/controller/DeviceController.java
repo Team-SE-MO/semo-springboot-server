@@ -107,4 +107,25 @@ public class DeviceController {
         return ApiResponse.successResponse(OK, "성공적으로 DEVICE가 삭제 되었습니다.");
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping
+    public ApiResponse<Void> updateDeviceInfo(
+            @Valid @RequestBody DeviceUpdate request,
+            @AuthenticationPrincipal JwtMemberDetails memberDetails) {
+        deviceService.update(
+                memberDetails.getCompanyId(),
+                request
+        );
+        return ApiResponse.successResponse(OK, "성공적으로 DEVICE가 수정 되었습니다.");
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping
+    public ApiResponse<Void> deleteDevice(
+            @RequestParam String deviceAlias,
+            @AuthenticationPrincipal JwtMemberDetails memberDetails) {
+        deviceService.deleteDevice(memberDetails.getCompanyId(), deviceAlias);
+        return ApiResponse.successResponse(OK, "성공적으로 DEVICE가 삭제 되었습니다.");
+    }
+
 }
