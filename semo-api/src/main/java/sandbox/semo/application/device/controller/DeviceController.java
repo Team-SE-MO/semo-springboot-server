@@ -19,10 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.device.service.DeviceService;
 import sandbox.semo.application.security.authentication.JwtMemberDetails;
+import sandbox.semo.domain.common.dto.response.OffsetPage;
 import sandbox.semo.domain.device.dto.request.DeviceRegister;
 import sandbox.semo.domain.device.dto.request.DataBaseInfo;
 import sandbox.semo.domain.device.dto.request.DeviceUpdate;
 import sandbox.semo.domain.device.dto.response.DeviceInfo;
+import sandbox.semo.domain.member.entity.Role;
 
 @Log4j2
 @RestController
@@ -48,10 +50,13 @@ public class DeviceController {
         return ApiResponse.successResponse(OK, "성공적으로 DEVICE가 등록되었습니다.");
     }
 
+    @PreAuthorize("hasAnyRole('SUPER','ADMIN')")
     @GetMapping
-    public ApiResponse<List<DeviceInfo>> getDeviceInfoByCompany(
+    public ApiResponse<OffsetPage<?>> getDeviceInfo(
+            @RequestParam(defaultValue = "1") int page,
             @AuthenticationPrincipal JwtMemberDetails memberDetails) {
-        List<DeviceInfo> data = deviceService.getDeviceInfo(
+        OffsetPage<?> data = deviceService.findDevices(
+                page, 10,
                 memberDetails.getRole(),
                 memberDetails.getCompanyId()
         );

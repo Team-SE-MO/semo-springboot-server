@@ -2,16 +2,18 @@ package sandbox.semo.domain.device.dto.response;
 
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import sandbox.semo.domain.device.entity.DatabaseType;
 
 @Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class DeviceInfo {
+public class DeviceInfoWithCompanyInfo {
+
+    private String companyName;
+
+    private String taxId;
 
     private String deviceAlias;
 
