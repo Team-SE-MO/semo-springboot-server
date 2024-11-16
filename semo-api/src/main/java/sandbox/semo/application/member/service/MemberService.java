@@ -32,6 +32,8 @@ public interface MemberService {
 
     void deleteMember(MemberRemove request);
 
-    List<MemberInfo> findAllMembers(Long ownCompanyId, Role ownRole, MemberSearchFilter request);
+    OffsetPage<MemberInfo> findAllMembers(
+            Long ownCompanyId, Role ownRole, int page, int size, MemberSearchFilter request
+    );
 
 }
