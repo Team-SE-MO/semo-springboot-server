@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.company.service.CompanyService;
 import sandbox.semo.domain.common.dto.response.FormDecisionResponse;
+import sandbox.semo.domain.common.dto.response.OffsetPage;
 import sandbox.semo.domain.company.dto.request.CompanyFormDecision;
 import sandbox.semo.domain.company.dto.request.CompanyFormRegister;
 import sandbox.semo.domain.company.dto.response.CompanyFormInfo;
@@ -37,45 +38,28 @@ public class CompanyController {
     @PostMapping("/{id}")
     public ApiResponse<Long> companyRegister(@PathVariable(value = "id") Long formId) {
         Long data = companyService.companyRegister(formId);
-        return ApiResponse.successResponse(
-                OK,
-                "성공적으로 회사가 등록되었습니다.",
-                data
-        );
+        return ApiResponse.successResponse(OK, "성공적으로 회사가 등록되었습니다.", data);
     }
 
     @GetMapping
     public ApiResponse<List<Company>> companyList(@RequestParam(required = false) String keyword) {
         List<Company> data = companyService.searchCompanyByName(keyword);
-        return ApiResponse.successResponse(
-                OK,
-                "성공적으로 회사 목록을 조회하였습니다.",
-                data
-        );
+        return ApiResponse.successResponse(OK, "성공적으로 회사 목록을 조회하였습니다.", data);
     }
 
     @PostMapping("/form")
     public ApiResponse<Void> formRegister(
             @RequestBody @Valid CompanyFormRegister registerForm) {
         companyService.formRegister(registerForm);
-        return ApiResponse.successResponse(
-                OK,
-                "성공적으로 폼을 제출하였습니다.");
+        return ApiResponse.successResponse(OK, "성공적으로 폼을 제출하였습니다.");
     }
 
     @PreAuthorize("hasRole('SUPER')")
     @GetMapping("/form")
-    public ApiResponse<Page<CompanyFormInfo>> registerList(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-
-        Page<CompanyFormInfo> companyFormLists = companyService.findAllForms(page, size);
-        return ApiResponse.successResponse(
-                OK,
-                "성공적으로 목록을 조회하였습니다.",
-                companyFormLists
-        );
-
+    public ApiResponse<OffsetPage<CompanyFormInfo>> getFormList(
+            @RequestParam(defaultValue = "1") int page) {
+        OffsetPage<CompanyFormInfo> data = companyService.findForms(page, 10);
+        return ApiResponse.successResponse(OK, "성공적으로 목록을 조회하였습니다.", data);
     }
 
     @PreAuthorize("hasRole('SUPER')")
@@ -83,11 +67,6 @@ public class CompanyController {
     public ApiResponse<FormDecisionResponse> formUpdate(
             @RequestBody @Valid CompanyFormDecision updateForm) {
         FormDecisionResponse data = companyService.updateStatus(updateForm);
-
-        return ApiResponse.successResponse(
-                OK,
-                "성공적으로 처리되었습니다.",
-                data
-        );
+        return ApiResponse.successResponse(OK, "성공적으로 처리되었습니다.", data);
     }
 }

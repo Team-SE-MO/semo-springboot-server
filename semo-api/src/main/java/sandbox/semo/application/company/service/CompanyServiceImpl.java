@@ -1,5 +1,6 @@
 package sandbox.semo.application.company.service;
 
+import static sandbox.semo.application.common.exception.CommonErrorCode.BAD_REQUEST;
 import static sandbox.semo.application.company.exception.CompanyErrorCode.COMPANY_ALREADY_EXISTS;
 import static sandbox.semo.application.company.exception.CompanyErrorCode.FORM_DOES_NOT_EXIST;
 import static sandbox.semo.application.company.exception.CompanyErrorCode.STATUS_NOT_APPROVED;
@@ -13,8 +14,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sandbox.semo.application.common.exception.CommonBusinessException;
 import sandbox.semo.application.company.exception.CompanyBusinessException;
 import sandbox.semo.domain.common.dto.response.FormDecisionResponse;
+import sandbox.semo.domain.common.dto.response.OffsetPage;
 import sandbox.semo.domain.common.entity.FormStatus;
 import sandbox.semo.domain.company.dto.request.CompanyFormDecision;
 import sandbox.semo.domain.company.dto.request.CompanyFormRegister;
@@ -23,6 +26,8 @@ import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.company.entity.CompanyForm;
 import sandbox.semo.domain.company.repository.CompanyFormRepository;
 import sandbox.semo.domain.company.repository.CompanyRepository;
+import sandbox.semo.domain.member.dto.response.MemberFormInfo;
+import sandbox.semo.domain.member.entity.MemberForm;
 
 @Service
 @Transactional(readOnly = true)
@@ -79,19 +84,25 @@ public class CompanyServiceImpl implements CompanyService {
         }
     }
 
-    /**
-     * TODO: 0번째 에지부터 data가 없으면, 빈배열
-     * totalPage를 넘어갔을 때 data가 없으면 예외처리 발생
-     **/
     @Override
-    public Page<CompanyFormInfo> findAllForms(int page, int size) {
-        List<Sort.Order> sorts = new ArrayList<>();
-        sorts.add(Sort.Order.desc("requestDate"));
+    public OffsetPage<CompanyFormInfo> findForms(int page, int size) {
+        if (page < 1) {
+            throw new CommonBusinessException(BAD_REQUEST);
+        }
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sorts));
-        Page<CompanyForm> companyFormPage = companyFormRepository.findAll(pageable);
+        int offset = (page - 1) * size;
+        List<CompanyForm> companyForms = companyFormRepository.findPageWithOffset(offset, size);
+        long totalCount = companyFormRepository.count();
+        List<CompanyFormInfo> content = companyForms.stream()
+                .map(this::mapToCompanyFormInfo)
+                .toList();
+        int pageCount = (int) Math.ceil((double) totalCount / size);
+        boolean hasNext = page < pageCount;
+        return new OffsetPage<>(pageCount, content, hasNext);
+    }
 
-        return companyFormPage.map(companyForm -> CompanyFormInfo.builder()
+    private CompanyFormInfo mapToCompanyFormInfo(CompanyForm companyForm) {
+        return CompanyFormInfo.builder()
                 .formId(companyForm.getId())
                 .companyName(companyForm.getCompanyName())
                 .ownerName(companyForm.getOwnerName())
@@ -100,7 +111,7 @@ public class CompanyServiceImpl implements CompanyService {
                 .formStatus(companyForm.getFormStatus())
                 .requestDate(companyForm.getRequestDate())
                 .approvedAt(companyForm.getApprovedAt())
-                .build());
+                .build();
     }
 
     @Transactional
