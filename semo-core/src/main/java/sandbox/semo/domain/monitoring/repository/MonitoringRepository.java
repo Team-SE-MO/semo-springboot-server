@@ -7,11 +7,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -24,6 +27,8 @@ import sandbox.semo.domain.common.config.QueryLoader;
 import sandbox.semo.domain.device.entity.Device;
 import sandbox.semo.domain.monitoring.dto.response.DailyJobData;
 import sandbox.semo.domain.monitoring.dto.response.MetaExecutionData;
+import sandbox.semo.domain.monitoring.dto.response.StepData;
+import sandbox.semo.domain.monitoring.dto.response.StepInfo;
 import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
 import sandbox.semo.domain.monitoring.entity.SessionData;
 import sandbox.semo.domain.monitoring.repository.mapper.MetricDataRowMapper;
@@ -45,14 +50,14 @@ public class MonitoringRepository {
     }
 
     public List<SessionData> fetchSessionData(DataSource dataSource, Device device,
-        LocalDateTime collectedAt) {
+            LocalDateTime collectedAt) {
         List<SessionData> sessionDataList = new ArrayList<>();
         String query = queryLoader.getQuery("selectSessionData");
 
         log.info(">>> [ 🔍 SessionData 조회 시작: Device {} ]", device.getDeviceAlias());
         try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement stmt = conn.prepareStatement(query)) {
+                Connection conn = dataSource.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(query)) {
             ResultSet rs = stmt.executeQuery();
             SessionDataRowMapper rowMapper = new SessionDataRowMapper(device, collectedAt);
             while (rs.next()) {
@@ -60,11 +65,11 @@ public class MonitoringRepository {
                 sessionDataList.add(sessionData);
             }
             log.info(">>> [ 📊 SessionData 조회 완료: Device {}. 조회된 데이터 개수: {} ]",
-                device.getDeviceAlias(), sessionDataList.size()
+                    device.getDeviceAlias(), sessionDataList.size()
             );
         } catch (SQLException e) {
             log.error(">>> [ ❌ SessionData 조회 실패: Device {}. 에러: {} ]",
-                device.getDeviceAlias(), e.getMessage());
+                    device.getDeviceAlias(), e.getMessage());
         }
         return sessionDataList;
     }
@@ -88,26 +93,26 @@ public class MonitoringRepository {
             });
             Instant end = Instant.now();
             log.info(">>> [ ✅ SessionData 저장 완료 - 소요 시간: {}ms ]",
-                end.toEpochMilli() - start.toEpochMilli());
+                    end.toEpochMilli() - start.toEpochMilli());
         } catch (Exception e) {
             log.error(">>> [ ❌ SessionData 저장 실패: 에러: {} ]", e.getMessage(), e);
         }
     }
 
     public MonitoringMetric fetchMetricData(DataSource dataSource, Device device,
-        LocalDateTime collectedAt) {
+            LocalDateTime collectedAt) {
         MonitoringMetric monitoringMetric = null;
         String query = queryLoader.getQuery("selectMetricData");
 
         log.info(">>> [ 🔍 MetricData 조회 시작: Device {} ]", device.getDeviceAlias());
         try {
             monitoringMetric = new JdbcTemplate(dataSource).queryForObject(
-                query, new MetricDataRowMapper(device, collectedAt)
+                    query, new MetricDataRowMapper(device, collectedAt)
             );
             log.info(">>> [ 📊 MetricData 조회 완료: Device {} ]", device.getDeviceAlias());
         } catch (Exception e) {
             log.error(">>> [ ❌ MetricData 조회 실패: Device {}. 에러: {} ]", device.getDeviceAlias(),
-                e.getMessage());
+                    e.getMessage());
         }
         return monitoringMetric;
     }
@@ -117,21 +122,21 @@ public class MonitoringRepository {
         Instant start = Instant.now();
 
         log.info(">>> [ 💾 MonitoringMetric 저장 시작: Device {} ]",
-            monitoringMetric.getDevice().getDeviceAlias());
+                monitoringMetric.getDevice().getDeviceAlias());
         try {
             MapSqlParameterSource params = convertToSqlParameterSource(monitoringMetric);
             paramJdbcTemplate.update(query, params);
             Instant end = Instant.now();
             log.info(">>> [ ✅ MonitoringMetric 저장 완료 - 소요 시간: {}ms ]",
-                end.toEpochMilli() - start.toEpochMilli());
+                    end.toEpochMilli() - start.toEpochMilli());
         } catch (Exception e) {
             log.error(">>> [ ❌ MonitoringMetric 저장 실패: Device {}. 에러: {} ]",
-                monitoringMetric.getDevice().getDeviceAlias(), e.getMessage());
+                    monitoringMetric.getDevice().getDeviceAlias(), e.getMessage());
         }
     }
 
     private void setSessionDataValues(PreparedStatement ps, SessionData sessionData)
-        throws SQLException {
+            throws SQLException {
         ps.setObject(1, sessionData.getId().getCollectedAt());
         ps.setLong(2, sessionData.getId().getSid());
         ps.setLong(3, sessionData.getId().getDeviceId());
@@ -158,14 +163,16 @@ public class MonitoringRepository {
         ps.setLong(24, sessionData.getLastCallEt() != null ? sessionData.getLastCallEt() : 0);
         ps.setString(25, sessionData.getFailedOver() != null ? sessionData.getFailedOver() : "-");
         ps.setString(26,
-            sessionData.getBlockingSessionStatus() != null ? sessionData.getBlockingSessionStatus()
-                : "-");
+                sessionData.getBlockingSessionStatus() != null
+                        ? sessionData.getBlockingSessionStatus()
+                        : "-");
         ps.setString(27, sessionData.getEvent() != null ? sessionData.getEvent() : "-");
         ps.setString(28, sessionData.getWaitClass() != null ? sessionData.getWaitClass() : "-");
         ps.setString(29, sessionData.getState() != null ? sessionData.getState() : "-");
         ps.setLong(30, sessionData.getWaitTimeMicro() != null ? sessionData.getWaitTimeMicro() : 0);
         ps.setLong(31,
-            sessionData.getTimeRemainingMicro() != null ? sessionData.getTimeRemainingMicro() : 0);
+                sessionData.getTimeRemainingMicro() != null ? sessionData.getTimeRemainingMicro()
+                        : 0);
         ps.setString(32, sessionData.getServiceName() != null ? sessionData.getServiceName() : "-");
     }
 
@@ -201,5 +208,67 @@ public class MonitoringRepository {
                         .build());
     }
 
+    public StepInfo findStepExecutionData() {
+        String query = queryLoader.getQuery("selectStepDataMetric");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate today = LocalDate.now();
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("today", today.format(formatter));
+
+        Map<String, StepData> stepExecutionMap = new LinkedHashMap<>();
+
+        for (int i = 0; i < 6; i++) {
+            LocalDate date = today.minusDays(i);
+            String executionDate = date.format(formatter);
+            StepData defaultStepData = StepData.builder()
+                    .totalCount(0)
+                    .errorTypes(null)
+                    .hasError(false)
+                    .build();
+            stepExecutionMap.put(executionDate, defaultStepData);
+        }
+
+        paramJdbcTemplate.query(
+                query,
+                params,
+                (ResultSet rs) -> {
+                    String executionDate = rs.getString("EXEC_DATE");
+                    String errorInfo = rs.getString("ERROR_INFO");
+                    String totalCountStr = errorInfo.split("TOTAL_COUNT:")[1];
+                    int totalCount;
+
+                    if (totalCountStr.contains(",")) {
+                        totalCount = Integer.parseInt(totalCountStr.split(",")[0].trim());
+                    } else {
+                        totalCount = Integer.parseInt(totalCountStr.trim());
+                    }
+
+                    Map<String, Integer> errorTypes = null;
+                    if (errorInfo.contains("ERROR_TYPE")) {
+                        errorTypes = new HashMap<>();
+                        String[] errorParts = errorInfo.split("ERROR_TYPE:|ERROR_COUNT:");
+                        for (int i = 1; i < errorParts.length; i += 2) {
+                            if (i + 1 < errorParts.length) {
+                                String errorType = errorParts[i].split(",")[0].trim();
+                                String errorCountStr = errorParts[i + 1].split(",")[0].trim();
+                                int errorCount = Integer.parseInt(errorCountStr);
+                                errorTypes.put(errorType, errorCount);
+                            }
+                        }
+                    }
+
+                    StepData stepData = StepData.builder()
+                            .totalCount(totalCount)
+                            .errorTypes(errorTypes == null || errorTypes.isEmpty() ? null : errorTypes)
+                            .hasError(totalCount > 0)
+                            .build();
+                    stepExecutionMap.put(executionDate, stepData);
+                }
+        );
+
+        return StepInfo.builder()
+                .stepExecution(stepExecutionMap)
+                .build();
+    }
 
 }
