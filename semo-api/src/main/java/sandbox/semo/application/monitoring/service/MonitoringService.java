@@ -1,6 +1,6 @@
 package sandbox.semo.application.monitoring.service;
 
-import java.time.LocalDate;
+
 import sandbox.semo.domain.monitoring.dto.request.DeviceMonitoring;
 import sandbox.semo.domain.monitoring.dto.response.DailyJobExecutionInfo;
 import sandbox.semo.domain.monitoring.dto.response.DetailPageData;

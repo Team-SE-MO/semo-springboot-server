@@ -2,10 +2,8 @@ package sandbox.semo.application.monitoring.service;
 
 import static sandbox.semo.application.member.exception.MemberErrorCode.MEMBER_NOT_FOUND;
 
-import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -18,7 +16,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.member.exception.MemberBusinessException;
@@ -33,7 +30,6 @@ import sandbox.semo.domain.monitoring.dto.response.DetailPageData;
 import sandbox.semo.domain.monitoring.dto.response.DeviceConnectInfo;
 import sandbox.semo.domain.monitoring.dto.response.MetaExecutionData;
 import sandbox.semo.domain.monitoring.dto.response.MetricSummary;
-import sandbox.semo.domain.monitoring.dto.response.StepData;
 import sandbox.semo.domain.monitoring.dto.response.StepInfo;
 import sandbox.semo.domain.monitoring.dto.response.SummaryPageData;
 import sandbox.semo.domain.monitoring.dto.response.TotalProcessInfo;

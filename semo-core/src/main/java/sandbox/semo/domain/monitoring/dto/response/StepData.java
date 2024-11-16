@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Getter
 @NoArgsConstructor
@@ -22,10 +21,5 @@ public class StepData {
         this.totalCount = totalCount;
         this.errorTypes = errorTypes;
         this.hasError = hasError;
-    }
-
-    @JsonProperty("hasError")
-    public boolean hasError() {
-        return hasError;
     }
 }
