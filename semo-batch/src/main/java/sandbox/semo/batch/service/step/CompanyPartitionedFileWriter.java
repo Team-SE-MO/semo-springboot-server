@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,44 +26,56 @@ public class CompanyPartitionedFileWriter implements ItemWriter<CsvFileData> {
     private final String baseBackupPath;
     private final String saveDateStr;
     private final Map<Long, BufferedWriter> companyWriters = new ConcurrentHashMap<>();
-    private int totalWriteCount = 0;
+    private final Map<Long, Object> companyLocks = new ConcurrentHashMap<>();
+    private final Map<Long, Integer> companyWriteCounts = new ConcurrentHashMap<>();
 
     @Override
     public void write(Chunk<? extends CsvFileData> chunk) throws Exception {
         long startTime = System.currentTimeMillis();
         log.info(">>> 청크 데이터 크기: {}", chunk.size());
 
-        long groupingStart = System.currentTimeMillis();
         Map<Long, List<CsvFileData>> companyGroups = chunk.getItems().stream()
             .collect(Collectors.groupingBy(CsvFileData::getCompanyId));
-        long groupingEnd = System.currentTimeMillis();
-
-        log.info(">>> 그룹화 소요시간: {}ms, 회사 수: {}",
-            groupingEnd - groupingStart, companyGroups.size());
-
-        // 파일 쓰기
 
         for (Map.Entry<Long, List<CsvFileData>> entry : companyGroups.entrySet()) {
             Long companyId = entry.getKey();
             List<CsvFileData> items = entry.getValue();
 
-            StringBuilder builder = new StringBuilder(items.size() * 500);
-            for (CsvFileData data : items) {
-                appendCsvLine(builder, data);
-            }
+            // 회사별 락 획득
+            Object lock = companyLocks.computeIfAbsent(companyId, k -> new Object());
+            synchronized (lock) {
+                BufferedWriter writer = companyWriters.computeIfAbsent(companyId,
+                    this::createWriterSafely);
 
-            BufferedWriter writer = companyWriters.get(companyId);
-            if (writer == null) {
-                writer = createWriter(companyId);
-                companyWriters.put(companyId, writer);
+                // 회사별 데이터 정렬
+                items.sort(Comparator.comparing(CsvFileData::getCollectedAt)
+                    .thenComparing(CsvFileData::getSid)
+                    .thenComparing(CsvFileData::getDeviceId));
+
+                StringBuilder builder = new StringBuilder(items.size() * 500);
+                for (CsvFileData data : items) {
+                    appendCsvLine(builder, data);
+                }
+
+                writer.write(builder.toString());
+                writer.flush();
+
+                // 회사별 처리 건수 누적
+                companyWriteCounts.merge(companyId, items.size(), Integer::sum);
             }
-            writer.write(builder.toString());
         }
 
-        totalWriteCount += chunk.size();
         long endTime = System.currentTimeMillis();
-        log.info(">>> 전체 처리 소요시간: {}ms (그룹화: {}ms, 파일쓰기: {}ms)",
-            endTime - startTime, groupingEnd - groupingStart, endTime - groupingEnd);
+        log.info(">>> 청크 처리 시간: {}ms", endTime - startTime);
+    }
+
+    private BufferedWriter createWriterSafely(Long companyId) {
+        try {
+            return createWriter(companyId);
+        } catch (IOException e) {
+            log.error(">>> [ ❌ Writer 생성 실패 - companyId: {} ]", companyId, e);
+            throw new RuntimeException("Failed to create writer for company: " + companyId, e);
+        }
     }
 
     private void appendCsvLine(StringBuilder builder, CsvFileData data) {
@@ -116,7 +129,7 @@ public class CompanyPartitionedFileWriter implements ItemWriter<CsvFileData> {
             throw new IOException("백업 디렉토리 생성 실패: " + backupDir);
         }
 
-        log.info(">>> [ 📁 회사별 백업 파일 생성 시작: {} ]", fileName);
+        log.info(">>> [ 📁 회사({}) 백업 파일 생성 시작 ]", companyId);
 
         BufferedWriter writer = Files.newBufferedWriter(
             backupFile.toPath(),
@@ -128,7 +141,6 @@ public class CompanyPartitionedFileWriter implements ItemWriter<CsvFileData> {
 
         writeHeader(writer);
         return writer;
-
     }
 
     private void writeHeader(BufferedWriter writer) throws IOException {
@@ -160,14 +172,15 @@ public class CompanyPartitionedFileWriter implements ItemWriter<CsvFileData> {
     @PreDestroy
     public void cleanup() {
         for (Map.Entry<Long, BufferedWriter> entry : companyWriters.entrySet()) {
+            Long companyId = entry.getKey();
             try {
                 BufferedWriter writer = entry.getValue();
                 writer.flush();
                 writer.close();
                 log.info(">>> [ ✅ 회사({}) 백업 파일 작성 완료 - 처리 건수: {} ]",
-                    entry.getKey(), totalWriteCount);
+                    companyId, companyWriteCounts.getOrDefault(companyId, 0));
             } catch (IOException e) {
-                log.error("파일 닫기 실패 (Company ID: {})", entry.getKey(), e);
+                log.error(">>> [ ❌ 파일 닫기 실패 - companyId: {} ]", companyId, e);
             }
         }
     }
