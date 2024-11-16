@@ -1,9 +1,11 @@
 package sandbox.semo.application.monitoring.service;
 
+import java.time.LocalDate;
 import sandbox.semo.domain.monitoring.dto.request.DeviceMonitoring;
 import sandbox.semo.domain.monitoring.dto.response.DailyJobExecutionInfo;
 import sandbox.semo.domain.monitoring.dto.response.DetailPageData;
 import sandbox.semo.domain.monitoring.dto.response.MetaExecutionData;
+import sandbox.semo.domain.monitoring.dto.response.StepInfo;
 import sandbox.semo.domain.monitoring.dto.response.SummaryPageData;
 
 public interface MonitoringService {
@@ -15,4 +17,6 @@ public interface MonitoringService {
     MetaExecutionData getRealTimeJobExecutionTimes();
 
     DailyJobExecutionInfo getDailyJobExecutionTimes();
+
+    StepInfo getStepExecutionData();
 }
