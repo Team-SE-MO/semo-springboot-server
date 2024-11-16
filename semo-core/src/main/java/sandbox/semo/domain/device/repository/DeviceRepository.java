@@ -1,6 +1,7 @@
 package sandbox.semo.domain.device.repository;
 
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -8,6 +9,15 @@ import sandbox.semo.domain.device.dto.response.DeviceInfo;
 import sandbox.semo.domain.device.entity.Device;
 
 public interface DeviceRepository extends JpaRepository<Device, Long> {
+
+    @Query("SELECT d " +
+            "FROM Device d " +
+            "WHERE d.deviceAlias = :deviceAlias " +
+            "AND d.company.id = :companyId")
+    Optional<Device> findByAliasAndCompanyId(
+            @Param("deviceAlias") String deviceAlias,
+            @Param("companyId") Long companyId
+    );
 
     @Query("SELECT d.id " +
             "FROM Device d " +
