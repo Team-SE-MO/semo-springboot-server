@@ -206,7 +206,7 @@ public class BatchConfig {
                 "endTime", LocalDateTime.parse(endTime)
             ))
             .pageSize(CHUNK_SIZE)
-            .fetchSize(CHUNK_SIZE) // 매우중요..
+            .fetchSize(CHUNK_SIZE)
             .saveState(false)
             .rowMapper(new CsvFileDataRowMapper())
             .build();

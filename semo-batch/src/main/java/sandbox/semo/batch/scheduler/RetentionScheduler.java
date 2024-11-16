@@ -21,7 +21,7 @@ public class RetentionScheduler {
 
     @Scheduled(cron = "0 0 0 * * *")
     public void runRetention() throws Exception {
-        LocalDateTime retentionDate = LocalDateTime.now();
+        LocalDateTime retentionDate = LocalDateTime.now().minusDays(1);
 
         log.info(">>> [ 📑 데이터 보존 기간 관리 시작 - 기준일: {} ]", retentionDate);
         jobLauncher.run(
