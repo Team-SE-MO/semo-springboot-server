@@ -21,8 +21,7 @@ public class DailyTimeRangePartitioner implements Partitioner {
         LocalDateTime saveDate = LocalDateTime.parse(saveDateStr);
 
         LocalDateTime startOfDay = saveDate
-            .truncatedTo(ChronoUnit.DAYS)
-            .minusDays(1);
+            .truncatedTo(ChronoUnit.DAYS);
 
         for (int i = 0; i < gridSize; i++) {
             ExecutionContext context = new ExecutionContext();
