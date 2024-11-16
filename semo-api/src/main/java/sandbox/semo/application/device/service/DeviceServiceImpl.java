@@ -46,11 +46,10 @@ public class DeviceServiceImpl implements DeviceService {
         if (page < 1) {
             throw new CommonBusinessException(BAD_REQUEST);
         }
-
         int offset = (page - 1) * size;
         int includeCompanyId = switch (role) {
-            case ROLE_ADMIN -> 1;
             case ROLE_SUPER -> 0;
+            case ROLE_ADMIN -> 1;
             default -> throw new CommonBusinessException(FORBIDDEN_ACCESS);
         };
 

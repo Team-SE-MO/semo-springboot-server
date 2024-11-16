@@ -1,6 +1,7 @@
 package sandbox.semo.application.company.service;
 
 import java.util.List;
+import java.util.Optional;
 import sandbox.semo.domain.common.dto.response.FormDecisionResponse;
 import sandbox.semo.domain.common.dto.response.OffsetPage;
 import sandbox.semo.domain.company.dto.request.CompanyFormDecision;
@@ -19,4 +20,7 @@ public interface CompanyService {
     OffsetPage<CompanyFormInfo> findForms(int page, int size);
 
     FormDecisionResponse updateStatus(CompanyFormDecision request);
+
+    Optional<Company> findByCompanyNameAndTaxId(String companyName, String taxId);
+
 }
