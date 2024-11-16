@@ -27,6 +27,7 @@ import sandbox.semo.domain.file.dto.CsvFileInfo;
 public class FileController {
 
     private final FileService fileService;
+
     //TODO : 현재 테스트용으로 SUPER 권한으로 조회했는데 수정할 예정입니다.
     @PreAuthorize("hasAnyRole('SUPER','ADMIN','USER')")
     @GetMapping
@@ -43,9 +44,9 @@ public class FileController {
     @GetMapping("/download")
     public ResponseEntity<Resource> downloadCsvFile(
         @RequestParam String key,
-        @RequestParam(required = false) Long deviceId,
+        @RequestParam(required = false) String deviceAlias,
         @AuthenticationPrincipal JwtMemberDetails memberDetails
     ) {
-        return fileService.downloadCsvFile(key, memberDetails.getCompanyId(),deviceId);
+        return fileService.downloadCsvFile(key, memberDetails.getCompanyId(), deviceAlias);
     }
 }

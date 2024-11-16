@@ -4,6 +4,7 @@ import static sandbox.semo.application.file.exception.FileErrorCode.CSV_PROCESSI
 import static sandbox.semo.application.file.exception.FileErrorCode.DEVICE_ID_COLUMN_NOT_FOUND;
 import static sandbox.semo.application.file.exception.FileErrorCode.FILE_DOWNLOAD_FAILURE;
 import static sandbox.semo.application.file.exception.FileErrorCode.FILE_NOT_FOUND;
+import static sandbox.semo.application.file.exception.FileErrorCode.NO_MATCHING_DEVICE_DATA;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
@@ -37,7 +38,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import sandbox.semo.application.file.exception.FileBusinessException;
-import sandbox.semo.application.file.exception.FileErrorCode;
+import sandbox.semo.domain.device.repository.DeviceRepository;
 import sandbox.semo.domain.file.dto.CsvFileInfo;
 
 
@@ -47,49 +48,55 @@ import sandbox.semo.domain.file.dto.CsvFileInfo;
 public class FileServiceImpl implements FileService {
 
     private final AmazonS3 amazonS3;
+    private final DeviceRepository deviceRepository;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
 
+    private static final String S3_PREFIX = "session-data/company/";
+
     @Override
     public List<CsvFileInfo> getCsvFileListByCompany(Long companyId, LocalDate date) {
-        String prefix = "session-data/company/" + companyId + "/";
+        String prefix = buildPrefix(companyId, date);
+        log.info(">>> [ 🔍 S3 검색 시작 - prefix: {} ]", prefix);
 
+        List<CsvFileInfo> files = fetchCsvFilesFromS3(prefix);
+        files.sort((a, b) -> b.getLastModified().compareTo(a.getLastModified()));
+
+        log.info(">>> [ 📊 검색 결과 - 총 {}개 파일 ]", files.size());
+        return files;
+    }
+
+    private String buildPrefix(Long companyId, LocalDate date) {
+        String prefix = S3_PREFIX + companyId + "/";
         if (date != null) {
             prefix += String.format("%d/%d/%d",
                 date.getYear(),
                 date.getMonthValue(),
                 date.getDayOfMonth());
         }
+        return prefix;
+    }
 
-        log.info(">>> [ 🔍 S3 검색 시작 - prefix: {} ]", prefix);
-
+    private List<CsvFileInfo> fetchCsvFilesFromS3(String prefix) {
         List<CsvFileInfo> files = new ArrayList<>();
         ListObjectsV2Request request = new ListObjectsV2Request()
             .withBucketName(bucket)
             .withPrefix(prefix);
 
-        // listObjectsV2 메서드는 한 번의 요청으로 최대 1,000개의 객체만 반환할 수 있는데 더 많은 객체가 있을 경우를 처리하기 위해 페이징 처리가 필요한데, 이를 위해 do-while 루프를 사용
         ListObjectsV2Result listing;
         do {
             listing = amazonS3.listObjectsV2(request);
-
-            for (S3ObjectSummary summary : listing.getObjectSummaries()) {
-                if (summary.getKey().endsWith(".csv")) {
-                    files.add(createS3CsvFileInfo(summary));
-                }
-            }
+            listing.getObjectSummaries().stream()
+                .filter(summary -> summary.getKey().endsWith(".csv"))
+                .map(this::createS3CsvFileInfo)
+                .forEach(files::add);
 
             request.setContinuationToken(listing.getNextContinuationToken());
         } while (listing.isTruncated());
 
-        files.sort((a, b) -> b.getLastModified().compareTo(a.getLastModified()));
-
-        log.info(">>> [ 📊 검색 결과 - 총 {}개 파일 ]", files.size());
-
         return files;
     }
-
 
     private CsvFileInfo createS3CsvFileInfo(S3ObjectSummary summary) {
         try {
@@ -132,7 +139,9 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public ResponseEntity<Resource> downloadCsvFile(String key, Long companyId, Long deviceId) {
+    public ResponseEntity<Resource> downloadCsvFile(String key, Long companyId,
+        String deviceAlias) {
+        Long deviceId = deviceRepository.findIdByAliasAndCompanyId(deviceAlias, companyId);
         try {
             log.info(">>> [ 📥 파일 다운로드 시작 - key: {}, companyId: {}, deviceId: {} ]",
                 key, companyId, deviceId);
@@ -151,28 +160,9 @@ public class FileServiceImpl implements FileService {
                 ? originalFileName.replace(".csv", "_" + deviceId + ".csv")
                 : originalFileName;
 
-            // deviceId가 없으면 전체 파일 다운로드
-            if (deviceId == null) {
-                return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType("text/csv"))
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + fileName + "\"")
-                    .body(new InputStreamResource(s3Object.getObjectContent()));
-            }
-
-            // deviceId가 있는 경우 필터링된 데이터로 새 CSV 생성
-            ByteArrayResource filteredResource = filterCsvByDeviceId(
-                s3Object.getObjectContent(),
-                deviceId
-            );
-
+            Resource resourceToReturn = createResource(s3Object, deviceId);
             log.info(">>> [ ✅ 파일 다운로드 준비 완료 - fileName: {} ]", fileName);
-
-            return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("text/csv"))
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                    "attachment; filename=\"" + fileName + "\"")
-                .body(filteredResource);
+            return createCsvResponse(fileName, resourceToReturn);
         } catch (AmazonS3Exception e) {
             log.error(">>> [ ❌ S3 파일 다운로드 실패 - key: {}, error: {} ]",
                 key, e.getMessage());
@@ -186,28 +176,22 @@ public class FileServiceImpl implements FileService {
     private ByteArrayResource filterCsvByDeviceId(InputStream inputStream, Long deviceId)
         throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-
-            CSVParser parser = new CSVParser(reader,
-                CSVFormat.DEFAULT.withFirstRecordAsHeader());
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            CSVParser parser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader());
             CSVPrinter printer = new CSVPrinter(
                 new OutputStreamWriter(outputStream),
-                CSVFormat.DEFAULT.withHeader(
-                    parser.getHeaderMap().keySet().toArray(new String[0]))
-            );
+                CSVFormat.DEFAULT.withHeader(parser.getHeaderNames().toArray(new String[0]))
+            )) {
 
-            // deviceId 컬럼 인덱스 찾기
-            int deviceIdIndex = parser.getHeaderMap().get("DEVICE_ID");
-            if (deviceIdIndex == -1) {
+            List<String> headers = parser.getHeaderNames();
+            if (!headers.contains("DEVICE_ID")) {
                 log.error(">>> [ ❌ DEVICE_ID 컬럼을 찾을 수 없습니다 ]");
                 throw new FileBusinessException(DEVICE_ID_COLUMN_NOT_FOUND);
             }
 
             int filteredCount = 0;
-            // 필터링 및 새 CSV 작성
             for (CSVRecord record : parser) {
-                String deviceIdStr = record.get(deviceIdIndex).trim();
-                // 숫자로만 이루어진 경우에만 처리
+                String deviceIdStr = record.get("DEVICE_ID").trim();
                 if (deviceIdStr.matches("\\d+")) {
                     Long recordDeviceId = Long.parseLong(deviceIdStr);
                     if (recordDeviceId.equals(deviceId)) {
@@ -217,16 +201,27 @@ public class FileServiceImpl implements FileService {
                 }
             }
 
-            printer.flush();
-            printer.close();
-
             if (filteredCount == 0) {
                 log.info(">>> [ ℹ️ DEVICE_ID {}에 해당하는 데이터가 없습니다 ]", deviceId);
-                throw new FileBusinessException(FileErrorCode.NO_MATCHING_DEVICE_DATA);
-            } else {
-                log.info(">>> [ ✅ DEVICE_ID {} 데이터 {} 건 필터링 완료 ]", deviceId, filteredCount);
+                throw new FileBusinessException(NO_MATCHING_DEVICE_DATA);
             }
+            log.info(">>> [ ✅ DEVICE_ID {} 데이터 {} 건 필터링 완료 ]", deviceId, filteredCount);
             return new ByteArrayResource(outputStream.toByteArray());
+
         }
+    }
+
+    private Resource createResource(S3Object s3Object, Long deviceId) throws IOException {
+        return deviceId == null
+            ? new InputStreamResource(s3Object.getObjectContent())
+            : filterCsvByDeviceId(s3Object.getObjectContent(), deviceId);
+    }
+
+    private ResponseEntity<Resource> createCsvResponse(String fileName, Resource resource) {
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType("text/csv"))
+            .header(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"" + fileName + "\"")
+            .body(resource);
     }
 }
