@@ -99,6 +99,111 @@ public class MonitoringRepository {
         }
     }
 
+    public void deleteExpiredSessionDataList(
+        LocalDateTime retentionDate) {
+        String query = queryLoader.getQuery("deleteExpiredSessionDataList");
+        log.info(">>> [ 💾 SessionData 삭제 시작.]");
+
+        try {
+            // 단일 쿼리로 변경
+            int deletedCount = jdbcTemplate.update(query, retentionDate);
+
+            log.info(">>> [ 🗑️ CollectedAt: {} 기준 {} 개 행 삭제됨 ]",
+                retentionDate,
+                deletedCount);
+
+        } catch (Exception e) {
+            log.error(">>> [ ❌ SessionData 삭제 실패: 에러: {} ]", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    public void deleteJobExecutionParamsDataList(
+        LocalDateTime retentionDate) {
+        String query = queryLoader.getQuery("deleteJobExecutionParamsDataList");
+        log.info(">>> [ 💾 MetaData 삭제 시작.]");
+        try {
+            int deletedCount = jdbcTemplate.update(query, retentionDate);
+            log.info(">>> [ 🗑️ CollectedAt: {} 기준 {} 개 행 삭제됨 ]",
+                retentionDate,
+                deletedCount);
+        } catch (Exception e) {
+            log.error(">>> [ ❌ deleteJobExecutionParamData 삭제 실패: 에러: {} ]", e.getMessage(), e);
+            throw e;
+        }
+    }
+    public void deleteJobExecutionContextDataList(
+        LocalDateTime retentionDate) {
+        String query = queryLoader.getQuery("deleteJobExecutionContextDataList");
+        log.info(">>> [ 💾 MetaData 삭제 시작.]");
+        try {
+            int deletedCount = jdbcTemplate.update(query, retentionDate);
+            log.info(">>> [ 🗑️ CollectedAt: {} 기준 {} 개 행 삭제됨 ]",
+                retentionDate,
+                deletedCount);
+        } catch (Exception e) {
+            log.error(">>> [ ❌ deleteJobExecutionContextDataList 삭제 실패: 에러: {} ]", e.getMessage(), e);
+            throw e;
+        }
+    }
+    public void deleteStepExecutionContext(
+        LocalDateTime retentionDate) {
+        String query = queryLoader.getQuery("deleteStepExecutionContext");
+        log.info(">>> [ 💾 MetaData 삭제 시작.]");
+        try {
+            int deletedCount = jdbcTemplate.update(query, retentionDate);
+            log.info(">>> [ 🗑️ CollectedAt: {} 기준 {} 개 행 삭제됨 ]",
+                retentionDate,
+                deletedCount);
+        } catch (Exception e) {
+            log.error(">>> [ ❌ deleteStepExecutionContext 삭제 실패: 에러: {} ]", e.getMessage(), e);
+            throw e;
+        }
+    }
+    public void deleteStepExecution(
+        LocalDateTime retentionDate) {
+        String query = queryLoader.getQuery("deleteStepExecution");
+        log.info(">>> [ 💾 MetaData 삭제 시작.]");
+        try {
+            int deletedCount = jdbcTemplate.update(query, retentionDate);
+            log.info(">>> [ 🗑️ CollectedAt: {} 기준 {} 개 행 삭제됨 ]",
+                retentionDate,
+                deletedCount);
+        } catch (Exception e) {
+            log.error(">>> [ ❌ deleteStepExecution 삭제 실패: 에러: {} ]", e.getMessage(), e);
+            throw e;
+        }
+    }
+    public void deleteJobExecution(
+        LocalDateTime retentionDate) {
+        String query = queryLoader.getQuery("deleteJobExecution");
+        log.info(">>> [ 💾 MetaData 삭제 시작.]");
+        try {
+            int deletedCount = jdbcTemplate.update(query, retentionDate);
+            log.info(">>> [ 🗑️ CollectedAt: {} 기준 {} 개 행 삭제됨 ]",
+                retentionDate,
+                deletedCount);
+        } catch (Exception e) {
+            log.error(">>> [ ❌ deleteJobExecution 삭제 실패: 에러: {} ]", e.getMessage(), e);
+            throw e;
+        }
+    }
+    public void deleteJobInstance(
+        LocalDateTime retentionDate) {
+        String query = queryLoader.getQuery("deleteJobInstance");
+        log.info(">>> [ 💾 MetaData 삭제 시작.]");
+        try {
+            int deletedCount = jdbcTemplate.update(query, retentionDate);
+            log.info(">>> [ 🗑️ CollectedAt: {} 기준 {} 개 행 삭제됨 ]",
+                retentionDate,
+                deletedCount);
+        } catch (Exception e) {
+            log.error(">>> [ ❌ deleteJobInstance 삭제 실패: 에러: {} ]", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+
     public MonitoringMetric fetchMetricData(DataSource dataSource, Device device,
             LocalDateTime collectedAt) {
         MonitoringMetric monitoringMetric = null;

@@ -1,5 +1,6 @@
 package sandbox.semo.application.member.service;
 
+import static sandbox.semo.application.common.exception.CommonErrorCode.BAD_REQUEST;
 import static sandbox.semo.application.common.exception.CommonErrorCode.FORBIDDEN_ACCESS;
 import static sandbox.semo.application.member.exception.MemberErrorCode.ALREADY_EXISTS_EMAIL;
 import static sandbox.semo.application.member.exception.MemberErrorCode.COMPANY_NOT_EXIST;
@@ -9,22 +10,18 @@ import static sandbox.semo.application.member.exception.MemberErrorCode.MEMBER_N
 import static sandbox.semo.application.member.exception.MemberErrorCode.UNAUTHORIZED_TO_MEMBER;
 import static sandbox.semo.domain.member.entity.Role.ROLE_SUPER;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.common.exception.CommonBusinessException;
 import sandbox.semo.application.member.exception.MemberBusinessException;
+import sandbox.semo.application.member.exception.MemberErrorCode;
 import sandbox.semo.application.member.service.helper.LoginIdGenerator;
+import sandbox.semo.domain.common.dto.response.OffsetPage;
 import sandbox.semo.domain.common.dto.response.FormDecisionResponse;
 import sandbox.semo.domain.common.entity.FormStatus;
 import sandbox.semo.domain.company.entity.Company;
@@ -132,19 +129,25 @@ public class MemberServiceImpl implements MemberService {
         log.info(">>> [ ✅ 고객사 회원가입 폼이 성공적으로 등록되었습니다. ]");
     }
 
-    /**
-     * TODO: 0번째 에지부터 data가 없으면, 빈배열
-     * totalPage를 넘어갔을 때 data가 없으면 예외처리 발생
-     **/
     @Override
-    public Page<MemberFormInfo> findAllForms(int page, int size) {
-        List<Order> sorts = new ArrayList<>();
-        sorts.add(Sort.Order.desc("requestDate"));
+    public OffsetPage<MemberFormInfo> findForms(int page, int size) {
+        if (page < 1) {
+            throw new CommonBusinessException(BAD_REQUEST);
+        }
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sorts));
-        Page<MemberForm> memberFormPage = memberFormRepository.findAll(pageable);
+        int offset = (page - 1) * size;
+        List<MemberForm> memberForms = memberFormRepository.findPageWithOffset(offset, size);
+        long totalCount = memberFormRepository.count();
+        List<MemberFormInfo> content = memberForms.stream()
+                .map(this::mapToMemberFormInfo)
+                .toList();
+        int pageCount = (int) Math.ceil((double) totalCount / size);
+        boolean hasNext = page < pageCount;
+        return new OffsetPage<>(pageCount, content, hasNext);
+    }
 
-        return memberFormPage.map(memberForm -> MemberFormInfo.builder()
+    private MemberFormInfo mapToMemberFormInfo(MemberForm memberForm) {
+        return MemberFormInfo.builder()
                 .formId(memberForm.getId())
                 .company(memberForm.getCompany())
                 .ownerName(memberForm.getOwnerName())
@@ -152,7 +155,7 @@ public class MemberServiceImpl implements MemberService {
                 .formStatus(memberForm.getFormStatus())
                 .requestDate(memberForm.getRequestDate())
                 .approvedAt(memberForm.getApprovedAt())
-                .build());
+                .build();
     }
 
     @Override
@@ -171,8 +174,11 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     public Boolean checkEmailDuplicate(String email) {
-        if (memberRepository.existsByEmail(email)) {
+        if (memberRepository.findByEmailAndDeletedAtIsNull(email).isPresent()) {
             throw new MemberBusinessException(ALREADY_EXISTS_EMAIL);
+        }
+        if (memberRepository.findByEmail(email).isPresent()) {
+            throw new MemberBusinessException(MemberErrorCode.DELETED_MEMBER_EMAIL);
         }
         return true;
     }

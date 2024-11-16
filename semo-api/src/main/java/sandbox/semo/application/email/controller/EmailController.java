@@ -36,7 +36,7 @@ public class EmailController {
         return ApiResponse.successResponse(OK, "성공적으로 인증 코드 검증이 완료 되었습니다.");
     }
 
-    @PreAuthorize("hasRole('SUPER')")
+    @PreAuthorize("hasAnyRole('SUPER','ADMIN')")
     @PostMapping
     public ApiResponse<String> processEmailRequest(@Valid @RequestBody EmailSendRequest request) {
         String successMessage = emailService.processEmailRequest(request);

@@ -1,12 +1,18 @@
 package sandbox.semo.domain.company.repository;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import sandbox.semo.domain.company.entity.CompanyForm;
 
 public interface CompanyFormRepository extends JpaRepository<CompanyForm, Long> {
 
-    Page<CompanyForm> findAll(Pageable pageable);
+    @Query(value = """
+            SELECT * FROM COMPANY_FORM
+            ORDER BY REQUEST_DATE DESC
+            OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY
+            """, nativeQuery = true)
+    List<CompanyForm> findPageWithOffset(@Param("offset") int offset, @Param("size") int size);
 
 }

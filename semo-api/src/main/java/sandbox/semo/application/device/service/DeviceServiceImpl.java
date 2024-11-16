@@ -3,6 +3,7 @@ package sandbox.semo.application.device.service;
 import static sandbox.semo.application.company.exception.CompanyErrorCode.*;
 import static sandbox.semo.application.device.exception.DeviceErrorCode.ACCESS_DENIED;
 import static sandbox.semo.application.device.exception.DeviceErrorCode.DATABASE_CONNECTION_FAILURE;
+import static sandbox.semo.application.device.exception.DeviceErrorCode.DEVICE_NOT_FOUND;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -20,6 +21,7 @@ import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.company.repository.CompanyRepository;
 import sandbox.semo.domain.device.dto.request.DataBaseInfo;
 import sandbox.semo.domain.device.dto.request.DeviceRegister;
+import sandbox.semo.domain.device.dto.request.DeviceUpdate;
 import sandbox.semo.domain.device.dto.response.DeviceInfo;
 import sandbox.semo.domain.device.entity.Device;
 import sandbox.semo.domain.device.repository.DeviceRepository;
@@ -121,4 +123,37 @@ public class DeviceServiceImpl implements DeviceService {
         return "jdbc:oracle:thin:@" + ip + ":" + port + ":" + sId;
     }
 
+    @Transactional
+    @Override
+    public void update(Long companyId, DeviceUpdate request) {
+        Device device = deviceRepository.findByAliasAndCompanyId(
+                request.getTargetDevice(),
+                companyId
+        ).orElseThrow(() -> new DeviceBusinessException(DEVICE_NOT_FOUND));
+
+        DataBaseInfo dataBaseInfo = request.getUpdateDeviceInfo();
+        if (!healthCheck(dataBaseInfo)) {
+            throw new DeviceBusinessException(DATABASE_CONNECTION_FAILURE);
+        }
+
+        device.changeDevice(
+                request.getUpdateDeviceAlias(),
+                dataBaseInfo.getType(),
+                dataBaseInfo.getIp(),
+                dataBaseInfo.getPort(),
+                dataBaseInfo.getSid(),
+                dataBaseInfo.getUsername(),
+                aes256.encrypt(dataBaseInfo.getPassword())
+        );
+        log.info(">>> [ ✅ 데이터베이스 장비가 성공적으로 수정되었습니다. ]");
+    }
+
+    @Transactional
+    @Override
+    public void deleteDevice(Long companyId, String deviceAlias) {
+        Device device = deviceRepository.findByAliasAndCompanyId(deviceAlias, companyId)
+                .orElseThrow(() -> new DeviceBusinessException(DEVICE_NOT_FOUND));
+        device.markAsDeleted();
+        log.info(">>> [ ✅ 데이터베이스 장비가 성공적으로 삭제 되었습니다. ]");
+    }
 }
