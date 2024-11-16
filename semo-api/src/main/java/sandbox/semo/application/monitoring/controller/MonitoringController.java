@@ -64,6 +64,10 @@ public class MonitoringController {
         return ApiResponse.successResponse(HttpStatus.OK, "성공적으로 일별 Job의 실행시간을 조회했습니다.", data);
     }
 
-
+    @GetMapping("/failure")
+    public ApiResponse<StepInfo> getStepErrorStatistics() {
+        StepInfo data = monitoringService.getStepExecutionData();
+        return ApiResponse.successResponse(HttpStatus.OK, "성공적으로 배치 Step의 에러 통계를 조회했습니다.", data);
+    }
 }
 
