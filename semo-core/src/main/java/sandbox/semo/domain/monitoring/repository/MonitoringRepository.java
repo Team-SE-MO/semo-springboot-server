@@ -208,67 +208,107 @@ public class MonitoringRepository {
                         .build());
     }
 
+    //메인 Step 에러 데이터 조회 메서드
     public StepInfo findStepExecutionData() {
-        String query = queryLoader.getQuery("selectStepDataMetric");
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        LocalDate today = LocalDate.now();
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("today", today.format(formatter));
-
-        Map<String, StepData> stepExecutionMap = new LinkedHashMap<>();
-
-        for (int i = 0; i < 6; i++) {
-            LocalDate date = today.minusDays(i);
-            String executionDate = date.format(formatter);
-            StepData defaultStepData = StepData.builder()
-                    .totalCount(0)
-                    .errorTypes(null)
-                    .hasError(false)
-                    .build();
-            stepExecutionMap.put(executionDate, defaultStepData);
-        }
-
-        paramJdbcTemplate.query(
-                query,
-                params,
-                (ResultSet rs) -> {
-                    String executionDate = rs.getString("EXEC_DATE");
-                    String errorInfo = rs.getString("ERROR_INFO");
-                    String totalCountStr = errorInfo.split("TOTAL_COUNT:")[1];
-                    int totalCount;
-
-                    if (totalCountStr.contains(",")) {
-                        totalCount = Integer.parseInt(totalCountStr.split(",")[0].trim());
-                    } else {
-                        totalCount = Integer.parseInt(totalCountStr.trim());
-                    }
-
-                    Map<String, Integer> errorTypes = null;
-                    if (errorInfo.contains("ERROR_TYPE")) {
-                        errorTypes = new HashMap<>();
-                        String[] errorParts = errorInfo.split("ERROR_TYPE:|ERROR_COUNT:");
-                        for (int i = 1; i < errorParts.length; i += 2) {
-                            if (i + 1 < errorParts.length) {
-                                String errorType = errorParts[i].split(",")[0].trim();
-                                String errorCountStr = errorParts[i + 1].split(",")[0].trim();
-                                int errorCount = Integer.parseInt(errorCountStr);
-                                errorTypes.put(errorType, errorCount);
-                            }
-                        }
-                    }
-
-                    StepData stepData = StepData.builder()
-                            .totalCount(totalCount)
-                            .errorTypes(errorTypes == null || errorTypes.isEmpty() ? null : errorTypes)
-                            .hasError(totalCount > 0)
-                            .build();
-                    stepExecutionMap.put(executionDate, stepData);
-                }
-        );
+        Map<String, StepData> stepExecutionMap = initializeDefaultStepData();
+        updateStepDataFromDatabase(stepExecutionMap);
 
         return StepInfo.builder()
                 .stepExecution(stepExecutionMap)
                 .build();
+    }
+
+    // 1. 기본 데이터 초기화
+    private Map<String, StepData> initializeDefaultStepData() {
+        Map<String, StepData> stepExecutionMap = new LinkedHashMap<>();
+        LocalDate today = LocalDate.now();
+
+        for (int i = 0; i < 6; i++) {
+            String executionDate = getCalculatedDate(today, i);
+            stepExecutionMap.put(executionDate, createDefaultStepData());
+        }
+
+        return stepExecutionMap;
+    }
+
+    // 2. 계산된 날짜 반환
+    private String getCalculatedDate(LocalDate today, int daysAgo) {
+        return today.minusDays(daysAgo)
+                   .format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    }
+
+    // 3. 기본 데이터 생성
+    private StepData createDefaultStepData() {
+        return StepData.builder()
+                .totalCount(0)
+                .errorTypes(null)
+                .hasError(false)
+                .build();
+    }
+
+    // 4. 데이터베이스에서 데이터 업데이트
+    private void updateStepDataFromDatabase(Map<String, StepData> stepExecutionMap) {
+        String query = queryLoader.getQuery("selectStepDataMetric");
+        MapSqlParameterSource params = createQueryParameters();
+        
+        paramJdbcTemplate.query(
+            query,
+            params,
+            (ResultSet rs) -> {
+                processResultSet(rs, stepExecutionMap);
+                return null;
+            }
+        );
+    }
+
+    // 5. 쿼리 파라미터 생성
+    private MapSqlParameterSource createQueryParameters() {
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        LocalDate today = LocalDate.now();
+        params.addValue("startDate", today.minusDays(6));
+        params.addValue("endDate", today);
+        return params;
+    }
+
+    // 6. 결과 처리
+    private void processResultSet(ResultSet rs, Map<String, StepData> stepExecutionMap) {
+        try {
+            while (rs.next()) {
+                String executionDate = rs.getString("EXEC_DATE");
+                String errorInfo = rs.getString("ERROR_INFO");
+                String totalCountStr = errorInfo.split("TOTAL_COUNT:")[1];
+                int totalCount;
+
+                if (totalCountStr.contains(",")) {
+                    totalCount = Integer.parseInt(totalCountStr.split(",")[0].trim());
+                } else {
+                    totalCount = Integer.parseInt(totalCountStr.trim());
+                }
+
+                Map<String, Integer> errorTypes = null;
+                if (errorInfo.contains("ERROR_TYPE")) {
+                    errorTypes = new HashMap<>();
+                    String[] errorParts = errorInfo.split("ERROR_TYPE:|ERROR_COUNT:");
+                    for (int i = 1; i < errorParts.length; i += 2) {
+                        if (i + 1 < errorParts.length) {
+                            String errorType = errorParts[i].split(",")[0].trim();
+                            String errorCountStr = errorParts[i + 1].split(",")[0].trim();
+                            int errorCount = Integer.parseInt(errorCountStr);
+                            errorTypes.put(errorType, errorCount);
+                        }
+                    }
+                }
+
+                StepData stepData = StepData.builder()
+                        .totalCount(totalCount)
+                        .errorTypes(errorTypes == null || errorTypes.isEmpty() ? null : errorTypes)
+                        .hasError(totalCount > 0)
+                        .build();
+                stepExecutionMap.put(executionDate, stepData);
+            }
+        } catch (SQLException e) {
+            log.error(">>> [ ❌ StepData 조회 실패: 에러: {} ]", e.getMessage());
+        }
     }
 
 }
