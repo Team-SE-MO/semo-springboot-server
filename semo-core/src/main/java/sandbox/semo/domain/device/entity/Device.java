@@ -16,11 +16,13 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.DynamicUpdate;
 import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.common.entity.BaseTime;
 
 @Entity
 @Getter
+@DynamicUpdate
 @Table(name = "DEVICES")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Device extends BaseTime {
@@ -73,6 +75,17 @@ public class Device extends BaseTime {
         this.username = username;
         this.password = password;
         this.status = status;
+    }
+
+    public void changeDevice(String deviceAlias, DatabaseType type, String ip, Long port,
+            String sid, String username, String password) {
+        this.deviceAlias = deviceAlias;
+        this.type = type;
+        this.ip = ip;
+        this.port = port;
+        this.sid = sid;
+        this.username = username;
+        this.password = password;
     }
 
 }
