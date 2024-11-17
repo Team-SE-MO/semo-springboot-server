@@ -1,10 +1,9 @@
 package sandbox.semo.application.device.service;
 
-import java.util.List;
+import sandbox.semo.domain.common.dto.response.OffsetPage;
 import sandbox.semo.domain.device.dto.request.DeviceRegister;
 import sandbox.semo.domain.device.dto.request.DataBaseInfo;
 import sandbox.semo.domain.device.dto.request.DeviceUpdate;
-import sandbox.semo.domain.device.dto.response.DeviceInfo;
 import sandbox.semo.domain.member.entity.Role;
 
 public interface DeviceService {
@@ -13,7 +12,7 @@ public interface DeviceService {
 
     void register(Long companyId, DeviceRegister request);
 
-    List<DeviceInfo> getDeviceInfo(Role role, Long companyId);
+    OffsetPage<?> findDevices(int page, int size, Role role, Long companyId);
 
     void update(Long companyId, DeviceUpdate request);
 

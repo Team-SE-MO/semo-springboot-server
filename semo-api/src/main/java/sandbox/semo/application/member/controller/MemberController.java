@@ -5,7 +5,6 @@ import static org.springframework.http.HttpStatus.OK;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -114,12 +113,15 @@ public class MemberController {
 
     @PreAuthorize("hasAnyRole('SUPER','ADMIN')")
     @PostMapping
-    public ApiResponse<List<MemberInfo>> memberAllList(
+    public ApiResponse<OffsetPage<MemberInfo>> memberAllList(
+            @RequestParam(defaultValue = "1") int page,
             @RequestBody @Valid MemberSearchFilter request,
             @AuthenticationPrincipal JwtMemberDetails memberDetails) {
         Role ownRole = memberDetails.getRole();
         Long ownCompanyId = memberDetails.getCompanyId();
-        List<MemberInfo> data = memberService.findAllMembers(ownCompanyId, ownRole, request);
+        OffsetPage<MemberInfo> data = memberService.findAllMembers(
+                ownCompanyId, ownRole, page, 10, request
+        );
         return ApiResponse.successResponse(OK, "성공적으로 유저 목록을 조회하였습니다.", data);
     }
 

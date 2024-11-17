@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,7 +61,7 @@ public class MemberServiceImpl implements MemberService {
     @Override
     @Transactional
     public void superRegister(SuperRegister request) {
-        if (!request.getKey().equals(SUPER_KEY)){
+        if (!request.getKey().equals(SUPER_KEY)) {
             throw new MemberBusinessException(UNAUTHORIZED_TO_MEMBER);
         }
         checkEmailDuplicate(request.getEmail());
@@ -239,23 +240,38 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
-    public List<MemberInfo> findAllMembers(Long ownCompanyId, Role ownRole,
-            MemberSearchFilter request) {
-        boolean isSuperRole = isSuperRole(ownRole);
-        boolean isOwnCompany = ownCompanyId.equals(request.getCompanyId());
-
-        if (!isSuperRole && !isOwnCompany) {
-            log.warn(">>> [ ❌ ADMIN이 다른 회사 유저목록을 조회할 수 없습니다. ]");
-            throw new CommonBusinessException(FORBIDDEN_ACCESS);
+    public OffsetPage<MemberInfo> findAllMembers(Long ownCompanyId, Role ownRole, int page,
+            int size, MemberSearchFilter request) {
+        if (page < 1) {
+            throw new CommonBusinessException(BAD_REQUEST);
         }
+        int offset = (page - 1) * size;
+        List<Role> rolesToSearch = (request.getRoleList() != null && !request.getRoleList().isEmpty())
+                ? request.getRoleList() : null;
 
-        List<Role> filterRoles = Optional.ofNullable(request.getRoleList())
-                .filter(list -> !list.isEmpty())
-                .orElse(List.of(Role.ROLE_USER, Role.ROLE_ADMIN));
-
-        return memberRepository.findAllActiveMemberContainsRole(request.getCompanyId(),
+        List<MemberInfo> members = memberRepository.findAllActiveMemberContainsRoleWithPagination(
+                ownRole.name(),
+                ownCompanyId,
+                request.getCompanyId(),
                 request.getKeyword(),
-                filterRoles);
+                rolesToSearch,
+                offset,
+                size
+        );
+
+        long totalCount = memberRepository.countAllActiveMemberContainsRole(
+                ownRole.name(),
+                ownCompanyId,
+                request.getCompanyId(),
+                request.getKeyword(),
+                rolesToSearch
+        );
+
+        int pageCount = (int) Math.ceil((double) totalCount / size);
+        boolean hasNext = ((long) page * size) < totalCount;
+
+        return new OffsetPage<>(pageCount, members, hasNext);
     }
+
 
 }

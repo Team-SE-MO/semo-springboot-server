@@ -6,6 +6,7 @@ import static sandbox.semo.application.company.exception.CompanyErrorCode.FORM_D
 import static sandbox.semo.application.company.exception.CompanyErrorCode.STATUS_NOT_APPROVED;
 
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -121,4 +122,10 @@ public class CompanyServiceImpl implements CompanyService {
                 .build();
 
     }
+
+    @Override
+    public Optional<Company> findByCompanyNameAndTaxId(String companyName, String taxId) {
+        return companyRepository.findByCompanyNameAndTaxId(companyName, taxId);
+    }
+
 }
