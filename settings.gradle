@@ -1,5 +1,5 @@
 rootProject.name = 'semo-springboot-server'
 include 'semo-api'
-include 'semo-batch'
+include 'semo-batch-collect'
 include 'semo-core'
 
