@@ -16,9 +16,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.member.exception.MemberBusinessException;
+import sandbox.semo.domain.common.dto.response.CursorPage;
 import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.device.repository.DeviceRepository;
 import sandbox.semo.domain.member.entity.Member;
@@ -27,11 +31,14 @@ import sandbox.semo.domain.monitoring.dto.request.DeviceMonitoring;
 import sandbox.semo.domain.monitoring.dto.response.DetailPageData;
 import sandbox.semo.domain.monitoring.dto.response.DeviceConnectInfo;
 import sandbox.semo.domain.monitoring.dto.response.MetricSummary;
+import sandbox.semo.domain.monitoring.dto.response.SessionDataInfo;
 import sandbox.semo.domain.monitoring.dto.response.SummaryPageData;
 import sandbox.semo.domain.monitoring.dto.response.TotalProcessInfo;
 import sandbox.semo.domain.monitoring.dto.response.TypeData;
 import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
+import sandbox.semo.domain.monitoring.entity.SessionData;
 import sandbox.semo.domain.monitoring.repository.MetricRepository;
+import sandbox.semo.domain.monitoring.repository.SessionDataRepository;
 
 @Log4j2
 @Service
@@ -42,6 +49,7 @@ public class MonitoringServiceImpl implements MonitoringService {
     private final MemberRepository memberRepository;
     private final DeviceRepository deviceRepository;
     private final MetricRepository metricRepository;
+    private final SessionDataRepository sessionDataRepository;
 
     @Override
     public SummaryPageData fetchSummaryData(Long memberId) {
@@ -263,6 +271,22 @@ public class MonitoringServiceImpl implements MonitoringService {
                         .value(Integer.parseInt(parts[1].trim()))
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public CursorPage<SessionDataInfo> fetchSessionData(
+            String deviceAlias, Long companyId, String collectedAt) {
+        Long deviceId = deviceRepository.findIdByAliasAndCompanyId(deviceAlias, companyId);
+        LocalDateTime searchTime = LocalDateTime.parse(collectedAt);
+        Pageable pageable = PageRequest.of(0, 200);
+        Page<SessionData> sessionDataPage = sessionDataRepository.findSessionData(
+                deviceId, searchTime, pageable
+        );
+        LocalDateTime nextCursorTime = searchTime.minusSeconds(5);
+        List<SessionDataInfo> data = sessionDataPage.getContent().stream()
+                .map(SessionDataInfo::fromEntity)
+                .toList();
+        return new CursorPage<>(data, nextCursorTime);
     }
 
 }

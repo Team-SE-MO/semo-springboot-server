@@ -10,12 +10,15 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.monitoring.service.MonitoringService;
 import sandbox.semo.application.security.authentication.JwtMemberDetails;
+import sandbox.semo.domain.common.dto.response.CursorPage;
 import sandbox.semo.domain.monitoring.dto.request.DeviceMonitoring;
 import sandbox.semo.domain.monitoring.dto.response.DetailPageData;
+import sandbox.semo.domain.monitoring.dto.response.SessionDataInfo;
 import sandbox.semo.domain.monitoring.dto.response.SummaryPageData;
 
 @Log4j2
@@ -42,6 +45,18 @@ public class MonitoringController {
     ) {
         Long companyId = memberDetails.getCompanyId();
         DetailPageData data = monitoringService.fetchDetailData(request, companyId);
+        return ApiResponse.successResponse(OK, "성공적으로 장비 차트 정보를 조회 하였습니다.", data);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @GetMapping("/grid")
+    public ApiResponse<CursorPage<SessionDataInfo>> fetchGridInfo(
+            @RequestParam String deviceAlias,
+            @RequestParam String collectedAt,
+            @AuthenticationPrincipal JwtMemberDetails memberDetails
+    ) {
+        Long companyId = memberDetails.getCompanyId();
+        CursorPage<SessionDataInfo> data = monitoringService.fetchSessionData(deviceAlias, companyId, collectedAt);
         return ApiResponse.successResponse(OK, "성공적으로 장비 차트 정보를 조회 하였습니다.", data);
     }
 
