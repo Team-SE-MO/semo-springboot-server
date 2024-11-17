@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.member.exception.MemberBusinessException;
 import sandbox.semo.domain.common.dto.response.CursorPage;
+import sandbox.semo.domain.common.dto.response.OffsetPage;
 import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.device.repository.DeviceRepository;
 import sandbox.semo.domain.member.entity.Member;
@@ -324,6 +325,23 @@ public class MonitoringServiceImpl implements MonitoringService {
                 .map(SessionDataInfo::fromEntity)
                 .toList();
         return new CursorPage<>(data, nextCursorTime);
+    }
+
+    @Override
+    public OffsetPage<SessionDataInfo> fetchSessionDataWithinTimeRange(
+            String deviceAlias, Long companyId, String startTime, int page
+    ) {
+        Long deviceId = deviceRepository.findIdByAliasAndCompanyId(deviceAlias, companyId);
+        LocalDateTime start = LocalDateTime.parse(startTime);
+        LocalDateTime end = start.plusMinutes(1);
+        Pageable pageable = PageRequest.of(page, 30);
+        Page<SessionData> sessionDataPage = sessionDataRepository.findSessionDataWithinTimeRange(
+                deviceId, start, end, pageable);
+        List<SessionDataInfo> data = sessionDataPage.getContent().stream()
+                .map(SessionDataInfo::fromEntity)
+                .toList();
+        boolean hasNext = sessionDataPage.hasNext();
+        return new OffsetPage<>(sessionDataPage.getTotalPages(), data, hasNext);
     }
 
 }

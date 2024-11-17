@@ -24,4 +24,18 @@ public interface SessionDataRepository extends JpaRepository<SessionData, Sessio
             Pageable pageable
     );
 
+    @Query("""
+            SELECT s
+            FROM SessionData s
+            WHERE s.id.deviceId = :deviceId
+              AND s.id.collectedAt BETWEEN :startTime AND :endTime
+            ORDER BY s.id.collectedAt DESC, s.id.sid DESC
+            """)
+    Page<SessionData> findSessionDataWithinTimeRange(
+            @Param("deviceId") Long deviceId,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime,
+            Pageable pageable
+    );
+
 }

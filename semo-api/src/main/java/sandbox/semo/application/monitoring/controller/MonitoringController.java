@@ -16,6 +16,7 @@ import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.monitoring.service.MonitoringService;
 import sandbox.semo.application.security.authentication.JwtMemberDetails;
 import sandbox.semo.domain.common.dto.response.CursorPage;
+import sandbox.semo.domain.common.dto.response.OffsetPage;
 import sandbox.semo.domain.monitoring.dto.request.DeviceMonitoring;
 import sandbox.semo.domain.monitoring.dto.response.DailyJobExecutionInfo;
 import sandbox.semo.domain.monitoring.dto.response.DetailPageData;
@@ -59,7 +60,23 @@ public class MonitoringController {
             @AuthenticationPrincipal JwtMemberDetails memberDetails
     ) {
         Long companyId = memberDetails.getCompanyId();
-        CursorPage<SessionDataInfo> data = monitoringService.fetchSessionData(deviceAlias, companyId, collectedAt);
+        CursorPage<SessionDataInfo> data = monitoringService.fetchSessionData(deviceAlias,
+                companyId, collectedAt);
+        return ApiResponse.successResponse(OK, "성공적으로 장비 차트 정보를 조회 하였습니다.", data);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @GetMapping("/grid/search")
+    public ApiResponse<OffsetPage<SessionDataInfo>> fetchGridInfoWithInTimeRange(
+            @RequestParam String deviceAlias,
+            @RequestParam String startTime,
+            @RequestParam(defaultValue = "1") int page,
+            @AuthenticationPrincipal JwtMemberDetails memberDetails
+    ) {
+        Long companyId = memberDetails.getCompanyId();
+        OffsetPage<SessionDataInfo> data = monitoringService.fetchSessionDataWithinTimeRange(
+                deviceAlias, companyId, startTime, page
+        );
         return ApiResponse.successResponse(OK, "성공적으로 장비 차트 정보를 조회 하였습니다.", data);
     }
 
