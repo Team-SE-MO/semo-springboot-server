@@ -9,9 +9,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.LinkedHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -28,16 +28,21 @@ import sandbox.semo.domain.device.repository.DeviceRepository;
 import sandbox.semo.domain.member.entity.Member;
 import sandbox.semo.domain.member.repository.MemberRepository;
 import sandbox.semo.domain.monitoring.dto.request.DeviceMonitoring;
+import sandbox.semo.domain.monitoring.dto.response.DailyJobData;
+import sandbox.semo.domain.monitoring.dto.response.DailyJobExecutionInfo;
 import sandbox.semo.domain.monitoring.dto.response.DetailPageData;
 import sandbox.semo.domain.monitoring.dto.response.DeviceConnectInfo;
+import sandbox.semo.domain.monitoring.dto.response.MetaExecutionData;
 import sandbox.semo.domain.monitoring.dto.response.MetricSummary;
 import sandbox.semo.domain.monitoring.dto.response.SessionDataInfo;
+import sandbox.semo.domain.monitoring.dto.response.StepInfo;
 import sandbox.semo.domain.monitoring.dto.response.SummaryPageData;
 import sandbox.semo.domain.monitoring.dto.response.TotalProcessInfo;
 import sandbox.semo.domain.monitoring.dto.response.TypeData;
 import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
 import sandbox.semo.domain.monitoring.entity.SessionData;
 import sandbox.semo.domain.monitoring.repository.MetricRepository;
+import sandbox.semo.domain.monitoring.repository.MonitoringRepository;
 import sandbox.semo.domain.monitoring.repository.SessionDataRepository;
 
 @Log4j2
@@ -49,6 +54,7 @@ public class MonitoringServiceImpl implements MonitoringService {
     private final MemberRepository memberRepository;
     private final DeviceRepository deviceRepository;
     private final MetricRepository metricRepository;
+    private final MonitoringRepository monitoringRepository;
     private final SessionDataRepository sessionDataRepository;
 
     @Override
@@ -271,6 +277,37 @@ public class MonitoringServiceImpl implements MonitoringService {
                         .value(Integer.parseInt(parts[1].trim()))
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public MetaExecutionData getRealTimeJobExecutionTimes() {
+        return monitoringRepository.findRealTimeJobExecutionTimes();
+    }
+
+    @Override
+    public DailyJobExecutionInfo getDailyJobExecutionTimes() {
+        List<DailyJobData> executionTimesList = monitoringRepository.findDailyJobExecutionTimes();
+
+        Map<String, DailyJobData> executionDateMap = executionTimesList.stream()
+                .collect(Collectors.toMap(
+                        data -> data.getExecutionDate().toString(),
+                        data -> new DailyJobData(
+                                null,
+                                data.getStoreJobDuration(),
+                                data.getRetentionJobDuration()
+                        ),
+                        (existing, replacement) -> existing,
+                        LinkedHashMap::new
+                ));
+
+        return DailyJobExecutionInfo.builder()
+                .executionDate(executionDateMap)
+                .build();
+    }
+
+    @Override
+    public StepInfo getStepExecutionData() {
+        return monitoringRepository.findStepExecutionData();
     }
 
     @Override
