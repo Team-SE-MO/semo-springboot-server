@@ -9,4 +9,4 @@ import lombok.Getter;
 public class DailyJobExecutionInfo {
 
     private Map<String, DailyJobData> executionDate;
-} 
+}
