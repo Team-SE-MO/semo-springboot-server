@@ -9,4 +9,5 @@ import lombok.Getter;
 public class StepInfo {
 
     private Map<String, StepData> stepExecution;
+
 }

@@ -1,11 +1,11 @@
 package sandbox.semo.domain.monitoring.dto.response;
 
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import com.fasterxml.jackson.annotation.JsonInclude;
 
 @Getter
 @NoArgsConstructor
@@ -22,4 +22,5 @@ public class StepData {
         this.errorTypes = errorTypes;
         this.hasError = hasError;
     }
+
 }
