@@ -19,7 +19,7 @@ public class StoreCsvFileScheduler {
     @Qualifier("storeCsvFileJob")
     private final Job storeCsvFileJob;
 
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 17 17 * * *")
     public void runBackup() throws Exception {
         LocalDateTime saveDate = LocalDateTime.now().minusDays(1);
 

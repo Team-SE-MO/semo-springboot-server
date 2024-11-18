@@ -1,5 +1,6 @@
 package sandbox.semo.batch.service.tasklet;
 
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.batch.core.StepContribution;
@@ -8,8 +9,6 @@ import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Value;
-
-import java.time.LocalDateTime;
 import sandbox.semo.domain.monitoring.repository.MonitoringRepository;
 
 @Log4j2
@@ -25,7 +24,7 @@ public class DeleteTasklet implements Tasklet {
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) {
         LocalDateTime retentionDate = LocalDateTime.parse(retentionDateStr);
-        
+
         try {
             monitoringRepository.deleteExpiredSessionDataList(retentionDate);
             log.info(">>> [ 🗑️ 만료된 세션 데이터 삭제 완료 - 기준일: {} ]", retentionDate);
