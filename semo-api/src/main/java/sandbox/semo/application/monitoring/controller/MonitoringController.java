@@ -4,9 +4,6 @@ import static org.springframework.http.HttpStatus.OK;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,7 +20,6 @@ import sandbox.semo.domain.monitoring.dto.request.DeviceMonitoring;
 import sandbox.semo.domain.monitoring.dto.response.DailyJobExecutionInfo;
 import sandbox.semo.domain.monitoring.dto.response.DetailPageData;
 import sandbox.semo.domain.monitoring.dto.response.MetaExecutionData;
-import sandbox.semo.domain.monitoring.dto.response.SessionDataGrid;
 import sandbox.semo.domain.monitoring.dto.response.SessionDataInfo;
 import sandbox.semo.domain.monitoring.dto.response.StepInfo;
 import sandbox.semo.domain.monitoring.dto.response.SummaryPageData;
@@ -53,17 +49,6 @@ public class MonitoringController {
         Long companyId = memberDetails.getCompanyId();
         DetailPageData data = monitoringService.fetchDetailData(request, companyId);
         return ApiResponse.successResponse(OK, "성공적으로 장비 차트 정보를 조회 하였습니다.", data);
-    }
-
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-    @GetMapping("/grid")
-    public ApiResponse<Page<SessionDataGrid>> getPaginated(
-            @AuthenticationPrincipal JwtMemberDetails memberDetails,
-            @RequestParam int page,
-            @RequestParam int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<SessionDataGrid> data = monitoringService.getPaginated(pageable);
-        return ApiResponse.successResponse(OK, "성공적으로 세션 데이터 그리드를 조회하였습니다.", data);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")

@@ -35,7 +35,6 @@ import sandbox.semo.domain.monitoring.dto.response.DetailPageData;
 import sandbox.semo.domain.monitoring.dto.response.DeviceConnectInfo;
 import sandbox.semo.domain.monitoring.dto.response.MetaExecutionData;
 import sandbox.semo.domain.monitoring.dto.response.MetricSummary;
-import sandbox.semo.domain.monitoring.dto.response.SessionDataGrid;
 import sandbox.semo.domain.monitoring.dto.response.SessionDataInfo;
 import sandbox.semo.domain.monitoring.dto.response.StepInfo;
 import sandbox.semo.domain.monitoring.dto.response.SummaryPageData;
@@ -231,16 +230,6 @@ public class MonitoringServiceImpl implements MonitoringService {
                 .sessionCountGroupByMachine(sessionCountGroupByMachine)
                 .sessionCountGroupByType(sessionCountGroupByType)
                 .build();
-    }
-
-    @Override
-    public Page<SessionDataGrid> getPaginated(Pageable pageable) {
-        int pageSize = 20;
-        Pageable adjustedPageable = PageRequest.of(
-                pageable.getPageNumber(),
-                pageSize,
-                pageable.getSort());
-        return sessionDataRepository.findAllSessionData(adjustedPageable);
     }
 
     private Duration getDurationFromString(String interval) {
