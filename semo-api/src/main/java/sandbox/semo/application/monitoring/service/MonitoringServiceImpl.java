@@ -22,20 +22,29 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sandbox.semo.application.member.exception.MemberBusinessException;
+import sandbox.semo.domain.common.dto.response.CursorPage;
+import sandbox.semo.domain.common.dto.response.OffsetPage;
 import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.device.repository.DeviceRepository;
 import sandbox.semo.domain.member.entity.Member;
 import sandbox.semo.domain.member.repository.MemberRepository;
 import sandbox.semo.domain.monitoring.dto.request.DeviceMonitoring;
+import sandbox.semo.domain.monitoring.dto.response.DailyJobData;
+import sandbox.semo.domain.monitoring.dto.response.DailyJobExecutionInfo;
 import sandbox.semo.domain.monitoring.dto.response.DetailPageData;
 import sandbox.semo.domain.monitoring.dto.response.DeviceConnectInfo;
+import sandbox.semo.domain.monitoring.dto.response.MetaExecutionData;
 import sandbox.semo.domain.monitoring.dto.response.MetricSummary;
 import sandbox.semo.domain.monitoring.dto.response.SessionDataGrid;
+import sandbox.semo.domain.monitoring.dto.response.SessionDataInfo;
+import sandbox.semo.domain.monitoring.dto.response.StepInfo;
 import sandbox.semo.domain.monitoring.dto.response.SummaryPageData;
 import sandbox.semo.domain.monitoring.dto.response.TotalProcessInfo;
 import sandbox.semo.domain.monitoring.dto.response.TypeData;
 import sandbox.semo.domain.monitoring.entity.MonitoringMetric;
+import sandbox.semo.domain.monitoring.entity.SessionData;
 import sandbox.semo.domain.monitoring.repository.MetricRepository;
+import sandbox.semo.domain.monitoring.repository.MonitoringRepository;
 import sandbox.semo.domain.monitoring.repository.SessionDataRepository;
 
 @Log4j2
@@ -48,6 +57,7 @@ public class MonitoringServiceImpl implements MonitoringService {
     private final DeviceRepository deviceRepository;
     private final MetricRepository metricRepository;
     private final SessionDataRepository sessionDataRepository;
+    private final MonitoringRepository monitoringRepository;
 
     @Override
     public SummaryPageData fetchSummaryData(Long memberId) {
@@ -279,6 +289,70 @@ public class MonitoringServiceImpl implements MonitoringService {
                         .value(Integer.parseInt(parts[1].trim()))
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public MetaExecutionData getRealTimeJobExecutionTimes() {
+        return monitoringRepository.findRealTimeJobExecutionTimes();
+    }
+
+    @Override
+    public DailyJobExecutionInfo getDailyJobExecutionTimes() {
+        List<DailyJobData> executionTimesList = monitoringRepository.findDailyJobExecutionTimes();
+
+        Map<String, DailyJobData> executionDateMap = executionTimesList.stream()
+                .collect(Collectors.toMap(
+                        data -> data.getExecutionDate().toString(),
+                        data -> new DailyJobData(
+                                null,
+                                data.getStoreJobDuration(),
+                                data.getRetentionJobDuration()
+                        ),
+                        (existing, replacement) -> existing,
+                        LinkedHashMap::new
+                ));
+
+        return DailyJobExecutionInfo.builder()
+                .executionDate(executionDateMap)
+                .build();
+    }
+
+    @Override
+    public StepInfo getStepExecutionData() {
+        return monitoringRepository.findStepExecutionData();
+    }
+
+    @Override
+    public CursorPage<SessionDataInfo> fetchSessionData(
+            String deviceAlias, Long companyId, String collectedAt) {
+        Long deviceId = deviceRepository.findIdByAliasAndCompanyId(deviceAlias, companyId);
+        LocalDateTime searchTime = LocalDateTime.parse(collectedAt);
+        Pageable pageable = PageRequest.of(0, 200);
+        Page<SessionData> sessionDataPage = sessionDataRepository.findSessionData(
+                deviceId, searchTime, pageable
+        );
+        LocalDateTime nextCursorTime = searchTime.minusSeconds(5);
+        List<SessionDataInfo> data = sessionDataPage.getContent().stream()
+                .map(SessionDataInfo::fromEntity)
+                .toList();
+        return new CursorPage<>(data, nextCursorTime);
+    }
+
+    @Override
+    public OffsetPage<SessionDataInfo> fetchSessionDataWithinTimeRange(
+            String deviceAlias, Long companyId, String startTime, int page
+    ) {
+        Long deviceId = deviceRepository.findIdByAliasAndCompanyId(deviceAlias, companyId);
+        LocalDateTime start = LocalDateTime.parse(startTime);
+        LocalDateTime end = start.plusMinutes(1);
+        Pageable pageable = PageRequest.of(page, 30);
+        Page<SessionData> sessionDataPage = sessionDataRepository.findSessionDataWithinTimeRange(
+                deviceId, start, end, pageable);
+        List<SessionDataInfo> data = sessionDataPage.getContent().stream()
+                .map(SessionDataInfo::fromEntity)
+                .toList();
+        boolean hasNext = sessionDataPage.hasNext();
+        return new OffsetPage<>(sessionDataPage.getTotalPages(), data, hasNext);
     }
 
 }

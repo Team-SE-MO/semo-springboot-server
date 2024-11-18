@@ -1,26 +1,32 @@
 package sandbox.semo.application.device.service;
 
+import static sandbox.semo.application.common.exception.CommonErrorCode.BAD_REQUEST;
+import static sandbox.semo.application.common.exception.CommonErrorCode.FORBIDDEN_ACCESS;
 import static sandbox.semo.application.company.exception.CompanyErrorCode.*;
 import static sandbox.semo.application.device.exception.DeviceErrorCode.ACCESS_DENIED;
 import static sandbox.semo.application.device.exception.DeviceErrorCode.DATABASE_CONNECTION_FAILURE;
+import static sandbox.semo.application.device.exception.DeviceErrorCode.DEVICE_NOT_FOUND;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sandbox.semo.application.common.exception.CommonBusinessException;
 import sandbox.semo.application.company.exception.CompanyBusinessException;
 import sandbox.semo.application.device.exception.DeviceBusinessException;
 import sandbox.semo.domain.common.crypto.AES256;
+import sandbox.semo.domain.common.dto.response.OffsetPage;
 import sandbox.semo.domain.company.entity.Company;
 import sandbox.semo.domain.company.repository.CompanyRepository;
 import sandbox.semo.domain.device.dto.request.DataBaseInfo;
 import sandbox.semo.domain.device.dto.request.DeviceRegister;
+import sandbox.semo.domain.device.dto.request.DeviceUpdate;
 import sandbox.semo.domain.device.dto.response.DeviceInfo;
+import sandbox.semo.domain.device.dto.response.DeviceInfoWithCompanyInfo;
 import sandbox.semo.domain.device.entity.Device;
 import sandbox.semo.domain.device.repository.DeviceRepository;
 import sandbox.semo.domain.member.entity.Role;
@@ -36,23 +42,57 @@ public class DeviceServiceImpl implements DeviceService {
     private final AES256 aes256;
 
     @Override
-    public List<DeviceInfo> getDeviceInfo(Role role, Long companyId) {
-        List<DeviceInfo> data = new ArrayList<>();
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new CompanyBusinessException(COMPANY_NOT_FOUND));
-        switch (role) {
-            case ROLE_ADMIN, ROLE_USER -> data = readDeviceOfAdminAndUserRole(company);
-            case ROLE_SUPER -> data = readDeviceOfSuperRole(company);
+    public OffsetPage<?> findDevices(int page, int size, Role role, Long companyId) {
+        if (page < 1) {
+            throw new CommonBusinessException(BAD_REQUEST);
         }
-        return data;
+        int offset = (page - 1) * size;
+        int includeCompanyId = switch (role) {
+            case ROLE_SUPER -> 0;
+            case ROLE_ADMIN -> 1;
+            default -> throw new CommonBusinessException(FORBIDDEN_ACCESS);
+        };
+
+        List<Device> devices = deviceRepository.findDevicesWithOffset(includeCompanyId, companyId, offset, size);
+        int totalCount = (int) deviceRepository.countDevices(includeCompanyId, companyId);
+
+        List<?> content = devices.stream()
+                .map(role == Role.ROLE_SUPER ?
+                        this::mapToDeviceInfoWithCompanyInfo :
+                        this::mapToDeviceInfo
+                ).toList();
+        int pageCount = (int) Math.ceil((double) totalCount / size);
+        boolean hasNext = (page * size) < totalCount;
+
+        return new OffsetPage<>(pageCount, content, hasNext);
     }
 
-    private List<DeviceInfo> readDeviceOfAdminAndUserRole(Company company) {
-        return deviceRepository.findByCompanyId(company.getId());
+    private DeviceInfo mapToDeviceInfo(Device device) {
+        return DeviceInfo.builder()
+                .deviceAlias(device.getDeviceAlias())
+                .type(device.getType())
+                .ip(device.getIp())
+                .port(device.getPort())
+                .sid(device.getSid())
+                .status(device.getStatus())
+                .createdAt(device.getCreatedAt())
+                .updatedAt(device.getUpdatedAt())
+                .build();
     }
 
-    private List<DeviceInfo> readDeviceOfSuperRole(Company company) {
-        return deviceRepository.findAllExceptByCompanyId(company.getId());
+    private DeviceInfoWithCompanyInfo mapToDeviceInfoWithCompanyInfo(Device device) {
+        return new DeviceInfoWithCompanyInfo(
+                device.getCompany().getCompanyName(),
+                device.getCompany().getTaxId(),
+                device.getDeviceAlias(),
+                device.getType(),
+                device.getIp(),
+                device.getPort(),
+                device.getSid(),
+                device.getStatus(),
+                device.getCreatedAt(),
+                device.getUpdatedAt()
+        );
     }
 
     @Transactional
@@ -121,4 +161,37 @@ public class DeviceServiceImpl implements DeviceService {
         return "jdbc:oracle:thin:@" + ip + ":" + port + ":" + sId;
     }
 
+    @Transactional
+    @Override
+    public void update(Long companyId, DeviceUpdate request) {
+        Device device = deviceRepository.findByAliasAndCompanyId(
+                request.getTargetDevice(),
+                companyId
+        ).orElseThrow(() -> new DeviceBusinessException(DEVICE_NOT_FOUND));
+
+        DataBaseInfo dataBaseInfo = request.getUpdateDeviceInfo();
+        if (!healthCheck(dataBaseInfo)) {
+            throw new DeviceBusinessException(DATABASE_CONNECTION_FAILURE);
+        }
+
+        device.changeDevice(
+                request.getUpdateDeviceAlias(),
+                dataBaseInfo.getType(),
+                dataBaseInfo.getIp(),
+                dataBaseInfo.getPort(),
+                dataBaseInfo.getSid(),
+                dataBaseInfo.getUsername(),
+                aes256.encrypt(dataBaseInfo.getPassword())
+        );
+        log.info(">>> [ ✅ 데이터베이스 장비가 성공적으로 수정되었습니다. ]");
+    }
+
+    @Transactional
+    @Override
+    public void deleteDevice(Long companyId, String deviceAlias) {
+        Device device = deviceRepository.findByAliasAndCompanyId(deviceAlias, companyId)
+                .orElseThrow(() -> new DeviceBusinessException(DEVICE_NOT_FOUND));
+        device.markAsDeleted();
+        log.info(">>> [ ✅ 데이터베이스 장비가 성공적으로 삭제 되었습니다. ]");
+    }
 }

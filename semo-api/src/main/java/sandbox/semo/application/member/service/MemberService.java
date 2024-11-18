@@ -1,7 +1,7 @@
 package sandbox.semo.application.member.service;
 
 import java.util.List;
-import org.springframework.data.domain.Page;
+import sandbox.semo.domain.common.dto.response.OffsetPage;
 import sandbox.semo.domain.common.dto.response.FormDecisionResponse;
 import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
@@ -22,7 +22,7 @@ public interface MemberService {
 
     void formRegister(MemberFormRegister request);
 
-    Page<MemberFormInfo> findAllForms(int page, int size);
+    OffsetPage<MemberFormInfo> findForms(int page, int size);
 
     FormDecisionResponse updateForm(MemberFormDecision request);
 
@@ -32,5 +32,8 @@ public interface MemberService {
 
     void deleteMember(MemberRemove request);
 
-    List<MemberInfo> findAllMembers(Long ownCompanyId, Role ownRole, MemberSearchFilter request);
+    OffsetPage<MemberInfo> findAllMembers(
+            Long ownCompanyId, Role ownRole, int page, int size, MemberSearchFilter request
+    );
+
 }

@@ -5,10 +5,8 @@ import static org.springframework.http.HttpStatus.OK;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
@@ -23,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import sandbox.semo.application.common.response.ApiResponse;
 import sandbox.semo.application.member.service.MemberService;
 import sandbox.semo.application.security.authentication.JwtMemberDetails;
+import sandbox.semo.domain.common.dto.response.OffsetPage;
 import sandbox.semo.domain.common.dto.response.FormDecisionResponse;
 import sandbox.semo.domain.member.dto.request.MemberFormDecision;
 import sandbox.semo.domain.member.dto.request.MemberFormRegister;
@@ -51,7 +50,7 @@ public class MemberController {
     }
 
     @PreAuthorize("hasAnyRole('SUPER','ADMIN')")
-    @PostMapping
+    @PostMapping("/register")
     public ApiResponse<String> register(
             @RequestBody @Valid MemberRegister memberRegister,
             @AuthenticationPrincipal JwtMemberDetails memberDetails) {
@@ -68,10 +67,9 @@ public class MemberController {
 
     @PreAuthorize("hasRole('SUPER')")
     @GetMapping("/form")
-    public ApiResponse<Page<MemberFormInfo>> getFormList(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Page<MemberFormInfo> data = memberService.findAllForms(page, size);
+    public ApiResponse<OffsetPage<MemberFormInfo>> getFormList(
+            @RequestParam(defaultValue = "1") int page) {
+        OffsetPage<MemberFormInfo> data = memberService.findForms(page, 10);
         return ApiResponse.successResponse(OK, "성공적으로 목록을 조회하였습니다.", data);
     }
 
@@ -114,13 +112,16 @@ public class MemberController {
     }
 
     @PreAuthorize("hasAnyRole('SUPER','ADMIN')")
-    @GetMapping
-    public ApiResponse<List<MemberInfo>> memberAllList(
+    @PostMapping
+    public ApiResponse<OffsetPage<MemberInfo>> memberAllList(
+            @RequestParam(defaultValue = "1") int page,
             @RequestBody @Valid MemberSearchFilter request,
             @AuthenticationPrincipal JwtMemberDetails memberDetails) {
         Role ownRole = memberDetails.getRole();
         Long ownCompanyId = memberDetails.getCompanyId();
-        List<MemberInfo> data = memberService.findAllMembers(ownCompanyId, ownRole, request);
+        OffsetPage<MemberInfo> data = memberService.findAllMembers(
+                ownCompanyId, ownRole, page, 10, request
+        );
         return ApiResponse.successResponse(OK, "성공적으로 유저 목록을 조회하였습니다.", data);
     }
 
