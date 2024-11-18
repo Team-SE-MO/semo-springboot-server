@@ -71,7 +71,7 @@ public class WebSocketService {
 
         LocalDateTime adjustedTime = currentTime.minusSeconds(adjustment).truncatedTo(ChronoUnit.SECONDS);
         LocalDateTime endTime = adjustedTime.minusSeconds(5).truncatedTo(ChronoUnit.SECONDS);
-        LocalDateTime startTime = endTime.minusSeconds(5).truncatedTo(ChronoUnit.SECONDS);
+        LocalDateTime startTime = endTime.minusSeconds(4).truncatedTo(ChronoUnit.SECONDS);
         DeviceMonitoring request = DeviceMonitoring.builder()
                 .deviceAlias(deviceAlias)
                 .interval("5s")
