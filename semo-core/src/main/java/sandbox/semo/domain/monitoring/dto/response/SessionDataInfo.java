@@ -1,5 +1,6 @@
 package sandbox.semo.domain.monitoring.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +14,9 @@ import sandbox.semo.domain.monitoring.entity.SessionData;
 @AllArgsConstructor
 public class SessionDataInfo {
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime collectedAt;
+
     private Long sid;
     private Long serial;
     private String username;
@@ -29,12 +32,18 @@ public class SessionDataInfo {
     private String program;
     private String type;
     private String sqlId;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime sqlExecStart;
+
     private Long sqlExecId;
     private String sqlText;
     private String module;
     private String action;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime logonTime;
+
     private Long lastCallEt;
     private String failedOver;
     private String blockingSessionStatus;
