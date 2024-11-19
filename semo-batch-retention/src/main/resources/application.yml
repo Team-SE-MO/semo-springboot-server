@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: semo-batch-collect
+
+  profiles:
+    active: secret
+
+  batch:
+    jdbc:
+      initialize-schema: never
+      isolation-level-for-create: default
+    job:
+      enabled: false
+
+server:
+  port: 9091
+
+logging:
+  level:
+    org.hibernate.type.descriptor.sql: trace
+
+backup:
+  path: ./backup/session-data

@@ -19,11 +19,11 @@ public class RetentionScheduler {
     @Qualifier("retentionJob")
     private final Job retentionJob;
 
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 0 30 * * *")
     public void runRetention() throws Exception {
         LocalDateTime retentionDate = LocalDateTime.now().minusDays(1);
 
-        log.info(">>> [ 📑 데이터 보존 기간 관리 시작 - 기준일: {} ]", retentionDate);
+        log.info(">>> [ 📑 데이터 삭제 시작 - 기준일: {} ]", retentionDate);
         jobLauncher.run(
             retentionJob,
             new JobParametersBuilder()

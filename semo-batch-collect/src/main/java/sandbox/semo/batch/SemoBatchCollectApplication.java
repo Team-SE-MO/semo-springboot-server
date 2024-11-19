@@ -14,10 +14,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableJpaRepositories(basePackages = "sandbox.semo.domain")
 @ComponentScan(basePackages = {"sandbox.semo"})
 @EntityScan(basePackages = "sandbox.semo.domain")
-public class SemoBatchApplication {
+public class SemoBatchCollectApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(SemoBatchApplication.class, args);
+        SpringApplication.run(SemoBatchCollectApplication.class, args);
     }
 
 }

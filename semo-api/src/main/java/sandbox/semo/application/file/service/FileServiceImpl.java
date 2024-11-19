@@ -177,10 +177,12 @@ public class FileServiceImpl implements FileService {
         throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            CSVParser parser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader());
+            CSVParser parser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().build());
             CSVPrinter printer = new CSVPrinter(
                 new OutputStreamWriter(outputStream),
-                CSVFormat.DEFAULT.withHeader(parser.getHeaderNames().toArray(new String[0]))
+                CSVFormat.DEFAULT.builder()
+                    .setHeader(parser.getHeaderNames().toArray(new String[0]))
+                    .build()
             )) {
 
             List<String> headers = parser.getHeaderNames();
