@@ -19,7 +19,7 @@ public class RetentionScheduler {
     @Qualifier("retentionJob")
     private final Job retentionJob;
 
-    @Scheduled(cron = "0 0 30 * * *")
+    @Scheduled(cron = "0 30 0 * * *")
     public void runRetention() throws Exception {
         LocalDateTime retentionDate = LocalDateTime.now().minusDays(1);
 

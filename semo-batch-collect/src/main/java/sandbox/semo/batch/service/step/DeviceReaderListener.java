@@ -1,7 +1,7 @@
 package sandbox.semo.batch.service.step;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.ItemReadListener;
 import org.springframework.batch.core.StepExecution;
@@ -9,7 +9,7 @@ import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.stereotype.Component;
 import sandbox.semo.domain.device.entity.Device;
 
-@Log4j2
+@Slf4j
 @Component
 public class DeviceReaderListener implements ItemReadListener<Device>, StepExecutionListener {
 
