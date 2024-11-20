@@ -301,6 +301,26 @@ public class MonitoringRepository {
         return response;
     }
 
+    public MetaExecutionData findRealTimeJobExecutionTimesByLastTime() {
+        String query = queryLoader.getQuery("selectRealTimeJobMetricByLastTime");
+
+        MetaExecutionData response = MetaExecutionData.builder()
+                .executionTimes(new LinkedHashMap<>())
+                .build();
+
+        DateTimeFormatter responseFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+        paramJdbcTemplate.query(
+                query,
+                (ResultSet rs) -> {
+                    LocalDateTime startTime = rs.getTimestamp("START_TIME").toLocalDateTime();
+                    Double duration = rs.getBigDecimal("DURATION_TIME_IN_HOURS").doubleValue();
+                    response.getExecutionTimes().put(startTime.format(responseFormatter), duration);
+                });
+
+        return response;
+    }
+
     public List<DailyJobData> findDailyJobExecutionTimes() {
         String query = queryLoader.getQuery("selectDailyJobExecutionTimes");
 

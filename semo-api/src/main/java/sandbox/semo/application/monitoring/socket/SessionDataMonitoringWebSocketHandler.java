@@ -31,7 +31,7 @@ public class SessionDataMonitoringWebSocketHandler extends TextWebSocketHandler 
         if (session.isOpen()) {
             String message = objectMapper.writeValueAsString(initialData);
             session.sendMessage(new TextMessage(message));
-            log.info(">>> [ 🚀 초기 데이터 전송: {}", message);
+            log.info(">>> [ 🚀 Session Data 초기 데이터 전송: {}", message);
         }
 
         sessionDataMonitoringWebSocketService.addSession(session);
@@ -41,7 +41,7 @@ public class SessionDataMonitoringWebSocketHandler extends TextWebSocketHandler 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         sessionDataMonitoringWebSocketService.removeSession(session);
-        log.info(">>> [ 👋 SessionData Monitoring WebSocket 연결 종료 ] => 세션 ID = {}", session.getId());
+        log.info(">>> [ 👋 Session Data Monitoring WebSocket 연결 종료 ] => 세션 ID = {}", session.getId());
     }
 
 }
