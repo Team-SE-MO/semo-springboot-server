@@ -10,21 +10,15 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class MonitoringWebSocketHandler extends TextWebSocketHandler {
-
-    private final WebSocketService webSocketService;
+public class BatchDataMonitoringWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        Long companyId = (Long) session.getAttributes().get("companyId");
-        String deviceAlias = (String) session.getAttributes().get("deviceAlias");
-        webSocketService.addSession(session);
-        log.info("WebSocket 연결 성공: 세션 ID = {}, companyId = {}, deviceAlias = {}", session.getId(), companyId, deviceAlias);
+        log.info("Batch WebSocket 연결 성공: 세션 ID = {}", session.getId());
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        webSocketService.removeSession(session);
         log.info("WebSocket 연결 종료: 세션 ID = {}", session.getId());
     }
 

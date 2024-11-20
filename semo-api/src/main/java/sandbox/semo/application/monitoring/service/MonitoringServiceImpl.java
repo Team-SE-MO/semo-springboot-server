@@ -313,14 +313,19 @@ public class MonitoringServiceImpl implements MonitoringService {
 
     @Override
     public CursorPage<SessionDataInfo> fetchSessionData(
-            String deviceAlias, Long companyId, String collectedAt) {
+            String deviceAlias, Long companyId, String endTime) {
         Long deviceId = deviceRepository.findIdByAliasAndCompanyId(deviceAlias, companyId);
-        LocalDateTime searchTime = LocalDateTime.parse(collectedAt);
+        LocalDateTime collectedAt = LocalDateTime.parse(endTime);
+        int currentSecond = collectedAt.getSecond();
+        int adjustment = currentSecond % 5;
+        LocalDateTime adjustedTime = collectedAt.minusSeconds(adjustment).truncatedTo(ChronoUnit.SECONDS);
+
+        LocalDateTime searchTime = adjustedTime.minusSeconds(5).truncatedTo(ChronoUnit.SECONDS);
         Pageable pageable = PageRequest.of(0, 200);
         Page<SessionData> sessionDataPage = sessionDataRepository.findSessionData(
                 deviceId, searchTime, pageable
         );
-        LocalDateTime nextCursorTime = searchTime.minusSeconds(5);
+        LocalDateTime nextCursorTime = collectedAt.minusSeconds(5);
         List<SessionDataInfo> data = sessionDataPage.getContent().stream()
                 .map(SessionDataInfo::fromEntity)
                 .toList();
