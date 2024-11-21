@@ -61,12 +61,12 @@ public class BatchConfig {
     @StepScope
     public JpaPagingItemReader<Device> deviceReader() {
         return new JpaPagingItemReaderBuilder<Device>()
-            .name("deviceReader")
-            .entityManagerFactory(entityManagerFactory)
-            .pageSize(CHUNK_AND_PAGE_SIZE)
-            .queryString("SELECT d FROM Device d ORDER BY d.id")
-            .saveState(false)
-            .build();
+                .name("deviceReader")
+                .entityManagerFactory(entityManagerFactory)
+                .pageSize(CHUNK_AND_PAGE_SIZE)
+                .queryString("SELECT d FROM Device d WHERE d.deletedAt IS NULL ORDER BY d.id")
+                .saveState(false)
+                .build();
     }
 
     @Bean
@@ -85,28 +85,28 @@ public class BatchConfig {
 
     @Bean
     protected Step deviceCollectionStep(
-        JobRepository jobRepository, PlatformTransactionManager transactionManager,
-        ItemReader<Device> reader,
-        ItemProcessor<Device, DeviceCollectionInfo> processor,
-        ItemWriter<DeviceCollectionInfo> writer) {
+            JobRepository jobRepository, PlatformTransactionManager transactionManager,
+            ItemReader<Device> reader,
+            ItemProcessor<Device, DeviceCollectionInfo> processor,
+            ItemWriter<DeviceCollectionInfo> writer) {
         return new StepBuilder("deviceStatusValidStep", jobRepository)
-            .<Device, DeviceCollectionInfo>chunk(CHUNK_AND_PAGE_SIZE, transactionManager)
-            .reader(reader)
-            .processor(processor)
-            .writer(writer)
-            .listener((StepExecutionListener) deviceReaderListener)
-            .listener((ItemReadListener<? super Device>) deviceReaderListener) // Step 리스너
-            .taskExecutor(deviceTaskExecutor())
-            .build();
+                .<Device, DeviceCollectionInfo>chunk(CHUNK_AND_PAGE_SIZE, transactionManager)
+                .reader(reader)
+                .processor(processor)
+                .writer(writer)
+                .listener((StepExecutionListener) deviceReaderListener)
+                .listener((ItemReadListener<? super Device>) deviceReaderListener) // Step 리스너
+                .taskExecutor(deviceTaskExecutor())
+                .build();
     }
 
     @Bean
     public Job collectSessionDataJob(JobRepository jobRepository,
-        PlatformTransactionManager transactionManager) {
+            PlatformTransactionManager transactionManager) {
         return new JobBuilder("collectSessionDataJob", jobRepository)
-            .start(deviceCollectionStep(
-                jobRepository, transactionManager,
-                deviceReader(), deviceProcessor(), deviceWriter()))
-            .build();
+                .start(deviceCollectionStep(
+                        jobRepository, transactionManager,
+                        deviceReader(), deviceProcessor(), deviceWriter()))
+                .build();
     }
 }
