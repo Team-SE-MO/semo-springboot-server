@@ -19,6 +19,7 @@ public class DeviceRealTimeData {
     private Map<String, List<TypeData>> sessionCountGroupByCommand;
     private Map<String, List<TypeData>> sessionCountGroupByMachine;
     private Map<String, List<TypeData>> sessionCountGroupByType;
+
     private List<SessionDataInfo> sessionDataInfos;
 
     public static DeviceRealTimeData from(

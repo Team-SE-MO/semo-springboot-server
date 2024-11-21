@@ -14,7 +14,7 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class WebSocketHandShakeInterceptor implements HandshakeInterceptor {
+public class SessionDataWebSocketHandShakeInterceptor implements HandshakeInterceptor {
 
     private static final int URL_LENGTH = 5;
 
@@ -49,7 +49,7 @@ public class WebSocketHandShakeInterceptor implements HandshakeInterceptor {
     public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
             WebSocketHandler wsHandler,
             Exception exception) {
-        log.info("Handshake Success!");
+        log.info(">>> [ 🤝 Session Data Web Socket Handshake Success! ]");
     }
 
     private boolean isNumeric(String str) {
