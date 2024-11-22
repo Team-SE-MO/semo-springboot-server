@@ -99,18 +99,14 @@ public class MonitoringRepository {
         }
     }
 
-    public void deleteExpiredSessionDataList(
-        LocalDateTime retentionDate) {
-        String query = queryLoader.getQuery("deleteExpiredSessionDataList");
+    public void truncateSessionDataList() {
+        String query = queryLoader.getQuery("truncateSessionDataList");
         log.info(">>> [ 💾 SessionData 삭제 시작.]");
 
         try {
-            // 단일 쿼리로 변경
-            int deletedCount = jdbcTemplate.update(query, retentionDate);
+             jdbcTemplate.update(query);
 
-            log.info(">>> [ 🗑️ CollectedAt: {} 기준 {} 개 행 삭제됨 ]",
-                retentionDate,
-                deletedCount);
+            log.info(">>> [ 🗑️ SessionData 삭제됨 ]");
 
         } catch (Exception e) {
             log.error(">>> [ ❌ SessionData 삭제 실패: 에러: {} ]", e.getMessage(), e);
