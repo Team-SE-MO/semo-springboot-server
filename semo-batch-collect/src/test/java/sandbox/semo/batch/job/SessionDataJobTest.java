@@ -60,36 +60,39 @@ class SessionDataJobTest {
     private TaskExecutor taskExecutor;
 
     @Test
-    @DisplayName("단일스레드와 멀티스레드 성능을 비교한다")
-    void compareThreadPerformanceTest() throws Exception {
-        // 단일스레드 실행
-        Step singleThreadStep = createStep(false);
+    @DisplayName("단일스레드와 멀티스레드 배치 작업 속도 비교")
+    void compareSingleAndMultiThreadTest() throws Exception {
+        // 단일스레드 테스트
+        Step singleThreadStep = createStep(false, 100); // 청크 사이즈 100
         Job singleThreadJob = createJob(singleThreadStep);
 
         log.info("=== 단일스레드 테스트 시작 ===");
-        long singleThreadTime = executeJob(singleThreadJob);
-        log.info("단일스레드 실행 시간: {} ms", singleThreadTime);
+        long singleThreadExecutionTime = executeJob(singleThreadJob);
+        log.info("단일스레드 실행 시간: {} ms", singleThreadExecutionTime);
 
-        // 실행 사이 간격
-        Thread.sleep(2000);
-
-        // 멀티스레드 실행
-        Step multiThreadStep = createStep(true);
+        // 멀티스레드 테스트
+        Step multiThreadStep = createStep(true, 5); // 청크 사이즈 5
         Job multiThreadJob = createJob(multiThreadStep);
 
         log.info("=== 멀티스레드 테스트 시작 ===");
-        long multiThreadTime = executeJob(multiThreadJob);
-        log.info("멀티스레드 실행 시간: {} ms", multiThreadTime);
+        long multiThreadExecutionTime = executeJob(multiThreadJob);
+        log.info("멀티스레드 실행 시간: {} ms", multiThreadExecutionTime);
 
+        // 속도 차이
+        log.info("=== 속도 차이 ===");
+        log.info("단일스레드 실행 시간: {} ms", singleThreadExecutionTime);
+        log.info("멀티스레드 실행 시간: {} ms", multiThreadExecutionTime);
+
+        // 속도 향상률 계산
         double performanceImprovement =
-            ((double) (singleThreadTime - multiThreadTime) / singleThreadTime) * 100;
+            ((double) (singleThreadExecutionTime - multiThreadExecutionTime) / singleThreadExecutionTime) * 100;
         log.info("성능 향상률: {}", String.format("%.2f%%", performanceImprovement));
     }
 
-    private Step createStep(boolean useMultiThread) {
+    private Step createStep(boolean useMultiThread, int chunkSize) {
         SimpleStepBuilder<Device, DeviceCollectionInfo> stepBuilder = new StepBuilder(
             "deviceCollectionStep", jobRepository)
-            .<Device, DeviceCollectionInfo>chunk(100, transactionManager)
+            .<Device, DeviceCollectionInfo>chunk(chunkSize, transactionManager) // 청크 사이즈 인자로 설정
             .reader(deviceReader)
             .processor(deviceProcessor)
             .writer(deviceWriter)

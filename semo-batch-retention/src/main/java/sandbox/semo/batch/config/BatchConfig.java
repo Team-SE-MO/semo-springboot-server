@@ -44,7 +44,7 @@ public class BatchConfig {
     @Value("${backup.path}")
     private String backupBasePath;
 
-    private static final int CHUNK_SIZE = 10000;
+    private static final int CHUNK_SIZE = 20000;
     private static final int GRID_SIZE = 6;
 
     private final MonitoringRepository monitoringRepository;
@@ -58,8 +58,8 @@ public class BatchConfig {
     @StepScope
     public TaskExecutor storeCsvFileTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(4);
-        executor.setMaxPoolSize(4);
+        executor.setCorePoolSize(6);
+        executor.setMaxPoolSize(6);
         executor.setQueueCapacity(25);
         executor.setThreadNamePrefix("retention-task-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
