@@ -40,7 +40,7 @@ public class SessionDataMonitoringWebSocketService {
 
     @PostConstruct
     public void startScheduler() {
-        log.info(">>> [ 🔄 WebSocket 데이터 전송 스케줄러 시작 ]");
+        log.info(">>> [ 🔄 Session Data Monitoring WebSocket 데이터 전송 스케줄러 시작 ]");
         scheduler.scheduleAtFixedRate(() -> {
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime truncatedNow = truncateToNearestInterval(now);
@@ -50,7 +50,7 @@ public class SessionDataMonitoringWebSocketService {
 
     @PreDestroy
     public void stopScheduler() {
-        log.info(">>> [ 💤 WebSocket 데이터 전송 스케줄러 종료 ]");
+        log.info(">>> [ 💤 Session Data Monitoring WebSocket 데이터 전송 스케줄러 종료 ]");
         scheduler.shutdown();
         try {
             if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {

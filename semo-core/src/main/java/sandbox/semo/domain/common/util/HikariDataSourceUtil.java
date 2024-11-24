@@ -14,6 +14,7 @@ public class HikariDataSourceUtil {
         config.setUsername(device.getUsername());
         config.setPassword(aes256.decrypt(device.getPassword()));
         config.setDriverClassName(getDriverClassName(device.getType()));
+        config.setConnectionTimeout(500);
         config.setInitializationFailTimeout(500);
         config.setMaximumPoolSize(10);
         return new HikariDataSource(config);
