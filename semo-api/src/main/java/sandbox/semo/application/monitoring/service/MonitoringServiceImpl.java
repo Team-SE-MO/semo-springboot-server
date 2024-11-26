@@ -285,10 +285,6 @@ public class MonitoringServiceImpl implements MonitoringService {
         return monitoringRepository.findRealTimeJobExecutionTimes();
     }
 
-    public MetaExecutionData getRealTimeJobExecutionTimesByLastTimes() {
-        return monitoringRepository.findRealTimeJobExecutionTimesByLastTime();
-    }
-
     @Override
     public DailyJobExecutionInfo getDailyJobExecutionTimes() {
         List<DailyJobData> executionTimesList = monitoringRepository.findDailyJobExecutionTimes();
