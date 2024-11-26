@@ -73,7 +73,7 @@ public interface DeviceRepository extends JpaRepository<Device, Long> {
                         FLOOR((CAST(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Seoul' AS DATE) - CAST(MAX(m.COLLECTED_AT) AS DATE)) * 24 * 60)
                     ELSE COUNT(s.DEVICE_ID) \
                 END AS statusValue, \
-                MAX(m.COLLECTED_AT) AS lastCollectedAt \
+                MAX(m.COLLECTED_AT) AS lastCollectedAt, MAX(d.UPDATED_AT) AS lastUpdatedAt \
             FROM DEVICES d
             LEFT JOIN MONITORING_METRICS m ON d.DEVICE_ID = m.DEVICE_ID \
                 AND m.COLLECTED_AT = (SELECT MAX(m2.COLLECTED_AT)
@@ -86,7 +86,7 @@ public interface DeviceRepository extends JpaRepository<Device, Long> {
             WHERE d.COMPANY_ID = :companyId
             AND d.DELETED_AT IS NULL
             GROUP BY d.DEVICE_ALIAS, d.TYPE, d.IP, d.PORT, d.SID, d.STATUS, m.BLOCKING_SESSION_COUNT
-            ORDER BY status DESC, statusValue DESC
+            ORDER BY lastUpdatedAt DESC
             """, nativeQuery = true)
     List<Object[]> findMetricSummaryDataByCompanyId(@Param("companyId") Long companyId);
 
