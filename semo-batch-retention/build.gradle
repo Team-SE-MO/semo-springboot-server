@@ -7,7 +7,7 @@ dependencies {
 
 tasks.bootJar {
 	enabled = true
-	mainClass.set("sandbox.semo.batch.SemoBatchCollectApplication")
+	mainClass.set("sandbox.semo.batch.SemoBatchRetentionApplication")
 }
 
 tasks.jar {
