@@ -24,6 +24,7 @@ public final class SecurityConstants {
     public static final String API_MEMBER_FORM = "/api/v1/member/form";
     public static final String API_COMPANY_LIST_PATH = "/api/v1/company";
     public static final String API_COMPANY_FORM_PATH = "/api/v1/company/form";
+    public static final String API_REGISTER_SUPER = "/api/v1/member/super";
 
 
     public static final List<String> PUBLIC_PATHS = List.of(
@@ -36,7 +37,8 @@ public final class SecurityConstants {
             API_EMAIL_CHECK,
             API_MEMBER_FORM,
             API_COMPANY_LIST_PATH,
-            API_COMPANY_FORM_PATH
+            API_COMPANY_FORM_PATH,
+            API_REGISTER_SUPER
     );
 
     public record JwtPathPattern(String method, String path) {
@@ -52,7 +54,8 @@ public final class SecurityConstants {
             new JwtPathPattern("POST", API_MEMBER_FORM),
             new JwtPathPattern("GET", API_COMPANY_LIST_PATH),
             new JwtPathPattern("POST", API_COMPANY_FORM_PATH),
-            new JwtPathPattern("PATCH", API_CHANGE_PASSWORD_PATH)
+            new JwtPathPattern("PATCH", API_CHANGE_PASSWORD_PATH),
+            new JwtPathPattern("POST", API_REGISTER_SUPER)
     );
 
 }
