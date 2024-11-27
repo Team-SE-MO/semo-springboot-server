@@ -47,13 +47,13 @@ subprojects {
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     }
 
-    tasks.named('bootJar') {
-        mainClass.set("sandbox.semo.application.SemoServiceApplication")
-    }
-
-    tasks.named('test') {
-        useJUnitPlatform()
-    }
+//    tasks.named('bootJar') {
+//        mainClass.set("sandbox.semo.application.SemoServiceApplication")
+//    }
+//
+//    tasks.named('test') {
+//        useJUnitPlatform()
+//    }
 }
 
 tasks.bootJar {
