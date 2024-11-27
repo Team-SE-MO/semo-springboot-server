@@ -98,7 +98,7 @@ public class SessionDataMonitoringWebSocketService {
                 if (session.isOpen()) {
                     String message = objectMapper.writeValueAsString(monitoringData);
                     session.sendMessage(new TextMessage(message));
-                    log.info(">>> [ 🚀 데이터 전송 ] => companyId = {}, message = {}", companyId, message);
+                    log.info(">>> [ 🚀 데이터 전송 ]");
                 }
             } catch (IOException e) {
                 log.error(">>> [ 🚨 데이터 전송 오류 ] => {}", e.getMessage());
