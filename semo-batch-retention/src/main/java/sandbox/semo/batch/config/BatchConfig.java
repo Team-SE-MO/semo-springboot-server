@@ -44,7 +44,7 @@ public class BatchConfig {
     @Value("${backup.path}")
     private String backupBasePath;
 
-    private static final int CHUNK_SIZE = 10000;
+    private static final int CHUNK_SIZE = 20000;
     private static final int GRID_SIZE = 6;
 
     private final MonitoringRepository monitoringRepository;
