@@ -29,8 +29,8 @@ jobs:
           chmod +x ./gradlew
           ./gradlew clean build -x test
 
-      - name: Test semo-app Module
-        run: ./gradlew :semo-app:test
+      - name: Test semo-api Module
+        run: ./gradlew :semo-api:test
 
       - name: Test semo-batch-collect Module
         run: ./gradlew :semo-batch-collect:test
@@ -51,12 +51,12 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker for semo-app
+      - name: Build Docker for semo-api
         run: |
-          cd semo-app
+          cd semo-api
           docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/semo_app .
 
-      - name: Push Docker for semo-app
+      - name: Push Docker for semo-api
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/semo_app:latest
 
       - name: Build Docker for semo-batch-collect
@@ -80,14 +80,14 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' # PR 이벤트에서는 실행하지 않음
     steps:
-      - name: Deploy semo-app to VM
+      - name: Deploy semo-api to VM
         uses: appleboy/ssh-action@master
         with:
           username: ${{ secrets.VM_USERNAME }}
           host: ${{ secrets.VM_IP }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
-            echo "Deploying semo-app..."
+            echo "Deploying semo-api..."
             sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_app:latest
             sudo docker stop semo_app || true
             sudo docker rm semo_app || true
