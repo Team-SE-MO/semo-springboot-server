@@ -41,11 +41,26 @@ jobs:
       - name: Verify JAR file for semo-batch-retention
         run: ls semo-batch-retention/build/libs
 
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: |
+            semo-api/build/libs/*.jar
+            semo-batch-collect/build/libs/*.jar
+            semo-batch-retention/build/libs/*.jar
+
   docker-build:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+          path: .
 
       - name: Login to DockerHub
         uses: docker/login-action@v1
@@ -53,29 +68,23 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker for semo-api
+      - name: Build and push Docker for semo-api
         run: |
-          cd semo-api
-          docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/semo_api .
+          ls -la semo-api/build/libs/
+          docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/semo_api:latest -f semo-api/Dockerfile semo-api
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/semo_api:latest
 
-      - name: Push Docker for semo-api
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/semo_api:latest
-
-      - name: Build Docker for semo-batch-collect
+      - name: Build and push Docker for semo-batch-collect
         run: |
-          cd semo-batch-collect
-          docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_collect .
+          ls -la semo-batch-collect/build/libs/
+          docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_collect:latest -f semo-batch-collect/Dockerfile semo-batch-collect
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_collect:latest
 
-      - name: Push Docker for semo-batch-collect
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_collect:latest
-
-      - name: Build Docker for semo-batch-retention
+      - name: Build and push Docker for semo-batch-retention
         run: |
-          cd semo-batch-retention
-          docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_retention .
-
-      - name: Push Docker for semo-batch-retention
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_retention:latest
+          ls -la semo-batch-retention/build/libs/
+          docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_retention:latest -f semo-batch-retention/Dockerfile semo-batch-retention
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_retention:latest
 
   deploy:
     needs: docker-build
