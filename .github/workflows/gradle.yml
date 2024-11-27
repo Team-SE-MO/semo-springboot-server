@@ -43,7 +43,6 @@ jobs:
 
   docker-build:
     needs: build
-    if: github.event_name == 'push'  # PR 이벤트에서는 실행하지 않음
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
