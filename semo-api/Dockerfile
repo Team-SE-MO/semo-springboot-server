@@ -5,7 +5,7 @@ FROM bellsoft/liberica-openjdk-alpine:17 as builder
 WORKDIR /app
 
 # 3. JAR 파일 복사
-COPY semo-app/build/libs/semo-app-*.jar app.jar
+COPY semo-app/build/libs/semo-api-*.jar app.jar
 
 # 4. Port expose (API 서버 포트 8080)
 EXPOSE 8080
