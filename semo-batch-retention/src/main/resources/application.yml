@@ -1,6 +1,6 @@
 spring:
   application:
-    name: semo-batch-collect
+    name: semo-batch-retention
 
   profiles:
     active: secret
