@@ -1,5 +1,5 @@
 # 1. Base image
-FROM bellsoft/liberica-openjdk-alpine:17 as builder
+FROM bellsoft/liberica-openjdk-alpine:17
 
 # 2. Working directory 설정
 WORKDIR /app
