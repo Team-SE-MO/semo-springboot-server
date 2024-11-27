@@ -5,7 +5,7 @@ FROM bellsoft/liberica-openjdk-alpine:17 as builder
 WORKDIR /app
 
 # 3. JAR 파일 복사
-COPY ./semo-batch-retention/build/libs/semo-batch-retention-*.jar batch-retention.jar
+COPY build/libs/semo-batch-retention-*.jar batch-retention.jar
 
 # 4. Port expose (배치 서버 포트 9091)
 EXPOSE 9091

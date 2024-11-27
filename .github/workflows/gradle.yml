@@ -35,6 +35,12 @@ jobs:
       - name: Verify JAR file
         run: ls semo-api/build/libs
 
+      - name: Verify JAR file for semo-batch-collect
+        run: ls semo-batch-collect/build/libs
+
+      - name: Verify JAR file for semo-batch-retention
+        run: ls semo-batch-retention/build/libs
+
   docker-build:
     needs: build
     if: github.event_name == 'push'  # PR 이벤트에서는 실행하지 않음

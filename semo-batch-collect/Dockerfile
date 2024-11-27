@@ -5,7 +5,7 @@ FROM bellsoft/liberica-openjdk-alpine:17 as builder
 WORKDIR /app
 
 # 3. JAR 파일 복사
-COPY ./semo-batch-collect/build/libs/semo-batch-collect-*.jar batch-collect.jar
+COPY build/libs/semo-batch-collect-*.jar batch-collect.jar
 
 # 4. Port expose (배치 서버 포트 9090)
 EXPOSE 9090
