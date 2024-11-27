@@ -1,5 +1,6 @@
 package sandbox.semo.application.common.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -11,11 +12,15 @@ import java.util.Collections;
 @Configuration
 public class CorsConfig {
 
+    @Value("${deploy.ip}")
+    private String ip;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        String url = "http://" + ip + ":3000";
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:3000"));
+        configuration.setAllowedOrigins(Collections.singletonList(url));
         configuration.setAllowedMethods(Collections.singletonList("*"));
         configuration.setAllowCredentials(true);
         configuration.setAllowedHeaders(Collections.singletonList("*"));
