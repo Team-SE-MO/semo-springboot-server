@@ -89,7 +89,7 @@ jobs:
   deploy:
     needs: docker-build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' # PR 이벤트에서는 실행하지 않음
+    # if: github.event_name == 'push' # PR 이벤트에서는 실행하지 않음
     steps:
       - name: Deploy semo-api to VM
         uses: appleboy/ssh-action@master
@@ -97,6 +97,9 @@ jobs:
           username: ${{ secrets.VM_USERNAME }}
           host: ${{ secrets.VM_IP }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          port: 22
+          key_type: ed25519  # Ed25519 키 타입 명시
+          debug: true
           script: |
             echo "Deploying semo-api..."
             sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_api:latest
@@ -110,6 +113,9 @@ jobs:
           username: ${{ secrets.VM_USERNAME }}
           host: ${{ secrets.VM_IP }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          port: 22
+          key_type: ed25519  # Ed25519 키 타입 명시
+          debug: true
           script: |
             echo "Deploying semo-batch-collect..."
             sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_collect:latest
@@ -123,6 +129,9 @@ jobs:
           username: ${{ secrets.VM_USERNAME }}
           host: ${{ secrets.VM_IP }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          port: 22
+          key_type: ed25519  # Ed25519 키 타입 명시
+          debug: true
           script: |
             echo "Deploying semo-batch-retention..."
             sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_retention:latest
