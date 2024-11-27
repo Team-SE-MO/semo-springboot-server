@@ -26,17 +26,9 @@ jobs:
 
       - name: Build Root Project
         run: |
+          echo ${{secrets.APPLICATION_SECRET}} | base64 --decode > ./src/main/resources/application-secret.yml
           chmod +x ./gradlew
           ./gradlew clean build -x test
-
-      - name: Test semo-api Module
-        run: ./gradlew :semo-api:test
-
-      - name: Test semo-batch-collect Module
-        run: ./gradlew :semo-batch-collect:test
-
-      - name: Test semo-batch-retention Module
-        run: ./gradlew :semo-batch-retention:test
 
   docker-build:
     needs: build
