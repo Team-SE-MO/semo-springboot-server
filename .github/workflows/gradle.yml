@@ -32,6 +32,9 @@ jobs:
           chmod +x ./gradlew
           ./gradlew clean build -x test
 
+      - name: Verify JAR file
+        run: ls semo-api/build/libs
+
   docker-build:
     needs: build
     if: github.event_name == 'push'  # PR 이벤트에서는 실행하지 않음
@@ -48,10 +51,10 @@ jobs:
       - name: Build Docker for semo-api
         run: |
           cd semo-api
-          docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/semo_app .
+          docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/semo_api .
 
       - name: Push Docker for semo-api
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/semo_app:latest
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/semo_api:latest
 
       - name: Build Docker for semo-batch-collect
         run: |
@@ -82,10 +85,10 @@ jobs:
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
             echo "Deploying semo-api..."
-            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_app:latest
-            sudo docker stop semo_app || true
-            sudo docker rm semo_app || true
-            sudo docker run -d --name semo_app -p 8080:8080 ${{ secrets.DOCKERHUB_USERNAME }}/semo_app:latest
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_api:latest
+            sudo docker stop semo_api || true
+            sudo docker rm semo_api || true
+            sudo docker run -d --name semo_api -p 8080:8080 ${{ secrets.DOCKERHUB_USERNAME }}/semo_api:latest
 
       - name: Deploy semo-batch-collect to VM
         uses: appleboy/ssh-action@master
