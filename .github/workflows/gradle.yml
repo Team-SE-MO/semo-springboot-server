@@ -3,7 +3,7 @@ name: CI / CD
 on:
   push:
     branches: [ "main" ]
-  pull_request: # PR이 생성되거나 업데이트될 때 실행
+  pull_request:
     branches: [ "main" ]
 
 permissions:
@@ -24,46 +24,97 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@dbbdc275be76ac10734476cc723d82dfe7ec6eda # v3.4.2
 
-      - name: Build with Gradle
+      - name: Build Root Project
         run: |
-          echo ${{secrets.APPLICATION_SECRET}} | base64 --decode > ./src/main/resources/application-secret.yml
           chmod +x ./gradlew
-          ./gradlew clean build
+          ./gradlew clean build -x test
 
-      # Docker 빌드 및 푸시는 PR 이벤트에서는 실행하지 않음
+      - name: Test semo-app Module
+        run: ./gradlew :semo-app:test
+
+      - name: Test semo-batch-collect Module
+        run: ./gradlew :semo-batch-collect:test
+
+      - name: Test semo-batch-retention Module
+        run: ./gradlew :semo-batch-retention:test
+
+  docker-build:
+    needs: build
+    if: github.event_name == 'push'  # PR 이벤트에서는 실행하지 않음
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Login to DockerHub
-        if: github.event_name == 'push'
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker
-        if: github.event_name == 'push'
-        run: docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/semo_app .
+      - name: Build Docker for semo-app
+        run: |
+          cd semo-app
+          docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/semo_app .
 
-      - name: Push Docker
-        if: github.event_name == 'push'
+      - name: Push Docker for semo-app
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/semo_app:latest
 
+      - name: Build Docker for semo-batch-collect
+        run: |
+          cd semo-batch-collect
+          docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_collect .
+
+      - name: Push Docker for semo-batch-collect
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_collect:latest
+
+      - name: Build Docker for semo-batch-retention
+        run: |
+          cd semo-batch-retention
+          docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_retention .
+
+      - name: Push Docker for semo-batch-retention
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_retention:latest
+
   deploy:
-    needs: build
+    needs: docker-build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' # PR 이벤트에서는 배포하지 않음
+    if: github.event_name == 'push' # PR 이벤트에서는 실행하지 않음
     steps:
-      - name: Deploy to VM
+      - name: Deploy semo-app to VM
         uses: appleboy/ssh-action@master
         with:
-          username: ${{ secrets.VM_USERNAME }}   # SSH 사용자명
-          host: ${{ secrets.VM_IP }}             # VM의 IP 주소
-          key: ${{ secrets.VM_SSH_PRIVATE_KEY }} # SSH 개인키
+          username: ${{ secrets.VM_USERNAME }}
+          host: ${{ secrets.VM_IP }}
+          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
-            echo "Pulling latest Docker image..."
+            echo "Deploying semo-app..."
             sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_app:latest
-            
-            echo "Stopping and removing existing container..."
             sudo docker stop semo_app || true
             sudo docker rm semo_app || true
-            
-            echo "Starting new container..."
             sudo docker run -d --name semo_app -p 8080:8080 ${{ secrets.DOCKERHUB_USERNAME }}/semo_app:latest
+
+      - name: Deploy semo-batch-collect to VM
+        uses: appleboy/ssh-action@master
+        with:
+          username: ${{ secrets.VM_USERNAME }}
+          host: ${{ secrets.VM_IP }}
+          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          script: |
+            echo "Deploying semo-batch-collect..."
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_collect:latest
+            sudo docker stop semo_batch_collect || true
+            sudo docker rm semo_batch_collect || true
+            sudo docker run -d --name semo_batch_collect -p 9090:9090 ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_collect:latest
+
+      - name: Deploy semo-batch-retention to VM
+        uses: appleboy/ssh-action@master
+        with:
+          username: ${{ secrets.VM_USERNAME }}
+          host: ${{ secrets.VM_IP }}
+          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          script: |
+            echo "Deploying semo-batch-retention..."
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_retention:latest
+            sudo docker stop semo_batch_retention || true
+            sudo docker rm semo_batch_retention || true
+            sudo docker run -d --name semo_batch_retention -p 9091:9091 ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_retention:latest
