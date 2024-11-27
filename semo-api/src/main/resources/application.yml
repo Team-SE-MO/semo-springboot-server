@@ -14,8 +14,22 @@ spring:
 
   data:
     redis:
-      host: localhost
+      host: redis
       port: 6379
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${spring.mail.username}
+    password: ${spring.mail.password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        debug: true
+
 
 server:
   port: 8080
@@ -25,19 +39,19 @@ logging:
     org.hibernate.type.descriptor.sql: trace
     org.springframework.security: DEBUG
 
-mail:
-  host: smtp.gmail.com
-  port: 587
-  username: ${spring.mail.username}
-  password: ${spring.mail.password}
-  properties:
-    mail:
-      smtp:
-        auth: true
-        starttls:
-          enable: true
-          required: true
-      debug: true
+#mail:
+#  host: smtp.gmail.com
+#  port: 587
+#  username: ${spring.mail.username}
+#  password: ${spring.mail.password}
+#  properties:
+#    mail:
+#      smtp:
+#        auth: true
+#        starttls:
+#          enable: true
+#          required: true
+#      debug: true
 
 redis:
   restore:
