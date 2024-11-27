@@ -1,5 +1,5 @@
 # 1. Base image
-FROM bellsoft/liberica-openjdk-alpine:17 as builder
+FROM bellsoft/liberica-openjdk-alpine:17
 
 # 2. Working directory 설정
 WORKDIR /app
@@ -11,4 +11,4 @@ COPY build/libs/semo-batch-retention-0.0.1-SNAPSHOT-plain.jar app.jar
 EXPOSE 9091
 
 # 5. 실행 명령어
-CMD ["java", "-jar", "batch-retention.jar"]
+CMD ["java", "-jar", "app.jar"]
