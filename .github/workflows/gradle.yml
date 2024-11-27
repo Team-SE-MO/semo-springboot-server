@@ -53,6 +53,7 @@ jobs:
   docker-build:
     needs: build
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' # PR 이벤트에서는 실행하지 않음
     steps:
       - uses: actions/checkout@v4
 
@@ -86,46 +87,46 @@ jobs:
           docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_retention:latest -f semo-batch-retention/Dockerfile semo-batch-retention
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_retention:latest
 
-  deploy:
-    needs: docker-build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' # PR 이벤트에서는 실행하지 않음
-    steps:
-      - name: Deploy semo-api to VM
-        uses: appleboy/ssh-action@master
-        with:
-          username: ${{ secrets.VM_USERNAME }}
-          host: ${{ secrets.VM_IP }}
-          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          script: |
-            echo "Deploying semo-api..."
-            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_api:latest
-            sudo docker stop semo_api || true
-            sudo docker rm semo_api || true
-            sudo docker run -d --name semo_api -p 8080:8080 ${{ secrets.DOCKERHUB_USERNAME }}/semo_api:latest
+#  deploy:
+#    needs: docker-build
+#    runs-on: ubuntu-latest
+#    if: github.event_name == 'push' # PR 이벤트에서는 실행하지 않음
+#    steps:
+#      - name: Deploy semo-api to VM
+#        uses: appleboy/ssh-action@master
+#        with:
+#          username: ${{ secrets.VM_USERNAME }}
+#          host: ${{ secrets.VM_IP }}
+#          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+#          script: |
+#            echo "Deploying semo-api..."
+#            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_api:latest
+#            sudo docker stop semo_api || true
+#            sudo docker rm semo_api || true
+#            sudo docker run -d --name semo_api -p 8080:8080 ${{ secrets.DOCKERHUB_USERNAME }}/semo_api:latest
 
-      - name: Deploy semo-batch-collect to VM
-        uses: appleboy/ssh-action@master
-        with:
-          username: ${{ secrets.VM_USERNAME }}
-          host: ${{ secrets.VM_IP }}
-          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          script: |
-            echo "Deploying semo-batch-collect..."
-            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_collect:latest
-            sudo docker stop semo_batch_collect || true
-            sudo docker rm semo_batch_collect || true
-            sudo docker run -d --name semo_batch_collect -p 9090:9090 ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_collect:latest
+#      - name: Deploy semo-batch-collect to VM
+#        uses: appleboy/ssh-action@master
+#        with:
+#          username: ${{ secrets.VM_USERNAME }}
+#          host: ${{ secrets.VM_IP }}
+#          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+#          script: |
+#            echo "Deploying semo-batch-collect..."
+#            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_collect:latest
+#            sudo docker stop semo_batch_collect || true
+#            sudo docker rm semo_batch_collect || true
+#            sudo docker run -d --name semo_batch_collect -p 9090:9090 ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_collect:latest
 
-      - name: Deploy semo-batch-retention to VM
-        uses: appleboy/ssh-action@master
-        with:
-          username: ${{ secrets.VM_USERNAME }}
-          host: ${{ secrets.VM_IP }}
-          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          script: |
-            echo "Deploying semo-batch-retention..."
-            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_retention:latest
-            sudo docker stop semo_batch_retention || true
-            sudo docker rm semo_batch_retention || true
-            sudo docker run -d --name semo_batch_retention -p 9091:9091 ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_retention:latest
+#      - name: Deploy semo-batch-retention to VM
+#        uses: appleboy/ssh-action@master
+#        with:
+#          username: ${{ secrets.VM_USERNAME }}
+#          host: ${{ secrets.VM_IP }}
+#          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+#          script: |
+#            echo "Deploying semo-batch-retention..."
+#            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_retention:latest
+#            sudo docker stop semo_batch_retention || true
+#            sudo docker rm semo_batch_retention || true
+#            sudo docker run -d --name semo_batch_retention -p 9091:9091 ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_retention:latest
