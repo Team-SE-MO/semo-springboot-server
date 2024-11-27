@@ -98,8 +98,7 @@ jobs:
           host: ${{ secrets.VM_IP }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           port: 22
-          key_type: ed25519  # Ed25519 키 타입 명시
-          debug: true
+          passphrase: ${{ secrets.VM_SSH_KEY_PASSPHRASE }}
           script: |
             echo "Deploying semo-api..."
             sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_api:latest
@@ -114,8 +113,7 @@ jobs:
           host: ${{ secrets.VM_IP }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           port: 22
-          key_type: ed25519  # Ed25519 키 타입 명시
-          debug: true
+          passphrase: ${{ secrets.VM_SSH_KEY_PASSPHRASE }}
           script: |
             echo "Deploying semo-batch-collect..."
             sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_collect:latest
@@ -130,8 +128,7 @@ jobs:
           host: ${{ secrets.VM_IP }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           port: 22
-          key_type: ed25519  # Ed25519 키 타입 명시
-          debug: true
+          passphrase: ${{ secrets.VM_SSH_KEY_PASSPHRASE }}
           script: |
             echo "Deploying semo-batch-retention..."
             sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/semo_batch_retention:latest
