@@ -50,14 +50,14 @@ public class MonitoringRepository {
     }
 
     public List<SessionData> fetchSessionData(DataSource dataSource, Device device,
-            LocalDateTime collectedAt) {
+        LocalDateTime collectedAt) {
         List<SessionData> sessionDataList = new ArrayList<>();
         String query = queryLoader.getQuery("selectSessionData");
 
         log.info(">>> [ 🔍 SessionData 조회 시작: Device {} ]", device.getDeviceAlias());
         try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(query)) {
+            Connection conn = dataSource.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(query)) {
             ResultSet rs = stmt.executeQuery();
             SessionDataRowMapper rowMapper = new SessionDataRowMapper(device, collectedAt);
             while (rs.next()) {
@@ -65,11 +65,11 @@ public class MonitoringRepository {
                 sessionDataList.add(sessionData);
             }
             log.info(">>> [ 📊 SessionData 조회 완료: Device {}. 조회된 데이터 개수: {} ]",
-                    device.getDeviceAlias(), sessionDataList.size()
+                device.getDeviceAlias(), sessionDataList.size()
             );
         } catch (SQLException e) {
             log.error(">>> [ ❌ SessionData 조회 실패: Device {}. 에러: {} ]",
-                    device.getDeviceAlias(), e.getMessage());
+                device.getDeviceAlias(), e.getMessage());
         }
         return sessionDataList;
     }
@@ -93,24 +93,19 @@ public class MonitoringRepository {
             });
             Instant end = Instant.now();
             log.info(">>> [ ✅ SessionData 저장 완료 - 소요 시간: {}ms ]",
-                    end.toEpochMilli() - start.toEpochMilli());
+                end.toEpochMilli() - start.toEpochMilli());
         } catch (Exception e) {
             log.error(">>> [ ❌ SessionData 저장 실패: 에러: {} ]", e.getMessage(), e);
         }
     }
 
-    public void deleteExpiredSessionDataList(
-        LocalDateTime retentionDate) {
-        String query = queryLoader.getQuery("deleteExpiredSessionDataList");
+    public void truncateSessionDataList() {
+        String query = queryLoader.getQuery("truncateSessionDataList");
         log.info(">>> [ 💾 SessionData 삭제 시작.]");
 
         try {
-            // 단일 쿼리로 변경
-            int deletedCount = jdbcTemplate.update(query, retentionDate);
-
-            log.info(">>> [ 🗑️ CollectedAt: {} 기준 {} 개 행 삭제됨 ]",
-                retentionDate,
-                deletedCount);
+            jdbcTemplate.update(query);
+            log.info(">>> [ 🗑️ SessionData 삭제됨 ]");
 
         } catch (Exception e) {
             log.error(">>> [ ❌ SessionData 삭제 실패: 에러: {} ]", e.getMessage(), e);
@@ -132,6 +127,7 @@ public class MonitoringRepository {
             throw e;
         }
     }
+
     public void deleteJobExecutionContextDataList(
         LocalDateTime retentionDate) {
         String query = queryLoader.getQuery("deleteJobExecutionContextDataList");
@@ -142,10 +138,12 @@ public class MonitoringRepository {
                 retentionDate,
                 deletedCount);
         } catch (Exception e) {
-            log.error(">>> [ ❌ deleteJobExecutionContextDataList 삭제 실패: 에러: {} ]", e.getMessage(), e);
+            log.error(">>> [ ❌ deleteJobExecutionContextDataList 삭제 실패: 에러: {} ]", e.getMessage(),
+                e);
             throw e;
         }
     }
+
     public void deleteStepExecutionContext(
         LocalDateTime retentionDate) {
         String query = queryLoader.getQuery("deleteStepExecutionContext");
@@ -160,6 +158,7 @@ public class MonitoringRepository {
             throw e;
         }
     }
+
     public void deleteStepExecution(
         LocalDateTime retentionDate) {
         String query = queryLoader.getQuery("deleteStepExecution");
@@ -174,6 +173,7 @@ public class MonitoringRepository {
             throw e;
         }
     }
+
     public void deleteJobExecution(
         LocalDateTime retentionDate) {
         String query = queryLoader.getQuery("deleteJobExecution");
@@ -188,6 +188,7 @@ public class MonitoringRepository {
             throw e;
         }
     }
+
     public void deleteJobInstance(
         LocalDateTime retentionDate) {
         String query = queryLoader.getQuery("deleteJobInstance");
@@ -205,19 +206,19 @@ public class MonitoringRepository {
 
 
     public MonitoringMetric fetchMetricData(DataSource dataSource, Device device,
-            LocalDateTime collectedAt) {
+        LocalDateTime collectedAt) {
         MonitoringMetric monitoringMetric = null;
         String query = queryLoader.getQuery("selectMetricData");
 
         log.info(">>> [ 🔍 MetricData 조회 시작: Device {} ]", device.getDeviceAlias());
         try {
             monitoringMetric = new JdbcTemplate(dataSource).queryForObject(
-                    query, new MetricDataRowMapper(device, collectedAt)
+                query, new MetricDataRowMapper(device, collectedAt)
             );
             log.info(">>> [ 📊 MetricData 조회 완료: Device {} ]", device.getDeviceAlias());
         } catch (Exception e) {
             log.error(">>> [ ❌ MetricData 조회 실패: Device {}. 에러: {} ]", device.getDeviceAlias(),
-                    e.getMessage());
+                e.getMessage());
         }
         return monitoringMetric;
     }
@@ -227,21 +228,21 @@ public class MonitoringRepository {
         Instant start = Instant.now();
 
         log.info(">>> [ 💾 MonitoringMetric 저장 시작: Device {} ]",
-                monitoringMetric.getDevice().getDeviceAlias());
+            monitoringMetric.getDevice().getDeviceAlias());
         try {
             MapSqlParameterSource params = convertToSqlParameterSource(monitoringMetric);
             paramJdbcTemplate.update(query, params);
             Instant end = Instant.now();
             log.info(">>> [ ✅ MonitoringMetric 저장 완료 - 소요 시간: {}ms ]",
-                    end.toEpochMilli() - start.toEpochMilli());
+                end.toEpochMilli() - start.toEpochMilli());
         } catch (Exception e) {
             log.error(">>> [ ❌ MonitoringMetric 저장 실패: Device {}. 에러: {} ]",
-                    monitoringMetric.getDevice().getDeviceAlias(), e.getMessage());
+                monitoringMetric.getDevice().getDeviceAlias(), e.getMessage());
         }
     }
 
     private void setSessionDataValues(PreparedStatement ps, SessionData sessionData)
-            throws SQLException {
+        throws SQLException {
         ps.setObject(1, sessionData.getId().getCollectedAt());
         ps.setLong(2, sessionData.getId().getSid());
         ps.setLong(3, sessionData.getId().getDeviceId());
@@ -268,16 +269,16 @@ public class MonitoringRepository {
         ps.setLong(24, sessionData.getLastCallEt() != null ? sessionData.getLastCallEt() : 0);
         ps.setString(25, sessionData.getFailedOver() != null ? sessionData.getFailedOver() : "-");
         ps.setString(26,
-                sessionData.getBlockingSessionStatus() != null
-                        ? sessionData.getBlockingSessionStatus()
-                        : "-");
+            sessionData.getBlockingSessionStatus() != null
+                ? sessionData.getBlockingSessionStatus()
+                : "-");
         ps.setString(27, sessionData.getEvent() != null ? sessionData.getEvent() : "-");
         ps.setString(28, sessionData.getWaitClass() != null ? sessionData.getWaitClass() : "-");
         ps.setString(29, sessionData.getState() != null ? sessionData.getState() : "-");
         ps.setLong(30, sessionData.getWaitTimeMicro() != null ? sessionData.getWaitTimeMicro() : 0);
         ps.setLong(31,
-                sessionData.getTimeRemainingMicro() != null ? sessionData.getTimeRemainingMicro()
-                        : 0);
+            sessionData.getTimeRemainingMicro() != null ? sessionData.getTimeRemainingMicro()
+                : 0);
         ps.setString(32, sessionData.getServiceName() != null ? sessionData.getServiceName() : "-");
     }
 
@@ -285,18 +286,18 @@ public class MonitoringRepository {
         String query = queryLoader.getQuery("selectRealTimeJobMetric");
 
         MetaExecutionData response = MetaExecutionData.builder()
-                .executionTimes(new LinkedHashMap<>())
-                .build();
+            .executionTimes(new LinkedHashMap<>())
+            .build();
 
         DateTimeFormatter responseFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
         paramJdbcTemplate.query(
-                query,
-                (ResultSet rs) -> {
-                    LocalDateTime startTime = rs.getTimestamp("START_TIME").toLocalDateTime();
-                    Double duration = rs.getBigDecimal("DURATION_TIME_IN_HOURS").doubleValue();
-                    response.getExecutionTimes().put(startTime.format(responseFormatter), duration);
-                });
+            query,
+            (ResultSet rs) -> {
+                LocalDateTime startTime = rs.getTimestamp("START_TIME").toLocalDateTime();
+                Double duration = rs.getBigDecimal("DURATION_TIME_IN_HOURS").doubleValue();
+                response.getExecutionTimes().put(startTime.format(responseFormatter), duration);
+            });
 
         return response;
     }
@@ -305,18 +306,18 @@ public class MonitoringRepository {
         String query = queryLoader.getQuery("selectRealTimeJobMetricByLastTime");
 
         MetaExecutionData response = MetaExecutionData.builder()
-                .executionTimes(new LinkedHashMap<>())
-                .build();
+            .executionTimes(new LinkedHashMap<>())
+            .build();
 
         DateTimeFormatter responseFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
         paramJdbcTemplate.query(
-                query,
-                (ResultSet rs) -> {
-                    LocalDateTime startTime = rs.getTimestamp("START_TIME").toLocalDateTime();
-                    Double duration = rs.getBigDecimal("DURATION_TIME_IN_HOURS").doubleValue();
-                    response.getExecutionTimes().put(startTime.format(responseFormatter), duration);
-                });
+            query,
+            (ResultSet rs) -> {
+                LocalDateTime startTime = rs.getTimestamp("START_TIME").toLocalDateTime();
+                Double duration = rs.getBigDecimal("DURATION_TIME_IN_HOURS").doubleValue();
+                response.getExecutionTimes().put(startTime.format(responseFormatter), duration);
+            });
 
         return response;
     }
@@ -325,12 +326,12 @@ public class MonitoringRepository {
         String query = queryLoader.getQuery("selectDailyJobExecutionTimes");
 
         return paramJdbcTemplate.query(
-                query,
-                (rs, rowNum) -> DailyJobData.builder()
-                        .executionDate(rs.getDate("EXEC_DATE").toLocalDate())
-                        .storeJobDuration(rs.getDouble("STORE_JOB_DURATION"))
-                        .retentionJobDuration(rs.getDouble("RETENTION_JOB_DURATION"))
-                        .build());
+            query,
+            (rs, rowNum) -> DailyJobData.builder()
+                .executionDate(rs.getDate("EXEC_DATE").toLocalDate())
+                .storeJobDuration(rs.getDouble("STORE_JOB_DURATION"))
+                .retentionJobDuration(rs.getDouble("RETENTION_JOB_DURATION"))
+                .build());
     }
 
     //메인 Step 에러 데이터 조회 메서드
@@ -339,8 +340,8 @@ public class MonitoringRepository {
         updateStepDataFromDatabase(stepExecutionMap);
 
         return StepInfo.builder()
-                .stepExecution(stepExecutionMap)
-                .build();
+            .stepExecution(stepExecutionMap)
+            .build();
     }
 
     // 1. 기본 데이터 초기화
@@ -359,23 +360,23 @@ public class MonitoringRepository {
     // 2. 계산된 날짜 반환
     private String getCalculatedDate(LocalDate today, int daysAgo) {
         return today.minusDays(daysAgo)
-                   .format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
     }
 
     // 3. 기본 데이터 생성
     private StepData createDefaultStepData() {
         return StepData.builder()
-                .totalCount(0)
-                .errorTypes(null)
-                .hasError(false)
-                .build();
+            .totalCount(0)
+            .errorTypes(null)
+            .hasError(false)
+            .build();
     }
 
     // 4. 데이터베이스에서 데이터 업데이트
     private void updateStepDataFromDatabase(Map<String, StepData> stepExecutionMap) {
         String query = queryLoader.getQuery("selectStepDataMetric");
         MapSqlParameterSource params = createQueryParameters();
-        
+
         paramJdbcTemplate.query(
             query,
             params,
@@ -425,10 +426,10 @@ public class MonitoringRepository {
                 }
 
                 StepData stepData = StepData.builder()
-                        .totalCount(totalCount)
-                        .errorTypes(errorTypes == null || errorTypes.isEmpty() ? null : errorTypes)
-                        .hasError(totalCount > 0)
-                        .build();
+                    .totalCount(totalCount)
+                    .errorTypes(errorTypes == null || errorTypes.isEmpty() ? null : errorTypes)
+                    .hasError(totalCount > 0)
+                    .build();
                 stepExecutionMap.put(executionDate, stepData);
             }
         } catch (SQLException e) {

@@ -8,15 +8,15 @@ import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.util.concurrent.Executors;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Value;
 
+@Slf4j
 @RequiredArgsConstructor
-@Log4j2
 public class S3UploadTasklet implements Tasklet {
 
     private final AmazonS3 amazonS3;

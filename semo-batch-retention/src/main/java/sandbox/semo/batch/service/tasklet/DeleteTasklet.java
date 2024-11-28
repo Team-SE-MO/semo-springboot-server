@@ -18,16 +18,13 @@ public class DeleteTasklet implements Tasklet {
 
     private final MonitoringRepository monitoringRepository;
 
-    @Value("#{jobParameters['retentionDate']}")
-    private String retentionDateStr;
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) {
-        LocalDateTime retentionDate = LocalDateTime.parse(retentionDateStr);
 
         try {
-            monitoringRepository.deleteExpiredSessionDataList(retentionDate);
-            log.info(">>> [ 🗑️ 만료된 세션 데이터 삭제 완료 - 기준일: {} ]", retentionDate);
+            monitoringRepository.truncateSessionDataList();
+            log.info(">>> [ 🗑️ 만료된 세션 데이터 삭제 완료 ]");
             return RepeatStatus.FINISHED;
         } catch (Exception e) {
             log.error(">>> [ ❌ 세션 데이터 삭제 중 오류 발생: {} ]", e.getMessage());
